@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    
     "start": "nodemon app"
   },
   "keywords": [],
@@ -12,6 +11,7 @@
   "description": "",
   "dependencies": {
     "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
     "express": "^4.21.2",
     "mongodb": "^6.12.0",
     "mongoose": "^8.9.5",
