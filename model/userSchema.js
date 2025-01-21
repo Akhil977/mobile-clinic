@@ -13,11 +13,17 @@ const userSchema = new Schema({
         sparse: true,
         default: null
     },
-    // googleId: {
-    //     type: String,
-    //     // unique: true,
+    phone:{
+        type:String,
+        require:false,
+        unique:false,
+        sparse:true
+    },
+    googleId: {
+        type: String,
+        unique: true,
         
-    // },
+    },
     password: {
         type: String,
         required: false

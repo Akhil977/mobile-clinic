@@ -56,37 +56,36 @@
 						<h4 class="mtext-105 cl2 txt-center p-b-30">
 							Sign Up
 						</h4>
-						 <div class="bor8 m-b-20 how-pos4-parent">
-            <span id="message-text" class="message-text"></span> <!-- This is where the message will appear -->
-        </div>
 						<div class="bor8 m-b-20 how-pos4-parent">
-							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="name" placeholder="First Name					Last Name">
+							<span id="message-text" class="message-text"></span> <!-- This is where the message will appear -->
 						</div>
-
+						<div class="bor8 m-b-20 how-pos4-parent">
+							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="name" placeholder="First Name Last Name">
+						</div>
 						<div class="bor8 m-b-20 how-pos4-parent">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="email" placeholder="Your Email Address">
 						</div>
-                        <div class="bor8 m-b-20 how-pos4-parent">
+						<div class="bor8 m-b-20 how-pos4-parent">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="phonenumber" placeholder="Your Phone Number">
 						</div>
-
 						<div class="bor8 m-b-20 how-pos4-parent">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="password" name="password" placeholder="Your Password">
 						</div>
-                        <div class="bor8 m-b-20 how-pos4-parent">
-							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="password"  name="confirmPassword" placeholder="confirm  Password">
+						<div class="bor8 m-b-20 how-pos4-parent">
+							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="password" name="confirmPassword" placeholder="Confirm Password">
 						</div>
-
-						
-
-						<input type="submit" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" placeholder="Submit">
-							<!-- Submit
-						</input> -->
+				
+						<input type="submit" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" value="Submit">
 					</form>
+				
+					<!-- Google Sign-in Button with 'G' -->
+					<div class="txt-center p-t-20">
+						<a href="/auth/google" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #4285F4;">
+							<span style="font-size: 20px; color: white; font-weight: bold;">G</span>
+						</a>
+					</div>
 				</div>
-			</div>
-		</div>
-	</section>	
+			</section>
 	
 	<!-- Map -->
 	<div class="map">
@@ -128,6 +127,9 @@
                 // If there's an error message, show it
                 if (response.errorMessage) {
                     $('#message-text').text(response.errorMessage).css('color', 'red').show();
+                } else {
+                    // If no error, redirect to OTP page
+                    window.location.href = '/otp'; // Redirect to the OTP page
                 }
 
                 // If there's a success message, show it

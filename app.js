@@ -4,6 +4,7 @@ const path = require("path")
 const env = require("dotenv").config();
 const db = require("./config/db")
 const session = require('express-session');
+const passport= require("./config/passport")
 const userRouter=require("./routes/userRouter")
 db()
 app.use(
@@ -17,6 +18,8 @@ app.use(
         } // Set true if using HTTPS
     })
 );
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 app.use(express.json());

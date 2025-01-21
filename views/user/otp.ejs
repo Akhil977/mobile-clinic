@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .otp-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .otp-input {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      text-align: center;
+      margin: 0 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    .btn[disabled] {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .countdown {
+      color: #555;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .back-link {
+      display: block;
+      margin-top: 10px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <!-- Add SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div class="otp-container">
+    <h2>Reset Password</h2>
+    <p>An OTP has been sent to your email to reset your password.</p>
+    <form id="otpForm">
+      <div>
+          <input type="text" maxlength="1" class="otp-input" name="otp1" required>
+          <input type="text" maxlength="1" class="otp-input" name="otp2" required>
+          <input type="text" maxlength="1" class="otp-input" name="otp3" required>
+          <input type="text" maxlength="1" class="otp-input" name="otp4" required>
+          <input type="text" maxlength="1" class="otp-input" name="otp5" required>
+          <input type="text" maxlength="1" class="otp-input" name="otp6" required>
+      </div>
+      <button type="submit" class="btn">Submit</button>
+    </form>
+    
+    <!-- Resend OTP Button -->
+    <button id="resendBtn" class="btn" disabled>Resend OTP</button>
+    <div class="countdown">Resend available in <span id="countdown">60</span> seconds</div>
+  </div>
+
+  <script>
+    // OTP Countdown Logic
+    let countdown = 60;
+    const countdownEl = document.getElementById('countdown');
+    const resendBtn = document.getElementById('resendBtn');
+
+    const timer = setInterval(() => {
+        countdown--;
+        countdownEl.textContent = countdown;
+
+        if (countdown <= 0) {
+            clearInterval(timer);
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend OTP';
+        }
+    }, 1000);
+
+    // Resend OTP functionality
+    resendBtn.addEventListener('click', () => {
+        const email = 'user@example.com';  // Replace with dynamic email if needed
+
+        resendBtn.disabled = true;
+        countdown = 60;
+        countdownEl.textContent = countdown;
+        resendBtn.textContent = 'Resending...';
+
+        fetch('/resend-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })  // Send email to backend
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.fire({
+                title: 'OTP Sent!',
+                text: data.message || 'A new OTP has been sent to your email.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'An error occurred while resending the OTP.',
+                icon: 'error',
+                confirmButtonText: 'Close'
+            });
+        });
+    });
+
+    // Form Submission Logic
+    otpForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent form submission reload
+
+    const formData = new FormData(otpForm);
+
+    const otpData = {
+        otp1: formData.get('otp1'),
+        otp2: formData.get('otp2'),
+        otp3: formData.get('otp3'),
+        otp4: formData.get('otp4'),
+        otp5: formData.get('otp5'),
+        otp6: formData.get('otp6'),
+    };
+
+    try {
+        const response = await fetch('/verifyotp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(otpData),
+        });
+
+        const result = await response.json();
+        console.log('Backend Response:', result); // Log the response from the server
+
+        if (result.successMessage) {
+            // SweetAlert for Registration Success
+            Swal.fire({
+                title: 'Registration Successful!',
+                text: result.successMessage || 'You have been successfully registered.',
+                icon: 'success',
+                confirmButtonText: 'Go to Login',
+            }).then(() => {
+                window.location.href = '/login'; // Redirect to login page
+            });
+        } else {
+            // SweetAlert for Invalid OTP
+            Swal.fire({
+                title: 'Invalid OTP!',
+                text: result.errorMessage || 'Please try again.',
+                icon: 'error',
+                confirmButtonText: 'Try Again',
+            });
+        }
+    } catch (error) {
+        console.error('Error verifying OTP:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: 'Something went wrong. Please try again later.',
+            icon: 'error',
+            confirmButtonText: 'Close',
+        });
+    }
+});
+</script>
+</body>
+</html>

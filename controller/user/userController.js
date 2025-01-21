@@ -96,76 +96,151 @@ async function sendVerificationEmail(email, otp) {
 
 const signup = async (req, res) => {
     const { name, email, phonenumber, password, confirmPassword } = req.body;
-    console.log(req.body);
 
     // Validate required fields
     if (!name || !email || !phonenumber || !password || !confirmPassword) {
-        return res.json({ 
-            errorMessage: 'All fields are required.' 
+        return res.json({
+            errorMessage: 'All fields are required.'
         });
     }
 
     // Validate email format
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailRegex.test(email)) {
-        return res.json({ 
-            errorMessage: 'Please enter a valid email address.' 
+        return res.json({
+            errorMessage: 'Please enter a valid email address.'
         });
     }
 
-    // Validate phone number (simple validation for a 10-digit number)
+    // Validate phone number
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(phonenumber)) {
-        return res.json({ 
-            errorMessage: 'Please enter a valid 10-digit phone number.' 
+        return res.json({
+            errorMessage: 'Please enter a valid 10-digit phone number.'
         });
     }
 
     // Compare passwords
     if (password !== confirmPassword) {
-        return res.json({ 
-            errorMessage: 'Passwords do not match.' 
+        return res.json({
+            errorMessage: 'Passwords do not match.'
         });
     }
 
     try {
-        // Check if email already exists
+        // Check if the email already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.json({ 
-                errorMessage: 'Email already exists.' 
+            return res.json({
+                errorMessage: 'Email already exists.'
             });
         }
 
-        // Hash the password before saving
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Generate OTP
+        const otp = generateOtp();
 
-        // Create a new user with the hashed password
-        const newUser = new User({ name, email, phonenumber, password: hashedPassword });
-const otp = generateOtp();
-        // Save the new user to the database
-        await newUser.save();
-        const emailSent = await sendVerificationEmail(email,otp);
-        if(!emailSent){
-            return res.json("email-error")
+        // Send OTP to the user
+        const emailSent = await sendVerificationEmail(email, otp);
+        if (!emailSent) {
+            return res.json({
+                errorMessage: 'Failed to send OTP. Please try again.'
+            });
         }
-        req.session.userOtp=otp;
-        req.session.userData={email,password};
-    
-        // res.render("verify-otp");
-        console.log('Otp send',otp)
-        console.log("Data saved");
 
-        // Return a success message
-       res.redirect('/login')
+        // Temporarily store user data and OTP in session
+        req.session.userOtp = otp;
+        req.session.tempUserData = { name, email, phonenumber, password };
 
-    } catch (error) {
-        console.log("Error for save user", error);
-        return res.status(500).json({ 
-            errorMessage: 'Internal server error' 
+        console.log('OTP sent:', otp);
+
+        // Redirect to OTP verification page
+        return res.json({});   
+     } catch (error) {
+        console.log('Error during signup:', error);
+        return res.status(500).json({
+            errorMessage: 'Internal server error'
         });
     }
 };
+const verifyOtp = async (req, res) => {
+    const otp = req.body.otp1 + req.body.otp2 + req.body.otp3 + req.body.otp4 + req.body.otp5 + req.body.otp6;
+
+    console.log('Session OTP:', req.session.userOtp); // Check OTP stored in session
+    console.log('Received OTP:', otp); // Check OTP received from form
+
+    // Check if OTP matches
+    if (otp !== req.session.userOtp) {
+        console.log("OTP did not match.");
+        return res.json({
+            errorMessage: 'Invalid OTP. Please try again.'
+        });
+    }
+    
+    console.log("OTP matched!");
+
+    // Proceed with saving user data if OTP matches
+    try {
+        const { name, email, phonenumber, password } = req.session.tempUserData;
+
+        // Hash the password and create new user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ name, email, phonenumber, password: hashedPassword });
+
+        // Save the new user
+        await newUser.save();
+        console.log('User data saved successfully.');
+
+        // Clear session data only after successful user creation
+        req.session.userOtp = null;
+        req.session.tempUserData = null;
+
+        // Send success response after user is saved
+        return res.json({
+            successMessage: 'Registration successful! You can now log in.'
+        });
+    } catch (error) {
+        console.log('Error saving user data:', error);
+        return res.status(500).json({
+            errorMessage: 'Internal server error'
+        });
+    }
+};
+const resendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;  // Ensure you have email in the request body
+
+        if (!email) {
+            return res.status(400).json({
+                errorMessage: 'Email is required for OTP resend.'
+            });
+        }
+
+        // Generate new OTP
+        const otp = generateOtp();
+
+        // Update session with the new OTP
+        req.session.userOtp = otp;
+
+        // Send OTP via email
+        const emailSent = await sendVerificationEmail(email, otp);
+        if (!emailSent) {
+            return res.status(500).json({
+                errorMessage: 'Failed to send OTP. Please try again.'
+            });
+        }
+
+        console.log('New OTP sent:', otp);  // Simulated OTP
+
+        // Respond with success message
+        return res.json({ message: 'OTP has been resent to your email.' });
+    } catch (error) {
+        console.log('Error during OTP resend:', error);
+        return res.status(500).json({
+            errorMessage: 'An error occurred while resending the OTP. Please try again.'
+        });
+    }
+};
+
 
 
 
@@ -174,5 +249,8 @@ module.exports={
     pageNotFound,
    
     loadLogin,
-    signup
+    signup,
+    verifyOtp,
+    resendOtp
+   
 }
