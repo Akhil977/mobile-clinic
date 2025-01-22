@@ -12,27 +12,21 @@ const pageNotFound = async (req,res) => {
 
 const loadHomepage = async (req, res) => {
     try {
-        // Example: Dummy cart data and session simulation
+        console.log("Session data:", req.session); // Log session data for debugging
+        
         const cart = [
-            { productId: 1, name: "Product A", price: 10, quantity: 2 },
-            { productId: 2, name: "Product B", price: 20, quantity: 1 },
+            { name: "Product 1", price: 100, quantity: 2 },
+            { name: "Product 2", price: 150, quantity: 1 },
         ];
-
-        // Simulate session data for testing
-        req.session.sessionId = req.session.sessionId || "dummy-session-id";
-        req.session.isLoggedIn = req.session.isLoggedIn || false; // Simulate logged-out by default
-
-        // Pass the cart and session data to the EJS template
-        res.render("home", { 
-            cart, 
-            sessionId: req.session.sessionId, 
-            isLoggedIn: req.session.isLoggedIn 
-        });
+        const isLoggedIn = req.session.isLoggedIn || false; // Default to false if not logged in
+        
+        res.render("home", { isLoggedIn, cart });
     } catch (error) {
-        console.error("Home page not found:", error.message);
+        console.error("Error loading homepage:", error.message);
         res.status(500).send("Server error");
     }
 };
+
 
 const loadLogin = (req, res) => {
     try {
@@ -95,10 +89,10 @@ async function sendVerificationEmail(email, otp) {
 }
 
 const signup = async (req, res) => {
-    const { name, email, phonenumber, password, confirmPassword } = req.body;
+    const { name, email, phone, password, confirmPassword } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phonenumber || !password || !confirmPassword) {
+    if (!name || !email || !phone || !password || !confirmPassword) {
         return res.json({
             errorMessage: 'All fields are required.'
         });
@@ -114,7 +108,7 @@ const signup = async (req, res) => {
 
     // Validate phone number
     const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(phonenumber)) {
+    if (!phoneRegex.test(phone)) {
         return res.json({
             errorMessage: 'Please enter a valid 10-digit phone number.'
         });
@@ -149,7 +143,7 @@ const signup = async (req, res) => {
 
         // Temporarily store user data and OTP in session
         req.session.userOtp = otp;
-        req.session.tempUserData = { name, email, phonenumber, password };
+        req.session.tempUserData = { name, email, phone, password };
 
         console.log('OTP sent:', otp);
 
@@ -180,11 +174,11 @@ const verifyOtp = async (req, res) => {
 
     // Proceed with saving user data if OTP matches
     try {
-        const { name, email, phonenumber, password } = req.session.tempUserData;
+        const { name, email, phone, password } = req.session.tempUserData;
 
         // Hash the password and create new user
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, email, phonenumber, password: hashedPassword });
+        const newUser = new User({ name, email, phone, password: hashedPassword });
 
         // Save the new user
         await newUser.save();
@@ -242,7 +236,53 @@ const resendOtp = async (req, res) => {
 };
 
 
+const log = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        const findUser = await User.findOne({ isAdmin: 0, email: email });
+        
+        if (!findUser) {
+            return res.json({ success: false, message: "User not found" });
+        }
+        
+        if (findUser.isBlocked) {
+            return res.json({ success: false, message: "User is blocked by admin" });
+        }
+        
+        const passwordMatch = await bcrypt.compare(password, findUser.password);
+        
+        if (!passwordMatch) {
+            return res.json({ success: false, message: "Incorrect password" });
+        }
+        
+        // Set session data
+        req.session.isLoggedIn = true;
+        req.session.user = findUser._id;
+        
+        req.session.save((err) => {
+            if (err) {
+                console.error("Error saving session:", err);
+                return res.json({ success: false, message: "Login failed. Please try again later." });
+            }
+            console.log("Login successful. User ID:", req.session.user);
+            res.json({ success: true });
+        });
+    } catch (error) {
+        console.error("Login error", error);
+        res.json({ success: false, message: "Login failed. Please try again later." });
+    }
+};
 
+const logout = async (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Error destroying session:", err);
+            return res.status(500).send("Unable to log out");
+        }
+        res.redirect("/"); // Redirect to login page after logout
+    });
+};
 
 module.exports={
     loadHomepage,
@@ -251,6 +291,7 @@ module.exports={
     loadLogin,
     signup,
     verifyOtp,
-    resendOtp
+    resendOtp,log
+    ,logout
    
 }

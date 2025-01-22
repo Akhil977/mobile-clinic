@@ -11,7 +11,7 @@ app.use(
     session({
         secret: process.env.SESSION_SECRET, // Replace with a secure, random string
         resave: false,            // Don't save session if unmodified
-        saveUninitialized: true,  // Save new sessions even if not modified
+        saveUninitialized: false,  // Save new sessions even if not modified
         cookie: { secure: false ,
             httpOnly:true
 

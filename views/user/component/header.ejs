@@ -80,23 +80,26 @@
                     <div class="profile-menu icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11">
                         <i class="zmdi zmdi-face"></i>
                         <ul class="sub-menu">
-                        <% if (!isLoggedIn) { %>
-                            <li><a href="/login"><button class="btn btn-success">Login</button></a></li>
-                        <% } else { %>
-                            <% if (false) { %>
-                                <li><a href="/admin">Admin</a></li>
+                            <% if (!isLoggedIn) { %>
+                                <!-- Show Login button if user is not logged in -->
+                                <li>
+                                    <a href="/login">
+                                        <button class="btn btn-success">Login</button>
+                                    </a>
+                                </li>
+                            <% } else { %>
+                                <!-- Show user-specific options when logged in -->
+                                <li><a href="/profile">My Profile</a></li>
+                                <li><a href="/orders">My Orders</a></li>
+                                <li>
+                                    <a href="/logout">
+                                        <button class="btn btn-danger">Log Out</button>
+                                    </a>
+                                </li>
                             <% } %>
-                            <li><a href="#">My Profile</a></li>
-                            <li><a href="#">My Orders</a></li>
-                            <li><a href="logout"><button class="btn btn-success">Log out</button></a></li>
-                        <% } %>
                         </ul>
                     </div>
                     
-                </div>
-            </nav>
-        </div>	
-    </div>
 
     <!-- Header Mobile -->
     <div class="wrap-header-mobile">
@@ -118,12 +121,12 @@
             <div class="profile-menu icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11">
                 <i class="zmdi zmdi-face"></i>
                 <ul class="sub-menu">
-                <% if (false) { %>
+                <% if (!isLoggedIn) { %>
                     <li><a href="/login">Login</a></li>
                 <% } else { %>
                     <li><a href="#">My Profile</a></li>
                     <li><a href="#">My Orders</a></li>
-                    <li><a href="logout">Log out</a></li>
+                    <li><a href="/logout">Log out</a></li>
                 <% } %>
                 </ul>
             </div>

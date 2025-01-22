@@ -29,23 +29,20 @@
 			<div class="flex-w flex-tr">
 				<div class="size-210 bor10 p-lr-70 p-t-55 p-b-70 p-lr-15-lg w-full-md">
 					<button class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" style="display: none; position: relative; top: 50%; bottom: 50%;" id="loginbtn">LOGIN</button>
-					<form action="/signin" method="post" id="loginform">
+					<form action="/log" method="post" id="loginform">
 						<h4 class="mtext-105 cl2 txt-center p-b-30">
 							Sign In
 						</h4>
-
+					
 						<div class="bor8 m-b-20 how-pos4-parent">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="email" placeholder="Your Email Address">
-							<!-- <img class="how-pos4 pointer-none" src="images/icons/icon-email.png" alt="ICON"> -->
 						</div>
-
+					
 						<div class="bor8 m-b-30">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="password" name="password" placeholder="Your Password...">
 						</div>
-
-						<input type="submit" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" placeholder="Submit">
-							<!-- Submit
-						</input> -->
+					
+						<input type="submit" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" value="Submit">
 					</form>
 				</div>
 				
@@ -66,7 +63,7 @@
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="email" placeholder="Your Email Address">
 						</div>
 						<div class="bor8 m-b-20 how-pos4-parent">
-							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="phonenumber" placeholder="Your Phone Number">
+							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="phone" placeholder="Your Phone Number">
 						</div>
 						<div class="bor8 m-b-20 how-pos4-parent">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="password" name="password" placeholder="Your Password">
@@ -103,49 +100,58 @@
 
 </body>
 <script>
-    // Hide the success message after 5 seconds
-    if (document.getElementById('successMessage')) {
-        setTimeout(function() {
-            document.getElementById('successMessage').style.display = 'none';
-        }, 5000); // 5 seconds
-    }
-	</script>
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+$(document).ready(function() {
+    $('#loginform').submit(function(e) {
+        e.preventDefault();  // Prevent the default form submission
 
-<script>
-    $('#signupform').submit(function(e) {
-        e.preventDefault();  // Prevent default form submission
+        const formData = $(this).serialize();  // Serialize the form data
 
-        const formData = $(this).serialize();  // Serialize form data
-
-        // Send AJAX request
+        // Send AJAX request to login route
         $.ajax({
-            url: '/signup',  // Your signup route
+            url: '/log',  // Your login route
             type: 'POST',
             data: formData,
             success: function(response) {
-                // If there's an error message, show it
-                if (response.errorMessage) {
-                    $('#message-text').text(response.errorMessage).css('color', 'red').show();
+                // Check if login was successful
+                if (response.success) {
+                    // Redirect to homepage and prevent the login page from being stored in history
+                    window.location.replace('/');  // Replace current page with the homepage
                 } else {
-                    // If no error, redirect to OTP page
-                    window.location.href = '/otp'; // Redirect to the OTP page
+                    // If login failed, show the error message
+                    $('#message-text').text(response.message).css('color', 'red').show();
                 }
-
-                // If there's a success message, show it
-               
-
-                    // Optionally, you can redirect or hide the form after success
-                    // window.location.href = '/login';  // Redirect to login
-                    // or
-                    // $('#signupform').hide(); // Hide the signup form
-                
             },
             error: function(xhr, status, error) {
                 $('#message-text').text('There was an error, please try again later.').css('color', 'red').show();
             }
         });
     });
+});
 </script>
-
+<script>
+	$('#signupform').submit(function(e) {
+		e.preventDefault();  // Prevent default form submission
+	
+		const formData = $(this).serialize();  // Serialize form data
+	
+		// Send AJAX request to signup
+		$.ajax({
+			url: '/signup',  // Your signup route
+			type: 'POST',
+			data: formData,
+			success: function(response) {
+				// If there's an error message, show it
+				if (response.errorMessage) {
+					$('#message-text').text(response.errorMessage).css('color', 'red').show();
+				} else {
+					// If no error, redirect to OTP page
+					window.location.replace('/otp'); // Replace current page with OTP page
+				}
+			},
+			error: function(xhr, status, error) {
+				$('#message-text').text('There was an error, please try again later.').css('color', 'red').show();
+			}
+		});
+	});
+</script>
 </html>
