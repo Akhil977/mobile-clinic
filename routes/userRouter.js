@@ -25,4 +25,9 @@ router.get('/google/callback',auth.preventBackToLogin, passport.authenticate('go
 router.post("/log",userController.log);
 router.get("/logout",userController.logout);
 
+
+
+// for blocked user 
+router.get('/blockedByAdmin',userController.adminBlocked);
+
 module.exports=router;

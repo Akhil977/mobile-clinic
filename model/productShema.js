@@ -1,57 +1,56 @@
 const mongoose = require("mongoose");
-const {schema}= mongoose;
+const Schema= mongoose.Schema;
 
 const productSchema=  new Schema({
-    productName:{
-        type:String,
-        required:true,
+
+    productName: {
+       type: String,
+       required: true,
+       unique: true, // Prevent duplicate product names
     },
-    description:{
-        type:String,
-        required:true,
+    regularPrice: {
+       type: Number,
+       required: true,
     },
-    brand:{
-        type:String,
-        required:true,
+    salePrice: {
+       type: Number,
+       required: true,
     },
-    category:{
-        type:Schema.Type.ObjectId,
-        ref:"category",
-        required:true,
+    description: {
+       type: String,
+       required: true,
     },
-    regularprice:{
-        type:Number,
-        required:true
+    category: {
+       type: Schema.Types.ObjectId,
+       ref: "Category",
+       required: true,
     },
-    salePrice:{
-        type:Number,
-        required:true
+    quantity: {
+       type: Number,
+       default: 0, // Corrected from `default: true`
     },
-    productOffer:{
-        type:Number,
-        default:0,
-    },quantity:{
-        type:Number,
-        default:true
+    productImages: [{ // Changed `images` to `productImages` for consistency
+       type: String,
+       required: true,
+    }],
+    createdAt: {
+       type: Date,
+       default: Date.now,
     },
-    color:{
-        type:String,
-        required:true
+    isListed: {
+       type: Boolean,
+       default: false,
     },
-    productImage:{
-        type:[String],
-        required:true
+    status: {
+       type: String,
+       enum: ["available", "out of stock", "Discontinued"],
+       required: true,
+       default: "available",
     },
-    isBlocked:{
-        type:Boolean,
-        default:false
-    },
-    status:{
-        type:String,
-        enum:["Available","out of stock","Discountinued"],
-        required:true,
-        default:"Available"
-    },
-},{timestamps:true});
+ }, { timestamps: true });
+ 
+ 
+
+ 
 const Product = mongoose.model("Product",productSchema)
 module.exports = Product;

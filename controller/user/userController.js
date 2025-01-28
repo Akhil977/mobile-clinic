@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const env = require("dotenv").config();
 const nodemailer =require('nodemailer')
 const User = require("../../model/userSchema")
+const Product= require('../../model/productShema')
 const pageNotFound = async (req,res) => {
     try {
         res.render("page-404")
@@ -13,14 +14,14 @@ const pageNotFound = async (req,res) => {
 const loadHomepage = async (req, res) => {
     try {
         console.log("Session data:", req.session); // Log session data for debugging
-        
+        const products = await Product.find({});
         const cart = [
             { name: "Product 1", price: 100, quantity: 2 },
             { name: "Product 2", price: 150, quantity: 1 },
         ];
         const isLoggedIn = req.session.isLoggedIn || false; // Default to false if not logged in
         
-        res.render("home", { isLoggedIn, cart });
+        res.render("home", { isLoggedIn, cart,products });
     } catch (error) {
         console.error("Error loading homepage:", error.message);
         res.status(500).send("Server error");
@@ -152,7 +153,7 @@ const signup = async (req, res) => {
      } catch (error) {
         console.log('Error during signup:', error);
         return res.status(500).json({
-            errorMessage: 'Internal server error'
+            errorMessage: 'Internal se rver error'
         });
     }
 };
@@ -275,14 +276,32 @@ const log = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            console.error("Error destroying session:", err);
-            return res.status(500).send("Unable to log out");
-        }
-        res.redirect("/"); // Redirect to login page after logout
-    });
+    // Check if the user is logged in
+    if (req.session.isLoggedIn) {
+        // Remove only the user-related session data
+        delete req.session.user;
+        delete req.session.isLoggedIn ;
+
+        // Save the session after removing the user part
+        req.session.save((err) => {
+            if (err) {
+                console.error("Error saving session after removing user data:", err);
+                return res.status(500).send("Unable to log out");
+            }
+            res.redirect("/login"); // Redirect to login page after user logout
+        });
+    } else {
+        res.redirect("/"); // Redirect to home page if no user session found
+    }
 };
+
+const adminBlocked= async(req,res)=>{
+    try {
+        res.render("blocked")
+    } catch (error) {
+        console.error("error in loading blocked.ejs");
+    }
+}
 
 module.exports={
     loadHomepage,
@@ -292,6 +311,7 @@ module.exports={
     signup,
     verifyOtp,
     resendOtp,log
-    ,logout
+    ,logout,
+    adminBlocked
    
 }
