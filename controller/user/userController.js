@@ -14,7 +14,7 @@ const pageNotFound = async (req,res) => {
 const loadHomepage = async (req, res) => {
     try {
         console.log("Session data:", req.session); // Log session data for debugging
-        const products = await Product.find({});
+        const products = await Product.find({ isListed: true });
         const cart = [
             { name: "Product 1", price: 100, quantity: 2 },
             { name: "Product 2", price: 150, quantity: 1 },
@@ -241,7 +241,7 @@ const log = async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        const findUser = await User.findOne({ isAdmin: 0, email: email });
+        const findUser = await User.findOne({email: email });
         
         if (!findUser) {
             return res.json({ success: false, message: "User not found" });

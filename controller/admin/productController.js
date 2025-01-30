@@ -181,13 +181,57 @@ const getProductAddPage = async (req, res) => {
     }
  }
 
+
+
+ const editProduct= async(req,res)=>{
+   try {
+      const id=req.params.id;
+      const product=await Product.findOne({_id:id}); 
+      const data = req.body;
+      const existingProduct = await Product.findOne({productName:data.productName,_id:{$ne:id}})
+
+      if(existingProduct){
+         return res.status(400).json({error:"Product with this name alrady exist. please try anothername"})
+      }
+      const images=[];
+
+      if(req.files&&req.length.length>0){
+         for(let i=0;i<req.files.length;i++){
+            images.push(req.files[i].filename);
+         }
+      }
+
+const updateFields={
+   productName:data.productName,
+   description:data.description,
+   brand:data.brand,
+   category:product.category,
+   regularPrice:data.regularprice,
+   salePrice:data.salePrice,
+   quantity:data.quantity,
+
+}
+if(req.files.length>0){
+   updateFields.$push={
+      productImage:{$each:images}
+   }
+}
+await Product.findByIdAndUpdate(id,updateFields,{new:true});
+
+   } catch (error) {
+      console.error(error);
+      res.redirect("/pageerror")
+   }
+ }
+
  
  module.exports = {
     getProductAddPage,
     addProducts,
     getAllProducts,
     toggleProductList,
-    getEditProduct
+    getEditProduct,
+    editProduct
    
     
  }                                             

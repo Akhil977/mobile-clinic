@@ -63,11 +63,6 @@ const uploads = multer({
 
 
 
-
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-
 const path = require('path');
 
 const imageDir = path.join(__dirname,"../public/uploads");
@@ -80,7 +75,7 @@ router.get("/logout-admin", adminAuth.adminCheck, adminController.adminLogout);
 
 // User Management
 router.get("/userManagement", adminAuth.adminCheck, customerController.customerInfo);
-router.get("/blockCustomer", adminAuth.adminCheck, customerController.blockUnblockCustomer);
+router.post('/blockCustomer', adminAuth.adminCheck, customerController.blockUnblockCustomer);
 
 // Category Management'/admin/addCategory'
 
@@ -101,6 +96,9 @@ router.patch('/toggleCategory/:id', adminAuth.adminCheck, categoryController.tog
 
 
 router.get("/editProduct",adminAuth.adminCheck,productController.getEditProduct)
+
+
+router.post("/editProduct/:id",adminAuth.adminCheck,uploads.array("images", 4),productController.editProduct)
 
 
 

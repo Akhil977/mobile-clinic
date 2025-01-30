@@ -30,9 +30,9 @@ const productDetails = async (req, res) => {
         // Find related products from the same brand, excluding the current product
         const relatedProducts = await Product.find({
             brand: findBrand,
-            _id: { $ne: productId }
+            _id: { $ne: productId },
+            isListed: true // Only fetch products that are listed
         });
-
         // Render the product details page and pass the necessary data
         res.render("product-details", {
             product: product,

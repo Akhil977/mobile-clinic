@@ -12,7 +12,7 @@ const customerInfo = async (req, res) => {
             page = req.query.page;
         }
 
-        const limit = 3;
+        const limit = 6;
         const UserData = await User.find({
             isAdmin: false,
             $or: [
@@ -44,7 +44,7 @@ const customerInfo = async (req, res) => {
 
 const blockUnblockCustomer = async (req, res) => {
     try {
-        const userId = req.query.id;
+        const userId = req.body.id; // Use req.body.id to get the user ID from the form
 
         if (!userId) {
             return res.status(400).send("User ID is required");
@@ -56,11 +56,11 @@ const blockUnblockCustomer = async (req, res) => {
             return res.status(404).send("User not found");
         }
 
-        user.isBlocked = !user.isBlocked;
+        user.isBlocked = !user.isBlocked; // Toggle the blocked status
 
         await user.save();
 
-        res.redirect("/admin/userManagement");
+        res.redirect("/admin/userManagement"); // Redirect back to the user management page
     } catch (error) {
         console.error("Error blocking/unblocking customer:", error);
         res.status(500).send("Internal Server Error");
