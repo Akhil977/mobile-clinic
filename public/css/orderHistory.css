@@ -1,0 +1,124 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    display: flex;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0px;
+    height: 100vh;
+    position: fixed;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 22px;
+}
+
+.sidebar a {
+    padding: 15px;
+    color: #ddd;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    background-color: #555;
+    color: #fff;
+}
+
+.content {
+    margin-left: 250px; /* Add margin to the left to avoid overlap with the sidebar */
+    padding: 20px;
+    padding-top: 0px;
+    flex: 1; /* Allow content to take the remaining space */
+    padding-left: 15px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+tr:hover {
+    background-color: #bebebeb4;
+}
+
+button {
+    background-color: #cb3a35;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #d71b14;
+}
+
+.action-link {
+    margin-right: 10px;
+    text-decoration: none;
+    color: #007bff;
+}
+.viewd{
+    padding-right:10px ;text-decoration: none; color: orange;
+}
+
+.viewd:hover {
+    text-decoration: underline;
+}
+.back-button{
+    text-decoration: none; color: white; padding: 10px 15px; background-color: orange; border-radius: 10px; margin-bottom: 20px; position: relative;
+}
+.logout-link {
+    margin-top: auto; /* Push to bottom */
+    width: 88%;
+    padding: 10px;
+    background-color: #d9534f;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.logout-link:hover {
+    background-color: #c9302c;
+}

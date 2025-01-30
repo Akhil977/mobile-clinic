@@ -98,8 +98,46 @@ router.post("/addProducts", adminAuth.adminCheck, uploads.array("images", 4), pr
 router.get('/products', adminAuth.adminCheck, productController.getAllProducts)
 router.patch('/toggle-list/:id', adminAuth.adminCheck, productController.toggleProductList)
 router.patch('/toggleCategory/:id', adminAuth.adminCheck, categoryController.toggleCategory)
-router.get('/editProduct', adminAuth.adminCheck, productController.getEditProduct)
-router.post("/editProduct/:id", adminAuth.adminCheck, uploads.array("images", 4), productController.editProduct)
-router.post('/deleteImage', adminAuth.adminCheck, productController.deleteSingleImage)
+
+
+router.get("/editProduct",adminAuth.adminCheck,productController.getEditProduct)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// router.get("/editProduct",adminAuth.adminCheck,productController.getEditProduct);
+// router.post('/update-product/:id',adminAuth.adminCheck,uploads.array("images",4),productController.updateProduct);
+// router.post("/deleteImage",adminAuth.adminCheck,productController.deleteSingleImage)
+
+
+
+
+
+
+
+
+// router.get('/editproduct/:id', productController.productController.getEditProduct)
+
+
+
+// // Update product
+// router.post(
+//   '/update-product/:id', 
+//   upload.array('newImages', 3), // Allow up to 3 new images
+//   productController.productController.updateProduct
+// );
+
+// // Delete product image
+// router.delete('/delete-product-image/:productId/:imageId', productController.productController.deleteProductImage);
 
 module.exports = router

@@ -13,12 +13,11 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Debug: Log the request body
-        console.log("Request body:", req.body);
+     
 
         // Find admin user
         const admin = await User.findOne({isAdmin: true });
-        console.log("Query result:", admin);
+      
 
         if (admin) {
             // Compare password
@@ -28,7 +27,7 @@ const login = async (req, res) => {
             if (passwordMatch) {
                 // Set session
                 req.session.admin = true;
-                console.log("Session set:", req.session);
+            
 
                 // Redirect to admin dashboard
                 return res.redirect("/admin");

@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
-const Schema= mongoose.Schema;
+const Schema = mongoose.Schema;
 
-const productSchema=  new Schema({
-
+const productSchema = new Schema({
     productName: {
        type: String,
        required: true,
@@ -27,12 +26,16 @@ const productSchema=  new Schema({
     },
     quantity: {
        type: Number,
-       default: 0, // Corrected from `default: true`
+       default: 0, // Default quantity is 0
     },
-    productImages: [{ // Changed `images` to `productImages` for consistency
+    productImages: [{ 
        type: String,
        required: true,
     }],
+    brand: {
+       type: String,
+       default: "Unknown", // Default value set to "Unknown"
+    },
     createdAt: {
        type: Date,
        default: Date.now,
@@ -47,10 +50,7 @@ const productSchema=  new Schema({
        required: true,
        default: "available",
     },
- }, { timestamps: true });
- 
- 
+}, { timestamps: true });
 
- 
-const Product = mongoose.model("Product",productSchema)
+const Product = mongoose.model("Product", productSchema);
 module.exports = Product;
