@@ -44,6 +44,55 @@ const categoryInfo = async (req, res) => {
       return res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+
+
+  const getEditCategory = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+        if (!category) {
+            return res.status(404).render('error', { message: 'Category not found' });
+        }
+        res.render(editcategory, { 
+            category,
+            csrfToken: req.csrfToken() // Add this if using CSRF protection
+        });
+    } catch (error) {
+        res.status(500).render('error', { message: 'Server Error' });
+    }
+};
+
+// Update category
+const updateCategory = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const categoryId = req.params.id;
+
+        // Check for duplicate category name (excluding current category)
+        const existingCategory = await Category.findOne({
+            name: { $regex: new RegExp(`^${name}$`, 'i') },
+            _id: { $ne: categoryId }
+        });
+
+        if (existingCategory) {
+            return res.status(400).json({ error: 'Category name already exists' });
+        }
+
+        const updatedCategory = await Category.findByIdAndUpdate(
+            categoryId,
+            { name, description },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCategory) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        res.json({ message: 'Category updated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Server Error' });
+    }
+};
   
   const addCategoryOffer = async (req, res) => {
     try {
@@ -144,15 +193,7 @@ const categoryInfo = async (req, res) => {
       res.redirect('/pageError');
     }
   };
-  const getEditCategory = async (req, res) => {
-    try {
-      let id = req.query.id;
-      const category = await Category.findOne({ _id: id });
-      res.render('editCategory', { category: category });
-    } catch (error) {
-      res.redirect('/pageerror');
-    }
-  };
+  
   const editCategory = async (req, res) => {
     try {
       let id = req.params.id;
@@ -209,8 +250,11 @@ const categoryInfo = async (req, res) => {
     removeCategoryOffer,
     getListCategory,
     getUnlistCategory,
-    getEditCategory,
+    
     editCategory,
-    toggleCategory 
+    toggleCategory,
+    updateCategory,getEditCategory
+   
+    
   };
   

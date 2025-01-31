@@ -183,55 +183,114 @@ const getProductAddPage = async (req, res) => {
 
 
 
- const editProduct= async(req,res)=>{
+ const editProduct = async (req, res) => {
    try {
-      const id=req.params.id;
-      const product=await Product.findOne({_id:id}); 
-      const data = req.body;
-      const existingProduct = await Product.findOne({productName:data.productName,_id:{$ne:id}})
-
-      if(existingProduct){
-         return res.status(400).json({error:"Product with this name alrady exist. please try anothername"})
-      }
-      const images=[];
-
-      if(req.files&&req.length.length>0){
-         for(let i=0;i<req.files.length;i++){
-            images.push(req.files[i].filename);
-         }
-      }
-
-const updateFields={
-   productName:data.productName,
-   description:data.description,
-   brand:data.brand,
-   category:product.category,
-   regularPrice:data.regularprice,
-   salePrice:data.salePrice,
-   quantity:data.quantity,
-
-}
-if(req.files.length>0){
-   updateFields.$push={
-      productImage:{$each:images}
-   }
-}
-await Product.findByIdAndUpdate(id,updateFields,{new:true});
-
-   } catch (error) {
-      console.error(error);
-      res.redirect("/pageerror")
-   }
- }
-
+     const id = req.params.id;
+     const product = await Product.findById(id);
  
+     if (!product) {
+       return res.status(404).json({ 
+         success: false,
+         error: "Product not found." 
+       });
+     }
+ 
+     const data = req.body;
+ 
+     // Validate product name uniqueness
+     if (data.productName && data.productName !== product.productName) {
+       const existingProduct = await Product.findOne({
+         productName: data.productName,
+         _id: { $ne: id }
+       });
+ 
+       if (existingProduct) {
+         return res.status(409).json({
+           success: false,
+           error: "Product name already exists. Use a different name."
+         });
+       }
+     }
+ 
+     // Handle image updates
+     const updateFields = {
+       productName: data.productName || product.productName,
+       description: data.description || product.description,
+       brand: data.brand || product.brand,
+       category: data.category || product.category,
+       regularPrice: data.regularPrice || product.regularPrice,
+       salePrice: data.salePrice || product.salePrice,
+       quantity: data.quantity || product.quantity,
+     };
+ 
+     // Process new images (append to existing ones)
+     if (req.files?.length) {
+       const newImages = req.files.map(file => file.filename);
+       updateFields.$push = { 
+         productImages: { $each: newImages } 
+       };
+     }
+ 
+     // Perform the update
+     const updatedProduct = await Product.findByIdAndUpdate(
+       id,
+       updateFields,
+       { new: true, runValidators: true }
+     );
+ 
+     // Ensure images field exists in response
+     if (!updatedProduct.productImages) {
+       updatedProduct.productImages = [];
+     }
+ 
+     res.status(200).json({
+       success: true,
+       message: "Product updated successfully",
+       product: updatedProduct
+     });
+ 
+   } catch (error) {
+     console.error("Update error:", error);
+     res.status(500).json({
+       success: false,
+       error: process.env.NODE_ENV === 'development' 
+         ? error.message 
+         : "Internal server error"
+     });
+   }
+ };
+
+ const deleteSingleImage = async (req, res) => {
+   try {
+     const { imageNameToServer, productIdToServer } = req.body;
+ 
+     // Fix: Invalid syntax in `$pull`
+     const product = await Product.findByIdAndUpdate(
+       productIdToServer,
+       { $pull: { productImage: imageNameToServer } }, // Directly match the image name
+       { new: true }
+     );
+ 
+     const imagePath = path.join("public", "uploads", 'product-images', imageNameToServer);
+     if (fs.existsSync(imagePath)) {
+       fs.unlinkSync(imagePath); // Fix: Removed redundant `await`
+       console.log("Image deleted successfully"); // Added log message
+     }
+ 
+     res.json({ success: true });
+ 
+   } catch (error) {
+     console.error(error);
+     res.status(500).json({ error: "Failed to delete image" }); // Handle errors properly
+   }
+ };
  module.exports = {
     getProductAddPage,
     addProducts,
     getAllProducts,
     toggleProductList,
     getEditProduct,
-    editProduct
+    editProduct,deleteSingleImage
    
     
  }                                             

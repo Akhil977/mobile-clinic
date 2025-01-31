@@ -94,14 +94,16 @@ router.get('/products', adminAuth.adminCheck, productController.getAllProducts)
 router.patch('/toggle-list/:id', adminAuth.adminCheck, productController.toggleProductList)
 router.patch('/toggleCategory/:id', adminAuth.adminCheck, categoryController.toggleCategory)
 
+router.get('/categories/edit/:id',  categoryController.getEditCategory);
+router.put('/categories/update/:id', categoryController.updateCategory);
+
 
 router.get("/editProduct",adminAuth.adminCheck,productController.getEditProduct)
 
-
-router.post("/editProduct/:id",adminAuth.adminCheck,uploads.array("images", 4),productController.editProduct)
-
+router.post('/editProduct/:id', uploads.array('images', 4), productController.editProduct);
 
 
+router.post('/deleteImage', productController.deleteSingleImage);
 
 
 
