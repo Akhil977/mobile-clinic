@@ -1,4 +1,3 @@
-
 const product = require('../../model/productShema')
 const User = require("../../model/userSchema")
 const Category = require('../../model/categorySchema')
@@ -24,6 +23,14 @@ const getProductAddPage = async (req, res) => {
    try {
        const products = req.body;
 
+       // Check for exactly 4 images
+       if (!req.files || req.files.length !== 3) {
+           return res.status(400).json({ 
+             success: false,
+             message: "Exactly 4 product images are required" 
+           });
+       }
+
        // Strip commas and convert to float
        const regularPrice = parseFloat(products.regularPrice.replace(/,/g, ''));
        const salePrice = parseFloat(products.salePrice.replace(/,/g, ''));
@@ -37,20 +44,21 @@ const getProductAddPage = async (req, res) => {
        }
        
        const productExists = await product.findOne({
-           productName: products.productName // Fixed typo (products.productsName → products.productName)
+           productName: products.productName
        });
 
        if (!productExists) {
            const images = [];
-           if (req.files && req.files.length > 0) {
-               for (let i = 0; i < req.files.length; i++) {
-                   const originalImagePath = req.files[i].path;
-                   const resizedImagePath = path.join("public", "uploads", "product-images", req.files[i].filename);
+           // Process and resize all 4 images
+           for (const file of req.files) {
+               const originalImagePath = file.path;
+               const resizedImagePath = path.join("public", "uploads", "product-images", file.filename);
 
-                   await sharp(originalImagePath).resize({ width: 440, height: 440 }).toFile(resizedImagePath);
+               await sharp(originalImagePath)
+                   .resize({ width: 440, height: 440 })
+                   .toFile(resizedImagePath);
 
-                   images.push(req.files[i].filename);
-               }
+               images.push(file.filename);
            }
 
            const categoryId = await Category.findOne({ name: products.category });
@@ -70,7 +78,7 @@ const getProductAddPage = async (req, res) => {
                isListed: products.isListed,
                quantity: products.quantity,
                size: products.size,
-               brand: products.brand || "Unknown", // Added brand field with default "Unknown"
+               brand: products.brand || "Unknown",
                status: "available"
            });
 
@@ -85,7 +93,6 @@ const getProductAddPage = async (req, res) => {
        res.redirect('/pageerror');
    }
 };
-
  
  const getAllProducts = async (req, res) => {
     try {
@@ -222,13 +229,42 @@ const getProductAddPage = async (req, res) => {
        salePrice: data.salePrice || product.salePrice,
        quantity: data.quantity || product.quantity,
      };
- 
-     // Process new images (append to existing ones)
-     if (req.files?.length) {
-       const newImages = req.files.map(file => file.filename);
+
+     // Process new images
+     if (req.files?.length > 0) {
+       const currentImageCount = product.productImages ? product.productImages.length : 0;
+       const totalImages = currentImageCount + req.files.length;
+
+       if (totalImages > 4) {
+         return res.status(400).json({
+           success: false,
+           error: "Maximum 4 images allowed. Please delete some existing images first."
+         });
+       }
+
+       // Process and resize new images
+       const newImages = [];
+       for (const file of req.files) {
+         const resizedImagePath = path.join("public", "uploads", "product-images", file.filename);
+         await sharp(file.path)
+           .resize({ width: 440, height: 440 })
+           .toFile(resizedImagePath);
+         newImages.push(file.filename);
+       }
+
+       // Add new images to existing ones
        updateFields.$push = { 
          productImages: { $each: newImages } 
        };
+     }
+
+     // Check final image count
+     const finalImageCount = (product.productImages?.length || 0) + (req.files?.length || 0);
+     if (finalImageCount < 3 || finalImageCount > 4) {
+       return res.status(400).json({
+         success: false,
+         error: "Products must have between 3 and 4 images before saving."
+       });
      }
  
      // Perform the update
@@ -237,11 +273,6 @@ const getProductAddPage = async (req, res) => {
        updateFields,
        { new: true, runValidators: true }
      );
- 
-     // Ensure images field exists in response
-     if (!updatedProduct.productImages) {
-       updatedProduct.productImages = [];
-     }
  
      res.status(200).json({
        success: true,
@@ -263,25 +294,36 @@ const getProductAddPage = async (req, res) => {
  const deleteSingleImage = async (req, res) => {
    try {
      const { imageNameToServer, productIdToServer } = req.body;
+
+     // Get current product
+     const product = await Product.findById(productIdToServer);
+     if (!product) {
+       return res.status(404).json({ error: "Product not found" });
+     }
  
-     // Fix: Invalid syntax in `$pull`
-     const product = await Product.findByIdAndUpdate(
+     // Delete physical file
+     const imagePath = path.join("public", "uploads", 'product-images', imageNameToServer);
+     if (fs.existsSync(imagePath)) {
+       fs.unlinkSync(imagePath);
+       console.log("Image deleted successfully");
+     }
+ 
+     // Update product document
+     const updatedProduct = await Product.findByIdAndUpdate(
        productIdToServer,
-       { $pull: { productImage: imageNameToServer } }, // Directly match the image name
+       { $pull: { productImages: imageNameToServer } },
        { new: true }
      );
  
-     const imagePath = path.join("public", "uploads", 'product-images', imageNameToServer);
-     if (fs.existsSync(imagePath)) {
-       fs.unlinkSync(imagePath); // Fix: Removed redundant `await`
-       console.log("Image deleted successfully"); // Added log message
-     }
- 
-     res.json({ success: true });
+     res.json({ 
+       success: true,
+       message: "Image deleted successfully",
+       remainingImages: updatedProduct.productImages
+     });
  
    } catch (error) {
      console.error(error);
-     res.status(500).json({ error: "Failed to delete imaages" }); // Handle errors properly
+     res.status(500).json({ error: "Failed to delete image" });
    }
  };
  module.exports = {

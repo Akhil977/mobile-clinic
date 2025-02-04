@@ -49,16 +49,14 @@ const categoryInfo = async (req, res) => {
 
   const getEditCategory = async (req, res) => {
     try {
-        const category = await Category.findById(req.params.id);
+      console.log(req.query.id)
+        const category = await Category.findById(req.query.id);
         if (!category) {
-            return res.status(404).render('error', { message: 'Category not found' });
+            return res.status(404);
         }
-        res.render(editcategory, { 
-            category,
-            csrfToken: req.csrfToken() // Add this if using CSRF protection
-        });
+        res.render('editcategory', { category }); // Ensure correct view name
     } catch (error) {
-        res.status(500).render('error', { message: 'Server Error' });
+        res.status(500).render('admin/error', { message: 'Server Error' });
     }
 };
 
@@ -187,6 +185,8 @@ const updateCategory = async (req, res) => {
   const getUnlistCategory = async (req, res) => {
     try {
       let id = req.query.id;
+
+
       await Category.updateOne({ _id: id }, { $set: { isListed: true } });
       res.redirect('/admin/category');
     } catch (error) {

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <%- include ('component/head.ejs') %>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+  <%- include ('component/header.ejs') %> 
+  <!-- Left side column. contains the logo and sidebar -->
+  <%- include ('component/useraside.ejs') %> 
+
+  <section class="profile-section">
+    <h2>Your Profile</h2>
+
+    <!-- Display user details -->
+    <div class="profile-info">
+      <p><strong>Name:</strong> gjyhgvj</p>
+      <p><strong>Email:</strong> sgsrgsrg</p>
+      <p><strong>Phone:</strong> suhviushvig</p>
+      <p><strong>Address:</strong> sgvsgvrsg</p>
+    </div>
+
+    <!-- Edit Profile and Change Password Links -->
+    <div class="profile-actions">
+      <a href="/edit-profile" class="btn">Edit Profile</a>
+      <a href="/change-password" class="btn">Change Password</a>
+    </div>
+  </section>
+
+  <style>
+    .profile-section {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+
+    .profile-info p {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+
+    .profile-actions {
+      margin-top: 20px;
+    }
+
+    .btn {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      margin-right: 10px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</div> <!-- End of wrapper -->
+
+</body>
+</html>

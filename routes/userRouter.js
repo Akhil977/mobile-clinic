@@ -4,6 +4,7 @@ const userController = require("../controller/user/userController");
 const passport = require("../config/passport");
 const productController = require("../controller/user/productController");
 const { preventBackToLogin, protectRoutes, preventBackAfterLogout,checkBlockedUser } = require("../middlewares/usermiddleware");
+const profileCotrller = require("../controller/user/profileCotrller")
 
 // Apply preventBackAfterLogout globally to prevent users from going back after logout
 router.use(preventBackAfterLogout);
@@ -50,7 +51,20 @@ router.get("/logout", (req, res) => {
 router.get('/productdetail',checkBlockedUser, productController.productDetails);
 router.get('/product-detail',checkBlockedUser, productController.productDetails);
 
+
+
+router.get("/forgot-password",profileCotrller.getForgotPasspage)
+router.post("/verify-email",profileCotrller.forgotEmailValid)
+router.get("/forgot-otp",profileCotrller.getforgototp)
+
+router.post("/verify-otp",profileCotrller.validatingotp)
+router.get("/reset-password",profileCotrller.getRestPassword)
+router.post('/reset-password',profileCotrller.restPassword)
+
+router.get("/profile",profileCotrller. getprofile)
 // Blocked User Page
 router.get('/blockedByAdmin', userController.adminBlocked);
+
+
 
 module.exports = router;

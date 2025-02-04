@@ -4,8 +4,6 @@
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
   <%- include ('component/header.ejs') %> 
-  
-  <!-- Left side column. contains the logo and sidebar -->
   <%- include ('component/aside.ejs') %> 
 
   <!-- Content Wrapper. Contains page content -->
@@ -13,95 +11,107 @@
     <!-- Content Header (Page header) -->
     <section class="content-header">
       <h1>
-        Dashboard
-        <small>Control panel</small>
+        Edit Category
+        <small>Management</small>
       </h1>
       <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
-        <li class="active">Dashboard</li>
+        <li><a href="/admin/dashboard"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li><a href="/admin/categories">Categories</a></li>
+        <li class="active">Edit Category</li>
       </ol>
     </section>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Category</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Include SweetAlert2 -->
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Include CSRF Token if needed -->
-    <meta name="csrf-token" content="<%= csrfToken %>">
-</head>
-<body>
-    <%- include('../partials/adminHeader') %>
 
-    <div class="container mt-5">
-        <h2>Edit Category</h2>
-        
-        <form id="editCategoryForm">
-            <div class="mb-3">
-                <label for="name" class="form-label">Category Name</label>
-                <input type="text" class="form-control" id="name" name="name" 
-                       value="<%= category.name %>" required>
+    <!-- Main content -->
+    <section class="content">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h3 class="box-title">Edit Category Details</h3>
             </div>
+            <!-- form start -->
+            <form id="editCategoryForm" class="form-horizontal">
+              <div class="box-body">
+                <div class="form-group">
+                  <label for="name" class="col-sm-2 control-label">Name</label>
+                  <div class="col-sm-10">
+                    <input type="text" class="form-control" id="name" name="name" 
+                           value="<%= category.name %>" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="description" class="col-sm-2 control-label">Description</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control" id="description" name="description" 
+                              rows="3" required><%= category.description %></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="box-footer">
+                <a href="/admin/categories" class="btn btn-default">Cancel</a>
+                <button type="submit" class="btn btn-primary pull-right">Update Category</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <%- include ('component/footer.ejs') %>
+</div>
 
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" 
-                          rows="3" required><%= category.description %></textarea>
-            </div>
+<!-- Essential Scripts -->
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            <button type="submit" class="btn btn-primary">Update Category</button>
-            <a href="/admin/categories" class="btn btn-secondary">Cancel</a>
-        </form>
-    </div>
+<script>
+document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('name').value,
+        description: document.getElementById('description').value
+    };
 
-    <script>
-        document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                name: document.getElementById('name').value,
-                description: document.getElementById('description').value
-            };
-
-            try {
-                const response = await fetch(`/admin/categories/update/<%= category._id %>`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        text: result.message,
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        window.location.href = '/admin/categories';
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: result.error
-                    });
-                }
-            } catch (error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'An unexpected error occurred'
-                });
-            }
+    try {
+        const response = await fetch(`/admin/categories/update/<%= category._id %>`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
         });
-    </script>
 
- 
+        const result = await response.json();
+
+        if (response.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: result.message,
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = '/admin/category';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: result.error
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'An unexpected error occurred'
+        });
+    }
+});
+</script>
+
 </body>
 </html>

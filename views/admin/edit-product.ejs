@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <%- include ('component/head.ejs') %> 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
   <%- include ('component/header.ejs') %> 
@@ -8,7 +9,6 @@
 
   <!-- Stylesheets -->
   <link href="/admin-assets/main.css" rel="stylesheet" type="text/css" />
-  <link href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2/dist/sweetalert2.min.css" rel="stylesheet">
 
   <style>
@@ -54,16 +54,40 @@
     }
 
     .upload-box {
-      border: 2px dashed #ddd;
+      border: 2px dashed #ccc;
       padding: 20px;
       text-align: center;
-      margin: 10px 0;
-      cursor: pointer;
-      position: relative;
+      border-radius: 8px;
+      background: #f9f9f9;
+      transition: all 0.3s ease;
     }
 
     .upload-box:hover {
       border-color: #007bff;
+      background: #f0f7ff;
+    }
+
+    .upload-box i {
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+
+    .upload-box p {
+      margin: 5px 0;
+      color: #333;
+    }
+
+    .image-info {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .upload-label {
+      display: block;
+      cursor: pointer;
+      margin: 15px 0;
     }
 
     .preview-container {
@@ -99,6 +123,109 @@
     .btn-action {
       margin-top: 5px;
       margin-bottom: 5px;
+    }
+
+    .image-upload-section {
+        margin: 20px 0;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .image-upload-container {
+        margin-top: 20px;
+    }
+
+    .image-upload-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .file-input-wrapper {
+        flex: 1;
+        position: relative;
+    }
+
+    .image-preview {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .image-cropper {
+        flex: 1;
+        display: none;
+        padding: 15px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .image-cropper img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .save-button {
+        margin-top: 10px;
+        padding: 8px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .save-button:hover {
+        background: #0056b3;
+    }
+
+    .thumbnails-container {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .thumbnail {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .remove-image-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 20px;
+        height: 20px;
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        padding: 0;
+        line-height: 1;
     }
   </style>
 
@@ -159,48 +286,85 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label class="form-label">Stock</label>
-                <input type="number" name="
-                quantity" value="<%=product.
-quantity%>" class="form-control">
+                <input type="number" name="quantity" value="<%=product.quantity%>" class="form-control">
               </div>
             </div>
           </div>
         </div>
 
         <!-- Product Images -->
-        <div class="form-section">
-          <h4><i class="fa fa-images"></i> Product Images</h4>
-          
-          <!-- Existing Images -->
-          <div class="image-grid">
-            <% product.productImages.forEach((image, index) => { %>
-              <div class="image-item">
-                <img src="/uploads/product-images/<%= image %>" alt="Product Image">
-                <button type="button" class="delete-btn" onclick="deleteImage('<%= image %>', '<%= product._id %>')">×</button>
-              </div>
-            <% }); %>
-          </div>
+        <div class="card mb-4 image-upload-section">
+            <div class="card-header">
+                <h4>Product Images (3-4 Required)</h4>
+            </div>
+            <div class="card-body">
+                <!-- Existing Images -->
+                <div class="border row mb-3">
+                    <div id="existingImagesContainer" class="thumbnails-container">
+                        <% product.productImages.forEach((image, index) => { %>
+                            <div class="thumbnail" data-image="<%= image %>">
+                                <img src="/uploads/product-images/<%= image %>" alt="Product Image">
+                                <button type="button" class="remove-image-btn" onclick="deleteImage('<%= image %>', '<%= product._id %>')">×</button>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
 
-          <!-- Image Upload -->
-          <% for(let i=1; i<=4; i++) { %>
-            <div class="upload-box" onclick="document.getElementById('input<%=i%>').click()">
-              <i class="fa fa-cloud-upload fa-2x"></i>
-              <p>Click to upload image <%=i%></p>
-              <input type="file" id="input<%=i%>" name="images" accept="image/*" 
-                     style="display: none" onchange="handleImageUpload(event, <%=i%>)">
+                <!-- New Image Uploads -->
+                <div class="image-upload-container">
+                    <!-- First Image Upload -->
+                    <div class="image-upload-row">
+                        <div class="file-input-wrapper">
+                            <img src="" alt="Image Preview" id="imgView1" class="image-preview">
+                            <input class="form-control file-input" type="file" name="images"
+                                id="input1" accept="image/png, image/jpeg, image/jpg">
+                        </div>
+                        <div class="image-cropper">
+                            <img src="" id="croppedImg1" alt="Cropped Image">
+                            <button type="button" id="saveButton1" class="btn btn-primary btn-sm save-button">Save Crop</button>
+                        </div>
+                    </div>
+
+                    <!-- Second Image Upload -->
+                    <div class="image-upload-row">
+                        <div class="file-input-wrapper">
+                            <img src="" alt="Image Preview" id="imgView2" class="image-preview">
+                            <input class="form-control file-input" type="file" name="images"
+                                id="input2" accept="image/png, image/jpeg, image/jpg">
+                        </div>
+                        <div class="image-cropper">
+                            <img src="" id="croppedImg2" alt="Cropped Image">
+                            <button type="button" id="saveButton2" class="btn btn-primary btn-sm save-button">Save Crop</button>
+                        </div>
+                    </div>
+
+                    <!-- Third Image Upload -->
+                    <div class="image-upload-row">
+                        <div class="file-input-wrapper">
+                            <img src="" alt="Image Preview" id="imgView3" class="image-preview">
+                            <input class="form-control file-input" type="file" name="images"
+                                id="input3" accept="image/png, image/jpeg, image/jpg">
+                        </div>
+                        <div class="image-cropper">
+                            <img src="" id="croppedImg3" alt="Cropped Image">
+                            <button type="button" id="saveButton3" class="btn btn-primary btn-sm save-button">Save Crop</button>
+                        </div>
+                    </div>
+
+                    <!-- Fourth Image Upload -->
+                    <div class="image-upload-row">
+                        <div class="file-input-wrapper">
+                            <img src="" alt="Image Preview" id="imgView4" class="image-preview">
+                            <input class="form-control file-input" type="file" name="images"
+                                id="input4" accept="image/png, image/jpeg, image/jpg">
+                        </div>
+                        <div class="image-cropper">
+                            <img src="" id="croppedImg4" alt="Cropped Image">
+                            <button type="button" id="saveButton4" class="btn btn-primary btn-sm save-button">Save Crop</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="preview<%=i%>" class="preview-container">
-              <img id="previewImage<%=i%>" src="">
-              <div id="cropControls<%=i%>" class="crop-controls">
-                <button type="button" class="btn btn-primary" onclick="saveCrop(<%=i%>)">
-                  Save Crop
-                </button>
-                <button type="button" class="btn btn-danger" onclick="cancelCrop(<%=i%>)">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          <% } %>
         </div>
 
         <div class="form-section">
@@ -217,194 +381,205 @@ quantity%>" class="form-control">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2/dist/sweetalert2.all.min.js"></script>
 
 <script>
-let croppers = {};
+  // Store croppers for each image
+  let croppers = {};
 
-function handleImageUpload(event, index) {
-  const file = event.target.files[0];
-  if (!file) return;
+  // Initialize event listeners for file inputs
+  document.getElementById('input1').addEventListener('change', (e) => viewImage(e, 1));
+  document.getElementById('input2').addEventListener('change', (e) => viewImage(e, 2));
+  document.getElementById('input3').addEventListener('change', (e) => viewImage(e, 3));
+  document.getElementById('input4').addEventListener('change', (e) => viewImage(e, 4));
 
-  if (!file.type.startsWith('image/')) {
-    Swal.fire('Error', 'Please upload an image file', 'error');
-    return;
-  }
+  function viewImage(event, index) {
+      const input = event.target;
+      const imgView = document.getElementById(`imgView${index}`);
+      const cropperContainer = document.querySelector(`#input${index}`).closest('.image-upload-row').querySelector('.image-cropper');
+      const croppedImg = document.getElementById(`croppedImg${index}`);
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const previewContainer = document.getElementById(`preview${index}`);
-    const previewImage = document.getElementById(`previewImage${index}`);
-    const cropControls = document.getElementById(`cropControls${index}`);
-
-    previewImage.src = e.target.result;
-    previewContainer.style.display = 'block';
-    cropControls.style.display = 'block';
-
-    if (croppers[index]) {
-      croppers[index].destroy();
-    }
-
-    croppers[index] = new Cropper(previewImage, {
-      aspectRatio: 1,
-      viewMode: 1,
-      autoCropArea: 1,
-      zoomable: false,
-      crop: function(event) {
-        // Optional: Add any crop event handling here
+      // Destroy existing cropper if any
+      if (croppers[index]) {
+          croppers[index].destroy();
+          croppers[index] = null;
       }
-    });
-  };
-  reader.readAsDataURL(file);
-}
 
-function saveCrop(index) {
-  const cropper = croppers[index];
-  if (!cropper) return;
+      if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+              // Set the source of the preview image
+              imgView.src = e.target.result;
+              
+              // Initialize cropper after image is loaded
+              imgView.onload = function() {
+                  croppers[index] = new Cropper(imgView, {
+                      aspectRatio: 1,
+                      viewMode: 1,
+                      guides: true,
+                      background: false,
+                      autoCropArea: 0.8,
+                      zoomable: true,
+                      center: true,
+                      cropBoxResizable: true
+                  });
+                  
+                  // Show the cropper container
+                  cropperContainer.style.display = 'block';
+              };
 
-  const canvas = cropper.getCroppedCanvas({
-    width: 600,
-    height: 600
-  });
+              // Setup save button handler
+              const saveButton = document.querySelector(`#saveButton${index}`);
+              saveButton.onclick = function() {
+                  if (croppers[index]) {
+                      // Get the cropped canvas
+                      const croppedCanvas = croppers[index].getCroppedCanvas();
+                      
+                      // Set the cropped image
+                      croppedImg.src = croppedCanvas.toDataURL('image/jpeg');
+                      
+                      // Convert canvas to blob and create new file input
+                      croppedCanvas.toBlob((blob) => {
+                          const fileName = `cropped-image-${index}.jpg`;
+                          const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
+                          
+                          // Create a new FileList with the cropped image
+                          const dataTransfer = new DataTransfer();
+                          dataTransfer.items.add(croppedFile);
+                          
+                          // Update the original file input
+                          input.files = dataTransfer.files;
+                      }, 'image/jpeg');
+                      
+                      // Hide cropper container
+                      cropperContainer.style.display = 'none';
+                      
+                      // Destroy cropper
+                      croppers[index].destroy();
+                      croppers[index] = null;
 
-  canvas.toBlob((blob) => {
-    const file = new File([blob], `image-${index}.png`, { type: 'image/png' });
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    document.getElementById(`input${index}`).files = dataTransfer.files;
-
-    // Update preview
-    const previewImage = document.getElementById(`previewImage${index}`);
-    previewImage.src = canvas.toDataURL();
-
-    // Cleanup
-    cropper.destroy();
-    croppers[index] = null;
-    document.getElementById(`cropControls${index}`).style.display = 'none';
-
-    Swal.fire({
-      icon: 'success',
-      title: 'Image Cropped',
-      text: 'The image has been cropped successfully',
-      timer: 1500
-    });
-  });
-}
-
-function cancelCrop(index) {
-  if (croppers[index]) {
-    croppers[index].destroy();
-    croppers[index] = null;
+                      // Update total image count
+                      updateImageCount();
+                  }
+              };
+          };
+          
+          reader.readAsDataURL(input.files[0]);
+      }
   }
-  document.getElementById(`preview${index}`).style.display = 'none';
-  document.getElementById(`input${index}`).value = '';
-}
 
-function deleteImage(imageName, productId) {
-  Swal.fire({
-    title: 'Delete Image?',
-    text: 'This action cannot be undone',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Delete'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch('/admin/deleteImage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageNameToServer: imageName,
-          productIdToServer: productId
-        })
-      }).then(response => {
-        if (response.ok) {
-          Swal.fire('Deleted!', 'Image has been removed.', 'success')
-            .then(() => location.reload());
-        }
-      });
-    }
-  });
-}
-</script>
-<script>
-    // Form submission handler (fixed version)
-    document.getElementById('productForm').addEventListener('submit', async function(e) {
+  function updateImageCount() {
+      const existingImages = document.querySelectorAll('#existingImagesContainer .thumbnail').length;
+      const newImages = Array.from(document.querySelectorAll('.file-input')).filter(input => input.files.length > 0).length;
+      const totalImages = existingImages + newImages;
+
+      // Update UI to show current count
+      document.querySelector('.card-header h4').textContent = `Product Images (${totalImages}/4 Selected)`;
+  }
+
+  // Submit handler
+  document.getElementById('productForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      // Basic validation example
-      const productName = this.productName.value.trim();
-      if (!productName) {
-        Swal.fire('Error', 'Product name is required', 'error');
-        return;
-      }
-    
-      Swal.fire({
-        title: 'Updating Product',
-        text: 'Please wait...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-    
-      try {
-        const response = await fetch(this.action, {
-          method: 'POST',
-          body: new FormData(this)
-        });
-    
-        const data = await response.json();
-        
-        if (data.success) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: 'Product updated successfully',
-            timer: 2000,
-            showConfirmButton: false
-          }).then(() => {
-            window.location.href = '/admin/products';
-          });
-        } else {
-          throw new Error(data.message || 'Update failed');
-        }
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.message || 'Failed to update product. Please try again.'
-        });
-      }
-    });
-    
-    // Fixed deleteImage function
-    async function deleteImage(imageName, productId) {
-      const { isConfirmed } = await Swal.fire({
-        title: 'Delete Image?',
-        text: 'This action cannot be undone',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-      });
-    
-      if (isConfirmed) {
-        try {
-          const response = await fetch('/admin/deleteImage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageNameToServer: imageName, productIdToServer: productId })
-          });
-          
-          if (response.ok) {
-            Swal.fire('Deleted!', 'Image has been removed.', 'success');
-            // Remove image from DOM without reload
-            document.querySelector(`img[src*="${imageName}"]`).closest('.image-item').remove();
-          }
-        } catch (error) {
-          Swal.fire('Error', 'Failed to delete image', 'error');
-        }
-      }
-    }
-    </script>
-    
+      const formData = new FormData(this);
+      const existingImages = document.querySelectorAll('#existingImagesContainer .thumbnail').length;
+      const newImages = Array.from(document.querySelectorAll('.file-input')).filter(input => input.files.length > 0).length;
+      const totalImages = existingImages + newImages;
 
+      if (totalImages < 3 || totalImages > 4) {
+          Swal.fire({
+              title: 'Image Count Error',
+              text: `Products must have between 3 and 4 images. You currently have ${totalImages} image(s).`,
+              icon: 'error'
+          });
+          return;
+      }
+
+      try {
+          // Show loading state
+          Swal.fire({
+              title: 'Updating Product',
+              text: 'Please wait while we save your changes...',
+              allowOutsideClick: false,
+              didOpen: () => {
+                  Swal.showLoading();
+              }
+          });
+
+          const response = await fetch(this.action, {
+              method: 'POST',
+              body: formData
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Success!',
+                  text: result.message,
+                  timer: 1500,
+                  showConfirmButton: false
+              }).then(() => {
+                  window.location.href = '/admin/products';
+              });
+          } else {
+              throw new Error(result.error || 'Update failed');
+          }
+      } catch (error) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: error.message || 'Failed to update product. Please try again.'
+          });
+      }
+  });
+
+  // Initialize image count on page load
+  updateImageCount();
+
+  function deleteImage(imageName, productId) {
+      Swal.fire({
+          title: 'Delete Image?',
+          text: 'This action cannot be undone',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              fetch('/admin/deleteImage', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      imageNameToServer: imageName,
+                      productIdToServer: productId
+                  })
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      Swal.fire({
+                          icon: 'success',
+                          title: 'Deleted!',
+                          text: 'Image has been deleted.',
+                          timer: 1500,
+                          showConfirmButton: false
+                      }).then(() => {
+                          location.reload();
+                      });
+                  } else {
+                      Swal.fire('Error!', data.error, 'error');
+                  }
+              })
+              .catch(error => {
+                  console.error('Error:', error);
+                  Swal.fire('Error!', 'Something went wrong.', 'error');
+              });
+          }
+      });
+  }
+</script>
 </body>
 </html>
