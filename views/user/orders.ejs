@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <%- include ('component/head.ejs') %>
+<body>
+    <%- include ('component/header.ejs') %>
+    <div class="page-container">
+        <!-- Sidebar -->
+        <div class="user-aside">
+            <%- include ('component/useraside.ejs') %>
+        </div>
+
+        <!-- Main Content -->
+        <section class="main-content">
+            <div class="container mt-4">
+                <h5 class="section-title">My Orders</h5>
+                <div class="address-divider"></div>
+
+                <% if (orders && orders.length > 0) { %>
+                    <div class="orders-list">
+                        <% orders.forEach(function(order) { %>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h6>Order #<%= order.orderId %></h6>
+                                        <div class="order-actions">
+                                            <a href="/order-details?id=<%= order.orderId %>" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="order-details">
+                                        <p class="type-label">Status: 
+                                            <span class="badge 
+                                                <% switch(order.status) {
+                                                    case 'Pending': %> bg-warning <%
+                                                        break;
+                                                    case 'Processing': %> bg-info <%
+                                                        break;
+                                                    case 'Shipped': %> bg-primary <%
+                                                        break;
+                                                    case 'Delivered': %> bg-success <%
+                                                        break;
+                                                    case 'Cancelled': %> bg-danger <%
+                                                        break;
+                                                    default: %> bg-secondary <%
+                                                } %>
+                                            "><%= order.status %></span>
+                                        </p>
+                                        <p>Total Amount: ₹<%= order.finalAmount || order.totalPrice %></p>
+                                        <p>Items:</p>
+                                        <% order.orderedItems.forEach(function(item) { %>
+                                            <p class="ms-3">
+                                                <%= item.productName %> 
+                                                (<%= item.quantity %> x ₹<%= item.price %>)
+                                            </p>
+                                        <% }); %>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="no-address text-center">
+                        <i class="fas fa-shopping-bag fa-2x mb-2"></i>
+                        <p>No orders yet. Start shopping now!</p>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+    </div>
+
+    <!-- Styles -->
+    <style>
+    .page-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .user-aside {
+        width: 220px;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .main-content {
+        flex: 1; 
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .address-divider {
+        height: 1px;
+        background-color: #dee2e6;
+        margin: 15px 0;
+    }
+    .section-title {
+        color: #495057;
+        font-weight: 500;
+        margin-left: 15px;
+    }
+    .type-label {
+        color: #6c757d;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.8rem !important;
+    }
+    .no-address {
+        color: #6c757d;
+        padding: 30px;
+        background-color: white;
+        border-radius: 8px;
+        margin: 0 15px;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .order-details p {
+        margin-bottom: 0.3rem;
+        font-size: 0.9rem;
+    }
+    .order-actions button {
+        padding: 0.25rem 0.5rem;
+    }
+    .order-actions button:hover {
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    </style>
+</body>
+</html>

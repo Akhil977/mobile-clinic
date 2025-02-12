@@ -3,13 +3,15 @@ const router = express.Router();
 const userController = require("../controller/user/userController");
 const passport = require("../config/passport");
 const productController = require("../controller/user/productController");
-const { preventBackToLogin, protectRoutes, preventBackAfterLogout,checkBlockedUser } = require("../middlewares/usermiddleware");
+const { protectUserProfile,preventBackToLogin, protectRoutes, preventBackAfterLogout,checkBlockedUser } = require("../middlewares/usermiddleware");
 const profileCotrller = require("../controller/user/profileCotrller")
+const cartController = require("../controller/user/cartController")
+const checkout = require("../controller/user/orderController")
 
-// Apply preventBackAfterLogout globally to prevent users from going back after logout
+
 router.use(preventBackAfterLogout);
 
-// Public Routes
+
 router.get("/pageNotFound",checkBlockedUser,userController.pageNotFound);
 router.get("/",checkBlockedUser,userController.loadHomepage);
 router.get('/login', preventBackToLogin, userController.loadLogin);
@@ -22,32 +24,33 @@ router.get('/otp', (req, res) => {
 router.post('/verifyotp', userController.verifyOtp);
 router.post('/resend-otp', userController.resendOtp);
 
-// Google Authentication
+
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
     if (req.user.isBlocked) {
-        req.session.destroy(); // Destroy session if user is blocked
+        req.session.destroy(); 
         return res.redirect('/blockedByAdmin');
     }
 
-    req.session.isLoggedIn = true; // Set session logged-in state
-    req.session.user = req.user._id; // Store user ID in session
-    res.redirect('/'); // Redirect to homepage
+    req.session.isLoggedIn = true; 
+    req.session.user = req.user._id;
+    res.redirect('/'); 
 });
 
-// User Login
+
 router.post("/log", userController.log);
 
-// User Logout (Destroy session and prevent back navigation)
+
 router.get("/logout", (req, res) => {
-    req.session.destroy(() => {
+    delete req.session.isLoggedIn;
+    delete req.session.user ;
+  
         res.redirect('/login');
-    });
+    
 });
 
-// Protected Routes (Only logged-in users can access)
-// router.get('/dashboard', protectRoutes, userController.loadDashboard);
+
 router.get('/productdetail',checkBlockedUser, productController.productDetails);
 router.get('/product-detail',checkBlockedUser, productController.productDetails);
 
@@ -60,8 +63,46 @@ router.get("/forgot-otp",profileCotrller.getforgototp)
 router.post("/verify-otp",profileCotrller.validatingotp)
 router.get("/reset-password",profileCotrller.getRestPassword)
 router.post('/reset-password',profileCotrller.restPassword)
+router.get("/user-address",profileCotrller.getaddress)
+router.get('/add-address',profileCotrller. getaddaddress)
+router.get("/editaddress",profileCotrller.geteditaddress)
+router.post('/editaddress/:id',profileCotrller.posteditaddress);
+router.post("/addaddress",profileCotrller. addaddress)
+router.delete("/deleteaddress/:id",profileCotrller.deleteaddress)
 
-router.get("/profile",profileCotrller. getprofile)
+router.get("/profile",protectUserProfile,profileCotrller.getprofile)
+router.patch("/profile",profileCotrller.updateProfile)
+
+router.post("/updatePassword",profileCotrller.checkOldPassword)
+router.post("/update-password",profileCotrller. updatePassword)
+
+
+
+
+//cart 
+router.get("/carthandler",cartController.addcart)
+router.post('/removecart', cartController.deleteitem)
+router.delete('/removecart', cartController.deleteitem)
+router.post('/updatecart', cartController.updateCartQuantity)
+
+router.get("/category",productController.getProduct)
+
+router.get("/cart",cartController.getCart)
+
+///////////checkout
+router.get("/checkout", protectUserProfile, checkout.getcheckout)
+router.post("/placeOrder", protectUserProfile, checkout.placeOrder)
+router.post("/add-checkout-address", protectUserProfile, checkout.addAddress)
+router.post("/edit-checkout-address", protectUserProfile, checkout.editAddress)
+
+
+
+
+router.get("/user-orders", protectRoutes, checkout.loadUserOrders);
+router.get("/order-details", protectRoutes, checkout.loadOrderDetails);
+router.post("/orders/cancel", protectRoutes, checkout.cancelOrder);
+router.post("/orders/return", protectRoutes, checkout.returnOrder);
+
 // Blocked User Page
 router.get('/blockedByAdmin', userController.adminBlocked);
 

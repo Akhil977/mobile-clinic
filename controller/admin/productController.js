@@ -10,7 +10,7 @@ const Product = require('../../model/productShema')
 const getProductAddPage = async (req, res) => {
     try {
  
-       const category = await Category.find({ isListed: true })
+       const category = await Category.find({})
        res.render('product-add', { cat: category })
  
     } catch (error) {
@@ -23,11 +23,20 @@ const getProductAddPage = async (req, res) => {
    try {
        const products = req.body;
 
-       // Check for exactly 4 images
+       // Check for exactly 3 images
        if (!req.files || req.files.length !== 3) {
            return res.status(400).json({ 
              success: false,
-             message: "Exactly 4 product images are required" 
+             message: "Exactly 3 product images are required" 
+           });
+       }
+
+       // Validate quantity
+       const quantity = parseInt(products.quantity);
+       if (isNaN(quantity) || quantity < 0) {
+           return res.status(400).json({
+               success: false,
+               message: "Quantity must be a positive number"
            });
        }
 
@@ -40,59 +49,82 @@ const getProductAddPage = async (req, res) => {
        console.log("Parsed Sale Price:", salePrice);
 
        if (isNaN(regularPrice) || isNaN(salePrice)) {
-           return res.status(400).json({ message: "Invalid price format" });
+           return res.status(400).json({ success: false, message: "Invalid price format" });
+       }
+    
+       if (regularPrice < 0) {
+           return res.status(400).json({ success: false, message: "Regular price cannot be negative" });
+       }
+    
+       if (salePrice < 0) {
+           return res.status(400).json({ success: false, message: "Sale price cannot be negative" });
+       }
+    
+       if (salePrice >= regularPrice) {
+           return res.status(400).json({ success: false, message: "Sale price must be smaller than the regular price" });
        }
        
        const productExists = await product.findOne({
            productName: products.productName
        });
 
-       if (!productExists) {
-           const images = [];
-           // Process and resize all 4 images
-           for (const file of req.files) {
-               const originalImagePath = file.path;
-               const resizedImagePath = path.join("public", "uploads", "product-images", file.filename);
-
-               await sharp(originalImagePath)
-                   .resize({ width: 440, height: 440 })
-                   .toFile(resizedImagePath);
-
-               images.push(file.filename);
-           }
-
-           const categoryId = await Category.findOne({ name: products.category });
-           if (!categoryId) {
-               return res.status(400).json({ message: "Category not found" });
-           }
-
-           const newProduct = new product({
-               productName: products.productName,
-               description: products.description,
-               category: categoryId._id,
-               regularPrice: regularPrice,
-               discountPrice: products.discountPrice,
-               salePrice: salePrice,
-               createdAt: Date.now(),
-               productImages: images,
-               isListed: products.isListed,
-               quantity: products.quantity,
-               size: products.size,
-               brand: products.brand || "Unknown",
-               status: "available"
+       if (productExists) {
+           return res.status(400).json({ 
+               success: false, 
+               message: "Product already exists" 
            });
-
-           await newProduct.save();
-           return res.redirect('/admin');
-       } else {
-           const category = await Category.find({ isListed: true });
-           return res.render('product-add', { cat: category, message: "Product already exists" });
        }
+
+       const images = [];
+       // Process and resize all images
+       for (const file of req.files) {
+           const originalImagePath = file.path;
+           const resizedImagePath = path.join("public", "uploads", "product-images", file.filename);
+
+           await sharp(originalImagePath)
+               .resize({ width: 440, height: 440 })
+               .toFile(resizedImagePath);
+
+           images.push(file.filename);
+       }
+
+       const categoryId = await Category.findOne({ name: products.category });
+       if (!categoryId) {
+           return res.status(400).json({ 
+               success: false, 
+               message: "Category not found" 
+           });
+       }
+
+       const newProduct = new product({
+           productName: products.productName,
+           description: products.description,
+           category: categoryId._id,
+           regularPrice: regularPrice,
+           discountPrice: products.discountPrice,
+           salePrice: salePrice,
+           createdAt: Date.now(),
+           productImages: images,
+           isListed: products.isListed,
+           quantity: products.quantity,
+           size: products.size,
+           brand: products.brand || "Unknown",
+           status: "available"
+       });
+
+       await newProduct.save();
+       return res.status(200).json({ 
+           success: true, 
+           message: "Product added successfully" 
+       });
    } catch (error) {
-       console.log("Error adding product", error);
-       res.redirect('/pageerror');
+       console.error("Error in addProducts:", error);
+       return res.status(500).json({ 
+           success: false, 
+           message: "Internal server error" 
+       });
    }
-};
+}
  
  const getAllProducts = async (req, res) => {
     try {

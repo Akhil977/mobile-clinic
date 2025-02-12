@@ -3,6 +3,7 @@ const env = require("dotenv").config();
 const nodemailer =require('nodemailer')
 const User = require("../../model/userSchema")
 const Product= require('../../model/productShema')
+const Cart = require("../../model/cartSchema")
 const pageNotFound = async (req,res) => {
     try {
         res.render("page-404")
@@ -13,22 +14,45 @@ const pageNotFound = async (req,res) => {
 
 const loadHomepage = async (req, res) => {
     try {
-        console.log("Session data:", req.session); // Log session data for debugging
+        // Log session data for debugging
+        console.log("Session data:", req.session);
+
+        // Fetch all products that are listed for sale
         const products = await Product.find({ isListed: true });
-        const cart = [
-            { name: "Product 1", price: 100, quantity: 2 },
-            { name: "Product 2", price: 150, quantity: 1 },
-        ];
-        const isLoggedIn = req.session.isLoggedIn || false; // Default to false if not logged in
-        
-        res.render("home", { isLoggedIn, cart,products });
+
+        // Fetch the user's cart (only if logged in)
+        let cart = [];
+        if (req.session.isLoggedIn) {
+            // Ensure userId is passed in the session correctly
+            const userId = req.session.user; 
+
+            // Fetch the cart and populate product details
+            const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
+            
+            // If the cart exists, map cart items and include product details
+            if (userCart) {
+                cart = userCart.item.map(item => ({
+                    productId: item.productId._id,  // Product ID
+                    name: item.productId.productName,  // Product Name
+                    price: item.price,  // Price of the item in the cart
+                    quantity: item.quantity,  // Quantity of the item
+                    totalPrice: item.totalPrice,  // Calculated total price of the item
+                    image: item.productId.productImages[0]  // Image of the product
+                }));
+            }
+        }
+
+        // Check if the user is logged in (boolean flag for frontend)
+        const isLoggedIn = req.session.isLoggedIn || false;
+
+        // Render the homepage with products and the user's cart
+        res.render("home", { isLoggedIn, cart, products });
+
     } catch (error) {
         console.error("Error loading homepage:", error.message);
         res.status(500).send("Server error");
     }
 };
-
-
 const loadLogin = (req, res) => {
     try {
         // Simulate session data (you can adjust this based on actual session management)
@@ -99,6 +123,50 @@ const signup = async (req, res) => {
         });
     }
 
+    // Check if name contains only spaces
+    if (name.trim().length === 0) {
+        return res.json({
+            errorMessage: 'Name cannot contain only spaces.'
+        });
+    }
+
+    // Check if name starts with a number or special character
+    if (/^[^a-zA-Z]/.test(name)) {
+        return res.json({
+            errorMessage: 'Name must start with a letter.'
+        });
+    }
+
+    // Validate name format (allowing only single spaces between characters)
+    const nameRegex = /^[a-zA-Z]+(?:\s[a-zA-Z]+)*$/;
+    if (!nameRegex.test(name.trim())) {
+        return res.json({
+            errorMessage: 'Name should contain only letters with single spaces between words.'
+        });
+    }
+
+    // Validate name length after trimming
+    if (name.trim().length < 2 || name.trim().length > 50) {
+        return res.json({
+            errorMessage: 'Name should be between 2-50 characters.'
+        });
+    }
+
+    // Validate name has both first and last name
+    const nameParts = name.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+        return res.json({
+            errorMessage: 'Please enter both first and last name.'
+        });
+    }
+
+    // Validate each name part is at least 2 characters
+    if (nameParts.some(part => part.length < 2)) {
+        return res.json({
+            errorMessage: 'Each name part should be at least 2 characters long.'
+        });
+    }
+
     // Validate email format
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailRegex.test(email)) {
@@ -142,18 +210,28 @@ const signup = async (req, res) => {
             });
         }
 
+        // Format the name (capitalize first letter of each part)
+        const formattedName = nameParts
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ');
+
         // Temporarily store user data and OTP in session
         req.session.userOtp = otp;
-        req.session.tempUserData = { name, email, phone, password };
+        req.session.tempUserData = { 
+            name: formattedName, 
+            email, 
+            phone, 
+            password 
+        };
 
         console.log('OTP sent:', otp);
 
         // Redirect to OTP verification page
         return res.json({});   
-     } catch (error) {
+    } catch (error) {
         console.log('Error during signup:', error);
         return res.status(500).json({
-            errorMessage: 'Internal se rver error'
+            errorMessage: 'Internal server error'
         });
     }
 };

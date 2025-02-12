@@ -1,76 +1,111 @@
-<aside class="main-sidebar">
-  <section class="sidebar">
-    <!-- Sidebar user panel without image -->
-    <div class="user-panel">
-      <div class="pull-left info">
-        <p>User Name</p>
-        <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
-      </div>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sidebar Example</title>
+  <!-- External CSS links (remove any conflicting ones if needed) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    /* Base styles for layout */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Content area */
+    .content {
+      flex: 1;
+      padding: 20px;
+      margin-left: 250px; /* Adjust for sidebar */
+      transition: margin-left 0.3s ease; /* Smooth transition */
+    }
 
-    <!-- Sidebar Menu -->
-    <ul class="sidebar-menu" data-widget="tree">
-      <li class="header">USER MENU</li>
-      <li><a href="/user-dashboard"><i ></i> Dashboard</a></li>
-      <li><a href="/user-address"><i class="fa fa-map-marker"></i> Address</a></li>
-      <li><a href="/user-orders"><i class="fa fa-shopping-cart"></i> Orders</a></li>
-      <li><a href="/wallet-status"><i class="fa fa-credit-card"></i> Wallet Status</a></li>
-      <li><a href="/wallet-history"><i class="fa fa-history"></i> Wallet History</a></li>
-      <li><a href="/referrals"><i class="fa fa-users"></i> Referrals</a></li>
-      <li><a href="/abcd"><i class="fa fa-cog"></i> ABCD</a></li>
-      <li><a href="/efg"><i class="fa fa-wrench"></i> EFG</a></li>
-    </ul>
-  </section>
-</aside>
+    /* If you want to hide the sidebar on small screens */
+    @media (max-width: 768px) {
+      .content {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
 
-<style>
- .main-sidebar {
-  width: 250px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: #222d32; /* Sidebar background color */
-  color: white;
-  padding-top: 20px;
-}
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <aside class="main-sidebar">
+        <div class="user-panel">
+            <div class="pull-left info">
+                <p>User Name</p>
+                <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="active"><a href="/user-dashboard"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+            <li><a href="/user-address"><i class="fa fa-map-marker"></i> Address</a></li>
+            <li><a href="/user-orders"><i class="fa fa-shopping-cart"></i> Orders</a></li>
+            <li><a href="/user-orders"><i class="fa fa-credit-card"></i>Wallet Status</a></li>
+            <li><a href="/user-orders"><i class="fa fa-history"></i> Wallet History</a></li>
+            <li><a href="/user-orders"><i class="fa fa-users"></i> Referals</a></li>
+            <li><a href="/user-orders"><i class="fa fa-sign-out"></i> logout</a></li>
+        </ul>
+    </aside>
 
-.sidebar {
-  padding: 10px;
-}
+    <style>
+        .main-sidebar {
+            background: #fff;
+            color: #333;
+        }
 
-.sidebar a {
-  color: black; /* Change text color to black */
-  text-decoration: none;
-  display: block;
-  padding: 12px;
-}
+        .user-panel {
+            padding: 20px 15px;
+            border-bottom: 1px solid #eee;
+        }
 
-.sidebar-menu {
-  list-style: none;
-  padding: 0;
-}
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
 
-.sidebar-menu li {
-  border-bottom: 1px solid rgba(226, 41, 41, 0.1);
-}
+        .sidebar-menu li {
+            padding: 0;
+            margin: 0;
+        }
 
-.sidebar-menu li a:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px;
+            color: #333;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
 
-.user-panel {
-  text-align: center;
-  padding: 10px;
-  margin-bottom: 20px;
-}
+        .sidebar-menu li a:hover,
+        .sidebar-menu li.active a {
+            background: #f8f9fa;
+            color: #007bff;
+        }
 
-.user-panel .info {
-  text-align: left;
-}
+        .sidebar-menu li a i {
+            margin-right: 10px;
+        }
 
-.sidebar-menu li a {
-  font-size: 16px;
-  padding-left: 20px;
-}
-</style>
+        @media (max-width: 768px) {
+            .main-sidebar {
+                display: none;
+            }
+        }
+    </style>
+
+    <!-- Content area, should be separate and independent of sidebar -->
+   
+  </div>
+
+</body>
+</html>

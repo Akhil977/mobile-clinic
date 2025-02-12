@@ -2,12 +2,41 @@
 <html lang="en">
 	<%- include ('component/head.ejs') %>
 	<link rel="stylesheet" href="css/jquery-ui.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 	<script
 		src="https://code.jquery.com/jquery-3.6.0.min.js"
 		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
 		crossorigin="anonymous"
 	></script>
 	<script src="js/jquery-ui.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<script>
+		$(document).ready(function () {
+			toastr.options = {
+				"positionClass": "toast-top-right",
+				"closeButton": true,
+				"progressBar": true,
+				"timeOut": "3000"
+			};
+
+			$(document).on('click', '.add-to-cart-btn', function(e) {
+				e.preventDefault();
+				const href = $(this).attr('href');
+				
+				$.ajax({
+					url: href,
+					method: 'GET',
+					success: function(response) {
+						toastr.success(response.message || 'Product added to cart successfully!');
+					},
+					error: function(xhr) {
+						const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to add product to cart';
+						toastr.error(errorMsg);
+					}
+				});
+			});
+		});
+	</script>
 	<body class="animsition">
 		<!-- Header -->
 		<%- include ('component/header.ejs') %>
@@ -23,15 +52,14 @@
 
 		<!-- Product -->
 		<section class="bg0 p-t-23 p-b-140">
-			<form action="search" method="get">
-				<div class="container">
-					<div class="p-b-10">
-						<h3 class="ltext-103 cl5">Product Overview</h3>
-					</div>
+			<div class="container">
+				<div class="p-b-10">
+					<h3 class="ltext-103 cl5">Product Overview</h3>
+				</div>
 
-					<div class="flex-w flex-sb-m p-b-52">
-						<div class="flex-w flex-l-m filter-tope-group m-tb-10">
-							<!-- <a href="product" class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5 how-active1" data-filter="*">
+				<div class="flex-w flex-sb-m p-b-52">
+					<div class="flex-w flex-l-m filter-tope-group m-tb-10">
+						<!-- <a href="product" class="stext-106 cl6 hov1 bor3 trans-04 m-r-32 m-tb-5 how-active1" data-filter="*">
 						All Products
 					</a> -->
                     <% if (false) { %> 
@@ -75,22 +103,24 @@
 
 						<!-- Search product -->
 						<div class="dis-none panel-search w-full p-t-10 p-b-15">
-							<div class="bor8 dis-flex p-l-15 ui-widget">
-								<input
-									class="mtext-107 cl2 size-114 plh3 p-r-15"
-									type="text"
-									id="productsearch"
-									name="name"
-									placeholder="Search product, brand or category. . ."
-								/>
-								<button
-									type="submit"
-									class="size-113 flex-c-m fs-16 cl2 hov-cl1 trans-04 hov-search"
-									style="width: 50px"
-								>
-									<i class="zmdi zmdi-search"></i>
-								</button>
-							</div>
+							<form action="search" method="get">
+								<div class="bor8 dis-flex p-l-15 ui-widget">
+									<input
+										class="mtext-107 cl2 size-114 plh3 p-r-15"
+										type="text"
+										id="productsearch"
+										name="name"
+										placeholder="Search product, brand or category. . ."
+									/>
+									<button
+										type="submit"
+										class="size-113 flex-c-m fs-16 cl2 hov-cl1 trans-04 hov-search"
+										style="width: 50px"
+									>
+										<i class="zmdi zmdi-search"></i>
+									</button>
+								</div>
+							</form>
 						</div>
 
 						<!-- Filter -->
@@ -515,13 +545,21 @@
 									<!-- Block2 -->
 									<div class="block2">
 										<div class="block2-pic hov-img0">
+											<a href="/productdetail?id=<%= products[i]._id %>">
 											<img src="/uploads/product-images/<%= products[i].productImages[0] %>" alt="IMG-PRODUCT" />
-											<a href="/productdetail?id=<%= products[i]._id %>"
-												class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04">
-												Quick View
-											</a>
+										</a>
+										
+											<!-- Button Container to Keep Layout Consistent -->
+											<div class="button-container">
+												<!-- Quick View Button -->
+												
+										
+												<!-- Add to Cart Button -->
+												<a href="/carthandler?id=<%= products[i]._id %>" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 add-to-cart-btn">
+													Add to Cart
+												</a>
+											</div>
 										</div>
-					
 										<div class="block2-txt flex-w flex-t p-t-14">
 											<div class="block2-txt-child1 flex-col-l">
 												<a href="/productdetail?id=<%= products[i]._id %>"
@@ -532,13 +570,18 @@
 													$<%= products[i].regularPrice %>
 												</span>
 											</div>
-											<div class="block2-txt-child2 flex-r p-t-3">
+											<div class="block2-txt-child2 flex-c p-t-3">
 												<a href="#" class="btn-addwish-b2 dis-block pos-relative js-addwish-b2">
 													<img class="icon-heart1 dis-block trans-04" src="images/icons/icon-heart-01.png" alt="ICON" />
 													<img class="icon-heart2 dis-block trans-04 ab-t-l" src="images/icons/icon-heart-02.png" alt="ICON" />
 												</a>
-											</div>
+											
+											
+											</div>                    
 										</div>
+										
+										<!-- Add to Cart Button -->
+									
 									</div>
 								</div>
 							<% } %>
@@ -546,6 +589,7 @@
 							<p>No products available.</p>
 						<% } %>
 					</div>
+					
 					
 
 					<!-- Load more -->
@@ -558,7 +602,7 @@
 						</a>
 					</div>
 				</div>
-			</form>
+			</div>
 		</section>
 
 		<!-- Footer -->

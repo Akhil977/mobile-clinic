@@ -25,6 +25,8 @@
     <!-- Main content -->
     <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </head>
     <style>
         /* Professional Product Add Page Styling */
@@ -344,12 +346,9 @@
                    <div class="content-header">
                        <h2 class="content-title">Add New Product</h2>
                    </div>
-               </div>
-               <div class="col-lg-8 mx-auto">
-                   <div class="card mb-4">
+                   <div class="card">
                        <div class="card-body">
-                           <form method="POST" action="/admin/addProducts" enctype="multipart/form-data"
-                               id="addProductForm" onsubmit="return validateForm()">
+                           <form id="productForm" enctype="multipart/form-data">
                                <div class="mb-4">
                                    <label for="product_name" class="form-label">Product Name</label>
                                    <input type="text" placeholder="Type here" name="productName" class="form-control"
@@ -384,22 +383,23 @@
                                    </div>
                                    <div class="col-lg-4 mb-4">
                                        <label class="form-label">Quantity</label>
-                                       <input placeholder="" name="quantity" type="text" class="form-control">
+                                       <input placeholder="Enter quantity" name="quantity" type="number" min="0" class="form-control" required>
                                        <div id="quantity-error" class="error-message"></div>
                                    </div>
                                </div>
    
-                               <div class="row">
-                                   <div class="col-lg-4 mb-4">
-                                       <label class="form-label">Category</label>
-                                       <select class="form-select" name="category">
-                                           <% for(let i=0; i<cat.length; i++) { %>
-                                               <option value="<%=cat[i].name %>"><%=cat[i].name %></option>
-                                           <% } %>
-                                       </select>
-                                       <div id="category-error" class="error-message"></div>
-                                   </div>
-                               </div>
+                           <div class="row">
+    <div class="col-lg-4 mb-4">
+        <label class="form-label">Category</label>
+        <select class="form-select" name="category">
+            <option value="" selected disabled>Select a category</option>
+            <% for(let i = 0; i < cat.length; i++) { %>
+                <option value="<%= cat[i].name %>"><%= cat[i].name %></option>
+            <% } %>
+        </select>
+        <div id="category-error" class="error-message"></div>
+    </div>
+</div>
                              
    
                                <div class="card mb-4 image-upload-section">
@@ -414,7 +414,7 @@
                                            <!-- First Image Upload -->
                                            <div class="image-upload-row mb-3">
                                                <div class="file-input-wrapper">
-                                                   <img src="" alt="Image Preview" id="imgView1" class="image-preview">
+                                                   <img src="" alt="Image Preview"id="imgView1" class="image-preview">
                                                    <input class="form-control file-input" type="file" name="images"
                                                        id="input1" accept="image/png, image/jpeg, image/jpg">
                                                </div>
@@ -463,7 +463,6 @@
            </div>
        </section>
    
-       <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
        <script>
            // Store croppers for each image
            let croppers = {};
@@ -584,53 +583,80 @@
                container.appendChild(thumbnail);
            }
    
-           function validateForm() {
-               let isValid = true;
-               const requiredFields = ['productName', 'description', 'regularPrice', 'category'];
+           document.getElementById('productForm').addEventListener('submit', async function(e) {
+               e.preventDefault();
                
-               requiredFields.forEach(field => {
-                   const input = document.querySelector(`[name="${field}"]`);
-                   const errorElement = document.getElementById(`${field}-error`);
-   
-                   if (!input.value.trim()) {
-                       errorElement.textContent = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
-                       isValid = false;
-                   } else {
-                       errorElement.textContent = '';
-                   }
-               });
-   
-               const totalImages = document.querySelectorAll('#addedImagesContainer .thumbnail').length;
-               if (totalImages < 3 || totalImages > 4) {
+               // Validate quantity
+               const quantityInput = document.querySelector('input[name="quantity"]');
+               const quantity = parseInt(quantityInput.value);
+               
+               if (isNaN(quantity) || quantity < 0) {
                    Swal.fire({
                        icon: 'error',
-                       title: 'Image Count Invalid',
-                       text: 'You must upload between 3 and 4 images',
+                       title: 'Invalid Quantity',
+                       text: 'Quantity must be a positive number',
                        confirmButtonColor: '#3085d6'
                    });
-                   return false;
+                   return;
                }
-   
-               if (isValid) {
-                   return new Promise((resolve) => {
+
+               const formData = new FormData(this);
+               
+               try {
+                   // Show loading state
+                   Swal.fire({
+                       title: 'Adding Product...',
+                       text: 'Please wait',
+                       allowOutsideClick: false,
+                       showConfirmButton: false,
+                       willOpen: () => {
+                           Swal.showLoading();
+                       }
+                   });
+
+                   const response = await fetch('/admin/addProducts', {
+                       method: 'POST',
+                       body: formData
+                   });
+                   
+                   const data = await response.json();
+                   
+                   // Close loading state
+                   Swal.close();
+
+                   if (response.ok) {
+                       // Wait for 2 seconds
+                       await new Promise(resolve => setTimeout(resolve, 2000));
+                       
+                       // Show success message
                        Swal.fire({
-                           title: 'Add Product',
-                           text: 'Are you sure you want to add this product?',
-                           icon: 'warning',
-                           showCancelButton: true,
+                           icon: 'success',
+                           title: 'Success!',
+                           text: data.message || 'Product added successfully!',
                            confirmButtonColor: '#3085d6',
-                           cancelButtonColor: '#d33',
-                           confirmButtonText: 'Yes, add it!'
-                       }).then((result) => {
-                           if (result.isConfirmed) {
-                               document.getElementById('addProductForm').submit();
-                           }
+                           timer: 2000,
+                           showConfirmButton: false
+                       }).then(() => {
+                           window.location.href = '/admin';
                        });
+                   } else {
+                       Swal.fire({
+                           icon: 'error',
+                           title: 'Error',
+                           text: data.message || 'Failed to add product',
+                           confirmButtonColor: '#3085d6'
+                       });
+                   }
+               } catch (error) {
+                   console.error('Error:', error);
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Error',
+                       text: 'Network error or server is not responding. Please try again.',
+                       confirmButtonColor: '#3085d6'
                    });
                }
-   
-               return false;
-           }
+           });
        </script>
    </body>
    </html>

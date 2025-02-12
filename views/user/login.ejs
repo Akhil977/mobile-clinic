@@ -9,15 +9,6 @@
 	<!-- Cart -->
 	<%- include ('component/cart.ejs') %> 
 
-
-	<!-- Title page -->
-	<!-- <section class="bg-img1 txt-center p-lr-15 p-tb-92" style="background-image: url('images/bg-01.jpg');">
-		<h2 class="ltext-105 cl0 txt-center">
-			Contact
-		</h2>
-	</section>	 -->
-
-
 	<!-- Content page -->
 	<% if (successMessage) { %>
 		<div id="successMessage" class="alert alert-success text-center">
@@ -34,7 +25,7 @@
 							Sign In
 						</h4>
 						<div class="bor8 m-b-20 how-pos4-parent">
-							<span id="message-text" class="message-text"></span> <!-- This is where the message will appear -->
+							<span id="login-message" class="message-text"></span>
 						</div>
 					
 						<div class="bor8 m-b-20 how-pos4-parent">
@@ -45,7 +36,7 @@
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="password" name="password" placeholder="Your Password...">
 						</div>
 
-							 <div class="m-b-30">
+						<div class="m-b-30">
 							<a href="/forgot-password" class="stext-111 cl2 hov-cl1 trans-04">
 								Forgot Password?
 							</a>
@@ -54,7 +45,6 @@
 						<input type="submit" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" value="Submit">
 					</form>
 				</div>
-				
 
 				<div class="size-210 bor10 p-lr-70 p-t-55 p-b-70 p-lr-15-lg w-full-md">
 					<button class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" style="position: relative; top: 50%; bottom: 50%;" id="signupbtn">CREATE AN ACCOUNT</button>
@@ -63,7 +53,7 @@
 							Sign Up
 						</h4>
 						<div class="bor8 m-b-20 how-pos4-parent">
-							<span id="message-text" class="message-text"></span> <!-- This is where the message will appear -->
+							<span id="signup-message" class="message-text"></span>
 						</div>
 						<div class="bor8 m-b-20 how-pos4-parent">
 							<input class="stext-111 cl2 plh3 size-116 p-l-62 p-r-30" type="text" name="name" placeholder="First Name Last Name">
@@ -84,83 +74,73 @@
 						<input type="submit" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" value="Submit">
 					</form>
 				
-					<!-- Google Sign-in Button with 'G' -->
+					<!-- Google Sign-in Button -->
 					<div class="txt-center p-t-20">
 						<a href="/auth/google" class="flex-c-m stext-101 cl0 size-121 bg3 bor1 hov-btn3 p-lr-15 trans-04 pointer" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #4285F4;">
 							<span style="font-size: 20px; color: white; font-weight: bold;">G</span>
 						</a>
 					</div>
 				</div>
-			</section>
-	
+			</div>
+		</div>
+	</section>
+
 	<!-- Map -->
 	<div class="map">
 		<div class="size-303" id="google_map" data-map-x="40.691446" data-map-y="-73.886787" data-pin="images/icons/pin.png" data-scrollwhell="0" data-draggable="1" data-zoom="11"></div>
 	</div>
 
-
-
 	<!-- Footer -->
 	<%- include ('component/footer.ejs') %>
 
-<!-- Script -->
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<%- include ('component/script.ejs') %> 
+	<!-- Script -->
+	<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+	<%- include ('component/script.ejs') %> 
 
-</body>
-<script>
-$(document).ready(function() {
-    $('#loginform').submit(function(e) {
-        e.preventDefault();  // Prevent the default form submission
+	<script>
+	$(document).ready(function() {
+		$('#loginform').submit(function(e) {
+			e.preventDefault();
+			const formData = $(this).serialize();
 
-        const formData = $(this).serialize();  // Serialize the form data
-
-        // Send AJAX request to login route
-        $.ajax({
-            url: '/log',  // Your login route
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                // Check if login was successful
-                if (response.success) {
-                    // Redirect to homepage and prevent the login page from being stored in history
-                    window.location.replace('/');  // Replace current page with the homepage
-                } else {
-                    // If login failed, show the error message
-                    $('#message-text').text(response.message).css('color', 'red').show();
-                }
-            },
-            error: function(xhr, status, error) {
-                $('#message-text').text('There was an error, please try again later.').css('color', 'red').show();
-            }
-        });
-    });
-});
-</script>
-<script>
-	$('#signupform').submit(function(e) {
-		e.preventDefault();  // Prevent default form submission
-	
-		const formData = $(this).serialize();  // Serialize form data
-	
-		// Send AJAX request to signup
-		$.ajax({
-			url: '/signup',  // Your signup route
-			type: 'POST',
-			data: formData,
-			success: function(response) {
-				// If there's an error message, show it
-				if (response.errorMessage) {
-					$('#message-text').text(response.errorMessage).css('color', 'red').show();
-				} else {
-					// If no error, redirect to OTP page
-					window.location.replace('/otp'); // Replace current page with OTP page
+			$.ajax({
+				url: '/log',
+				type: 'POST',
+				data: formData,
+				success: function(response) {
+					if (response.success) {
+						window.location.replace('/');
+					} else {
+						$('#login-message').text(response.message).css('color', 'red').show();
+					}
+				},
+				error: function(xhr, status, error) {
+					$('#login-message').text('There was an error, please try again later.').css('color', 'red').show();
 				}
-			},
-			error: function(xhr, status, error) {
-				$('#message-text').text('There was an error, please try again later.').css('color', 'red').show();
-			}
+			});
+		});
+
+		$('#signupform').submit(function(e) {
+			e.preventDefault();
+			const formData = $(this).serialize();
+
+			$.ajax({
+				url: '/signup',
+				type: 'POST',
+				data: formData,
+				success: function(response) {
+					if (response.errorMessage) {
+						$('#signup-message').text(response.errorMessage).css('color', 'red').show();
+					} else {
+						window.location.replace('/otp');
+					}
+				},
+				error: function(xhr, status, error) {
+					$('#signup-message').text('There was an error, please try again later.').css('color', 'red').show();
+				}
+			});
 		});
 	});
-</script>
+	</script>
+</body>
 </html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <%- include ('component/head.ejs') %>
+<body>
+    <%- include ('component/header.ejs') %>
+    <div class="page-container">
+        <!-- Sidebar -->
+        <div class="user-aside">
+            <%- include ('component/useraside.ejs') %>
+        </div>
+
+        <!-- Main Content -->
+        <section class="main-content">
+            <div class="container mt-4">
+                <h5 class="section-title">Order Details</h5>
+                <div class="address-divider"></div>
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <!-- Order Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6>Order #<%= order.orderId %></h6>
+                            <span class="badge 
+                                <% switch(order.status) {
+                                    case 'Pending': %> bg-warning <%
+                                        break;
+                                    case 'Processing': %> bg-info <%
+                                        break;
+                                    case 'Shipped': %> bg-primary <%
+                                        break;
+                                    case 'Delivered': %> bg-success <%
+                                        break;
+                                    case 'Cancelled': %> bg-danger <%
+                                        break;
+                                    default: %> bg-secondary <%
+                                } %>
+                            "><%= order.status %></span>
+                        </div>
+
+                        <!-- Order Information -->
+                        <div class="order-info mb-4">
+                            <% if(order) { %>
+                                <p><strong>Invoice Date:</strong> <%= new Date(order.invoiceDate).toLocaleString('en-IN', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                }) %></p>
+                                <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+                                <p><strong>Coupon Applied:</strong> <%= order.couponApplied ? 'Yes' : 'No' %></p>
+                                
+                                <!-- Delivery Address -->
+                                <div class="delivery-address mt-3">
+                                    <h6>Delivery Address:</h6>
+                                    <% if(address) { %>
+                                        <p class="mb-0"><%= address.name %></p>
+                                        <p class="mb-0"><%= address.landmark %> <%= address.city %> <%= address.state %></p>
+                                        <p class="mb-0"><%= address.country %> <%= address.pincode %></p>
+                                        <p><%= address.phone %></p>
+                                    <% } else { %>
+                                        <p>No address available</p>
+                                    <% } %>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Ordered Items -->
+                        <h6 class="mb-3">Ordered Items</h6>
+                        <div class="ordered-items">
+                            <% if(products && products.length > 0) { %>
+                                <div class="row">
+                                    <% products.forEach(function(item) { %>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="product-card p-3 border rounded">
+    <div class="d-flex">
+        <img class="product-image me-3" 
+             src="<%= item.productImage %>" 
+             alt="<%= item.productName %>" 
+             style="width: 80px; height: 80px; object-fit: cover;">
+        <div class="product-info">
+            <h6 class="mb-1"><%= item.productName %></h6>
+            <p class="mb-1">Quantity: <%= item.quantity %></p>
+            <p class="mb-1">Price: ₹<%= item.price %></p>
+            <p class="mb-0"><strong>Total: ₹<%= item.total %></strong></p>
+        </div>
+    </div>
+</div>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            <% } else { %>
+                                <p>No items in the order.</p>
+                            <% } %>
+                        </div>
+
+                        <!-- Order Totals -->
+                        <div class="order-totals mt-4 pt-3 border-top">
+                            <div class="row">
+                                <div class="col-md-6 ms-auto">
+                                    <p class="d-flex justify-content-between mb-2">
+                                        <span>Total Price:</span>
+                                        <strong>₹<%= order.totalPrice %></strong>
+                                    </p>
+                                    <p class="d-flex justify-content-between mb-2">
+                                        <span>Discount:</span>
+                                        <strong>₹<%= order.discount %></strong>
+                                    </p>
+                                    <p class="d-flex justify-content-between mb-0">
+                                        <span>Final Amount:</span>
+                                        <strong>₹<%= order.finalAmount %></strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="order-actions mt-4 text-end">
+    <% if (order.status !== 'Cancelled') { %>
+        <% if (order.status === 'Delivered') { %>
+            <button class="btn btn-warning" onclick="handleReturn('<%= order.orderId %>')">
+                <i class="fas fa-undo-alt me-2"></i>Return Order
+            </button>
+        <% } else { %>
+            <button class="btn btn-danger" onclick="handleCancel('<%= order.orderId %>')">
+                <i class="fas fa-times-circle me-2"></i>Cancel Order
+            </button>
+        <% } %>
+    <% } %>
+</div>
+                    </div>
+                    
+                </div>
+      
+            </div>
+            <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelForm">
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">Please select reason for cancellation:</label>
+                        <select class="form-select" id="cancelReason" required>
+                            <option value="">Choose a reason</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Found better price elsewhere">Found better price elsewhere</option>
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Shipping time too long">Shipping time too long</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="cancelOtherReasonDiv" style="display: none;">
+                        <label for="cancelOtherReason" class="form-label">Please specify other reason:</label>
+                        <textarea class="form-control" id="cancelOtherReason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="confirmCancel">Confirm Cancellation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnModalLabel">Return Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="returnForm">
+                    <div class="mb-3">
+                        <label for="returnReason" class="form-label">Please select reason for return:</label>
+                        <select class="form-select" id="returnReason" required>
+                            <option value="">Choose a reason</option>
+                            <option value="Product damaged">Product damaged</option>
+                            <option value="Wrong item received">Wrong item received</option>
+                            <option value="Product not as described">Product not as described</option>
+                            <option value="Size/fit issue">Size/fit issue</option>
+                            <option value="Quality issue">Quality issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="returnOtherReasonDiv" style="display: none;">
+                        <label for="returnOtherReason" class="form-label">Please specify other reason:</label>
+                        <textarea class="form-control" id="returnOtherReason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" id="confirmReturn">Confirm Return</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </section>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentOrderId = '';
+
+        // Cancel Order Modal Trigger
+        function handleCancel(orderId) {
+            currentOrderId = orderId;
+            const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            cancelModal.show();
+        }
+
+        // Return Order Modal Trigger
+        function handleReturn(orderId) {
+            currentOrderId = orderId;
+            const returnModal = new bootstrap.Modal(document.getElementById('returnModal'));
+            returnModal.show();
+        }
+
+        // Attach global window functions
+        window.handleCancel = handleCancel;
+        window.handleReturn = handleReturn;
+
+        // Handle "Other" reason selection for cancel
+        const cancelReasonSelect = document.getElementById('cancelReason');
+        if (cancelReasonSelect) {
+            cancelReasonSelect.addEventListener('change', function() {
+                const otherReasonDiv = document.getElementById('cancelOtherReasonDiv');
+                otherReasonDiv.style.display = this.value === 'Other' ? 'block' : 'none';
+            });
+        }
+
+        // Handle "Other" reason selection for return
+        const returnReasonSelect = document.getElementById('returnReason');
+        if (returnReasonSelect) {
+            returnReasonSelect.addEventListener('change', function() {
+                const otherReasonDiv = document.getElementById('returnOtherReasonDiv');
+                otherReasonDiv.style.display = this.value === 'Other' ? 'block' : 'none';
+            });
+        }
+
+        // Confirm Cancel
+        const confirmCancelBtn = document.getElementById('confirmCancel');
+        if (confirmCancelBtn) {
+            confirmCancelBtn.addEventListener('click', async function() {
+                const reasonSelect = document.getElementById('cancelReason');
+                const otherReasonText = document.getElementById('cancelOtherReason');
+                
+                if (!reasonSelect.value) {
+                    alert('Please select a reason for cancellation');
+                    return;
+                }
+
+                const reason = reasonSelect.value === 'Other' ? otherReasonText.value : reasonSelect.value;
+                
+                if (reasonSelect.value === 'Other' && !otherReasonText.value.trim()) {
+                    alert('Please specify the other reason');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/orders/cancel?orderId=${currentOrderId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const data = await response.json();
+                        alert(data.message || 'Failed to cancel order');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while cancelling the order');
+                }
+            });
+        }
+
+        // Confirm Return
+        const confirmReturnBtn = document.getElementById('confirmReturn');
+        if (confirmReturnBtn) {
+            confirmReturnBtn.addEventListener('click', async function() {
+                const reasonSelect = document.getElementById('returnReason');
+                const otherReasonText = document.getElementById('returnOtherReason');
+                
+                if (!reasonSelect.value) {
+                    alert('Please select a reason for return');
+                    return;
+                }
+
+                const reason = reasonSelect.value === 'Other' ? otherReasonText.value : reasonSelect.value;
+                
+                if (reasonSelect.value === 'Other' && !otherReasonText.value.trim()) {
+                    alert('Please specify the other reason');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/orders/return?orderId=${currentOrderId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        const data = await response.json();
+                        alert(data.message || 'Failed to initiate return');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing return request');
+                }
+            });
+        }
+    });
+    </script>
+
+    <!-- Styles -->
+    <style>
+        .order-actions {
+    border-top: 1px solid #dee2e6;
+    padding-top: 20px;
+}
+
+.order-actions .btn {
+    padding: 8px 20px;
+    font-size: 0.9rem;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+    .page-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .user-aside {
+        width: 220px;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .address-divider {
+        height: 1px;
+        background-color: #dee2e6;
+        margin: 15px 0;
+    }
+    .section-title {
+        color: #495057;
+        font-weight: 500;
+        margin-left: 15px;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .product-card {
+        background-color: #fff;
+        transition: transform 0.2s;
+    }
+    .product-card:hover {
+        transform: translateY(-2px);
+    }
+    .product-image {
+        border-radius: 8px;
+    }
+    .delivery-address {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .order-totals {
+        font-size: 0.95rem;
+    }
+    .order-info p {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    </style>
+</body>
+</html>

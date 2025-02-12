@@ -1,63 +1,387 @@
 <!DOCTYPE html>
 <html lang="en">
     <%- include ('component/head.ejs') %>
-<body class="hold-transition skin-blue sidebar-mini">
-<div class="wrapper">
-  <%- include ('component/header.ejs') %> 
-  <!-- Left side column. contains the logo and sidebar -->
-  <%- include ('component/useraside.ejs') %> 
+<body>
+    <%- include ('component/header.ejs') %>
+    <div class="page-container">
+        <%- include ('component/useraside.ejs') %>
+        <!-- Main Content -->
+        <div class="main-content">
+            <section class="profile-section">
+                <h2>Your Profile</h2>
+                <!-- Display user details -->
+                <div class="profile-info">
+                    <p>
+                        <strong>Name:</strong>
+                        <span id="nameDisplay"><%= user.name %></span>
+                        <input type="text" id="nameInput" value="<%= user.name %>" class="edit-input" style="display: none;">
+                        <button onclick="toggleEdit('name')" id="nameEditBtn" class="edit-btn">✎</button>
+                        <button onclick="saveEdit('name')" id="nameSaveBtn" class="save-btn" style="display: none;">Save</button>
+                    </p>
+                    <p><strong>Email:</strong> <%= user.email %></p>
+                    
+                    <% if(user.phone) { %>
+                        <p>
+                            <strong>Phone:</strong>
+                            <span id="phoneDisplay"><%= user.phone %></span>
+                            <input type="text" id="phoneInput" value="<%= user.phone %>" maxlength="10" class="edit-input" style="display: none;">
+                            <button onclick="toggleEdit('phone')" id="phoneEditBtn" class="edit-btn">✎</button>
+                            <button onclick="saveEdit('phone')" id="phoneSaveBtn" class="save-btn" style="display: none;">Save</button>
+                            
+                        </p>
+                    <% } else { %>
+                        <p><strong>Phone:</strong> Sign in with Google</p>
+                    <% } %>
+                    <p>
+                        <strong>Primary
+                             Address:</strong>
+                        <select id="addressSelect" class="address-dropdown">
+                            <option value="Address 1">Address 1</option>
+                            <option value="Address 2">Address 2</option>
+                            <option value="Address 3">Address 3</option>
+                        </select>
+                    </p>
+                </div>
+                <!-- Edit Profile and Change Password Links -->
+                <div class="profile-actions">
+                    <a href="/edit-profile" class="btn">Edit Profile</a>
+                    <a href="javascript:void(0)" onclick="showPasswordChange()" class="btn">Change Password</a>
+                </div>
 
-  <section class="profile-section">
-    <h2>Your Profile</h2>
-
-    <!-- Display user details -->
-    <div class="profile-info">
-      <p><strong>Name:</strong> gjyhgvj</p>
-      <p><strong>Email:</strong> sgsrgsrg</p>
-      <p><strong>Phone:</strong> suhviushvig</p>
-      <p><strong>Address:</strong> sgvsgvrsg</p>
+                <div class="password-section" style="display: none;">
+                    <h3>Change Password</h3>
+                    <div class="password-form">
+                        <p>
+                            <strong>Old Password:</strong>
+                            <input type="password" id="oldPassword" class="password-input">
+                        </p>
+                        <div id="newPasswordFields" style="display: none;">
+                            <p>
+                                <strong>New Password:</strong>
+                                <input type="password" id="newPassword" class="password-input">
+                            </p>
+                            <p>
+                                <strong>Confirm Password:</strong>
+                                <input type="password" id="confirmPassword" class="password-input">
+                            </p>
+                        </div>
+                        <div class="password-actions">
+                            <button onclick="verifyOldPassword()" id="verifyBtn" class="btn">Verify Password</button>
+                            
+                            <button onclick="updatePassword()" id="updatePasswordBtn" style="display: none;" class="btn">Update Password</button>
+                            <button onclick="cancelPasswordChange()" class="btn btn-secondary">Cancel</button>
+                            <a href="/forgot-password" class="forgot-password">Forgot Password?</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
+    
+      
+    <script>
 
-    <!-- Edit Profile and Change Password Links -->
-    <div class="profile-actions">
-      <a href="/edit-profile" class="btn">Edit Profile</a>
-      <a href="/change-password" class="btn">Change Password</a>
-    </div>
-  </section>
 
-  <style>
-    .profile-section {
-      padding: 20px;
-      max-width: 600px;
-      margin: 0 auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background-color: #f9f9f9;
+
+function showPasswordChange() {
+    document.querySelector('.profile-info').style.display = 'none';
+    document.querySelector('.profile-actions').style.display = 'none';
+    document.querySelector('.password-section').style.display = 'block';
+}
+
+function cancelPasswordChange() {
+    document.querySelector('.profile-info').style.display = 'block';
+    document.querySelector('.profile-actions').style.display = 'block';
+    document.querySelector('.password-section').style.display = 'none';
+    // Reset all password fields
+    document.getElementById('oldPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    document.getElementById('newPasswordFields').style.display = 'none';
+    document.getElementById('verifyBtn').style.display = 'block';
+    document.getElementById('updatePasswordBtn').style.display = 'none';
+}
+
+function verifyOldPassword() {
+    const oldPassword = document.getElementById('oldPassword').value;
+    
+    fetch('/updatePassword', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+           
+        },
+        body: JSON.stringify({ oldPassword })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Invalid password');
+        return response.json();
+    })
+    .then(data => {
+        if (data.verified) {
+            document.getElementById('newPasswordFields').style.display = 'block';
+            document.getElementById('verifyBtn').style.display = 'none';
+            document.getElementById('updatePasswordBtn').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        alert('Current password is incorrect');
+    });
+}
+
+function updatePassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
     }
-
-    .profile-info p {
-      font-size: 1.2em;
-      margin-bottom: 10px;
+    
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
     }
+    
+    fetch('/update-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+         
+        },
+        body: JSON.stringify({ newPassword })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to update password');
+        return response.json();
+    })
+    .then(data => {
+        alert('Password updated successfully');
+        cancelPasswordChange();
+    })
+    .catch(error => {
+        alert('Failed to update password');
+    });
+}
 
-    .profile-actions {
-      margin-top: 20px;
-    }
+        function toggleEdit(field) {
+            document.getElementById(field + 'Display').style.display = 'none';
+            document.getElementById(field + 'Input').style.display = 'inline-block';
+            document.getElementById(field + 'EditBtn').style.display = 'none';
+            document.getElementById(field + 'SaveBtn').style.display = 'inline-block';
+        }
+        
+        function saveEdit(field) {
+            const inputElement = document.getElementById(field + 'Input');
+            const displayElement = document.getElementById(field + 'Display');
+            const previousValue = displayElement.textContent;
+            const newValue = inputElement.value;
 
-    .btn {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      text-decoration: none;
-      margin-right: 10px;
-    }
+            fetch("/profile", {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                   
+                },
+                body: JSON.stringify({ [field]: newValue })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Update failed');
+                return response.json();
+            })
+            .then(updatedUser => {
+                displayElement.textContent = updatedUser[field];
+                toggleEditUI(field, false);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to save changes');
+                inputElement.value = previousValue;
+                toggleEditUI(field, true);
+            });
+        }
 
-    .btn:hover {
-      background-color: #0056b3;
-    }
-  </style>
-</div> <!-- End of wrapper -->
+        function toggleEditUI(field, showEdit) {
+            const displayElement = document.getElementById(field + 'Display');
+            const inputElement = document.getElementById(field + 'Input');
+            const editBtn = document.getElementById(field + 'EditBtn');
+            const saveBtn = document.getElementById(field + 'SaveBtn');
 
+            if (showEdit) {
+                displayElement.style.display = 'inline';
+                inputElement.style.display = 'none';
+                editBtn.style.display = 'inline-block';
+                saveBtn.style.display = 'none';
+            } else {
+                displayElement.style.display = 'inline';
+                inputElement.style.display = 'none';
+                editBtn.style.display = 'inline-block';
+                saveBtn.style.display = 'none';
+            }
+        }
+    </script>
+    
+    <style>
+.password-section {
+    margin-top: 20px;
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.password-input {
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 250px;
+}
+
+.password-actions {
+    margin-top: 15px;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.password-form p {
+    margin-bottom: 15px;
+}
+
+
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            min-height: 100vh;
+        }
+
+        .page-container {
+            display: flex;
+            margin-top: 80px; /* Height of header */
+            min-height: calc(100vh - 80px);
+        }
+
+        .main-sidebar {
+            width: 250px;
+            background: #fff;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px 20px 20px 10px;
+            margin-left: 250px;
+            background: #f4f4f4;
+        }
+
+        .profile-section {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin-top: 0;
+        }
+
+        .profile-info p {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        .profile-info strong {
+            display: inline-block;
+            width: 100px;
+            color: #666;
+        }
+
+        .profile-actions {
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .edit-input {
+            display: none;
+            margin-left: 10px;
+            padding: 5px;
+        }
+
+        .edit-btn {
+    margin-left: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    background: transparent;
+    color: #007bff;
+    border: none;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.save-btn {
+    margin-left: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    transition: 0.3s;
+}
+
+        .save-btn {
+            background: #28a745;
+        }
+
+        .edit-btn:hover {
+            background: #0056b3;
+        }
+
+        .save-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+            .page-container {
+                flex-direction: column;
+            }
+
+            .main-sidebar {
+                position: relative;
+                width: 100%;
+                box-shadow: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+        }
+    </style>
 </body>
 </html>

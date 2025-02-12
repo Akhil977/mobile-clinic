@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+	<%- include ('component/head.ejs') %> 
+<body class="animsition">
+	
+	<!-- Header -->
+	<%- include ('component/header.ejs') %> 
+
+	<!-- Cart -->
+	<%- include ('component/cart.ejs') %> 
+
+	<!-- breadcrumb -->
+	<div class="container">
+		<div class="bread-crumb flex-w p-l-25 p-r-15 p-t-30 p-lr-0-lg">
+			<a href="/" class="stext-109 cl8 hov-cl1 trans-04">
+				Home
+				<i class="fa fa-angle-right m-l-9 m-r-10" aria-hidden="true"></i>
+			</a>
+			<span class="stext-109 cl4">Shopping Cart</span>
+		</div>
+	</div>
+		
+	<!-- Shopping Cart -->
+	<div class="bg0 p-t-75 p-b-85">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-10 m-lr-auto m-b-50">
+					<div class="m-l-25 m-r--38 m-lr-0-xl">
+						<div class="wrap-table-shopping-cart">
+							<table class="table-shopping-cart">
+								<thead>
+									<tr class="table_head">
+										<th class="column-1">Product</th>
+										<th class="column-2">Name</th>
+										<th class="column-3">Price</th>
+										<th class="column-4">Quantity</th>
+										<th class="column-5">Total</th>
+										<th class="column-6">Action</th>
+									</tr>
+								</thead>
+								<tbody>
+									<% let total = 0; %>
+									<% if (cart && Array.isArray(cart.item) && cart.item.length > 0) { %>
+										<% cart.item.forEach(cartItem => { %>
+											<% const product = cartItem.productId; %>
+											<% if (product) { %>
+												<% if (product.quantity > 0 && product.status === "available") { %>
+													<% total += cartItem.totalPrice; %>
+												<% } %>
+												<tr class="table_row" id="cart-item-<%= product._id %>">
+													<td class="column-1">
+														<div class="how-itemcart1">
+															<img src="/uploads/product-images/<%= product.productImages[0] %>" alt="IMG">
+														</div>
+													</td>
+													<td class="column-2"><%= product.productName %></td>
+													<td class="column-3">₹<%= cartItem.price %></td>
+													<td class="column-4">
+														<% if (product.quantity <= 0 || product.status !== "available") { %>
+															<span class="text-danger font-weight-bold">Out of Stock</span>
+															<input type="hidden" class="quantity-input" 
+																data-product-id="<%= product._id %>"
+																data-available-quantity="0"
+																value="0">
+														<% } else { %>
+															<div class="wrap-num-product flex-w m-l-auto m-r-0">
+																<button type="button" class="btn-num-product-down cl8 hov-btn3 trans-04 flex-c-m quantity-btn minus"
+																	data-product-id="<%= product._id %>">
+																	<i class="fs-16 zmdi zmdi-minus"></i>
+																</button>
+
+																<input class="mtext-104 cl3 txt-center num-product quantity-input" 
+																	type="number" 
+																	name="num-product1" 
+																	value="<%= cartItem.quantity %>"
+																	data-product-id="<%= product._id %>"
+																	data-available-quantity="<%= product.quantity %>"
+																	min="1"
+																	max="<%= product.quantity %>"
+																	readonly>
+
+																<button type="button" class="btn-num-product-up cl8 hov-btn3 trans-04 flex-c-m quantity-btn plus"
+																	data-product-id="<%= product._id %>">
+																	<i class="fs-16 zmdi zmdi-plus"></i>
+																</button>
+															</div>
+														<% } %>
+													</td>
+													<td class="column-5 product-total">
+														<% if (product.quantity <= 0 || product.status !== "available") { %>
+															<span class="text-danger">Out of Stock</span>
+														<% } else { %>
+															₹<%= cartItem.totalPrice %>
+														<% } %>
+													</td>
+													<td class="column-6">
+														<button type="button" 
+															class="delete-cart-item" 
+															data-product-id="<%= product._id %>">
+															×
+														</button>
+													</td>
+												</tr>
+											<% } %>
+										<% }); %>
+									<% } else { %>
+										<tr>
+											<td colspan="6" class="text-center p-4">
+												<p class="h5">Your cart is empty</p>
+												<a href="/product" class="btn btn-primary mt-3">Continue Shopping</a>
+											</td>
+										</tr>
+									<% } %>
+								</tbody>
+							</table>
+						</div>
+
+						<div class="flex-w flex-sb-m bor15 p-t-18 p-b-15 p-lr-40 p-lr-15-sm">
+							<div class="flex-w flex-m m-r-20 m-tb-5">
+								<div class="flex-c-m stext-101 cl2 size-119 bg8 bor13 hov-btn3 p-lr-15 trans-04 pointer m-tb-10">
+									Cart Total: ₹<span id="cart-total"><%= total %></span>
+								</div>
+							</div>
+
+							<div class="flex-w flex-m m-r-20 m-tb-5">
+								<a href="/product" class="flex-c-m stext-101 cl2 size-119 bg8 bor13 hov-btn3 p-lr-15 trans-04 pointer m-tb-10">
+									Continue Shopping
+								</a>
+								<a href="<%= cart && cart.item && cart.item.length > 0 ? '/checkout' : '#' %>" 
+									class="flex-c-m stext-101 cl0 size-119 bg3 bor14 hov-btn3 p-lr-15 trans-04 pointer m-tb-10 <%= !cart || !cart.item || cart.item.length === 0 ? 'disabled' : '' %>">
+									Proceed to Checkout
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Footer -->
+	<%- include ('component/footer.ejs') %> 
+
+	<!-- Scripts -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	
+	<!-- Include other scripts -->
+	<%- include ('component/script.ejs') %> 
+
+	<!-- Add toastr -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			console.log('DOM fully loaded');
+			
+			// Function to handle quantity updates
+			function handleQuantityUpdate(element, isIncrease) {
+				const productId = element.dataset.productId;
+				const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+				
+				if (!input) {
+					console.error('Quantity input not found for product:', productId);
+					return;
+				}
+
+				const availableQuantity = parseInt(input.dataset.availableQuantity) || 0;
+				const currentValue = parseInt(input.value) || 0;
+				
+				console.log('Button clicked:', isIncrease ? 'plus' : 'minus');
+				console.log('Current value:', currentValue);
+				console.log('Available quantity:', availableQuantity);
+				
+				// Don't allow updates if product is out of stock
+				if (availableQuantity <= 0) {
+					if (window.toastr) {
+						toastr.error('This product is out of stock');
+					} else {
+						alert('This product is out of stock');
+					}
+					return;
+				}
+
+				let newValue = currentValue;
+				
+				if (isIncrease) {
+					if (currentValue < availableQuantity) {
+						newValue = currentValue + 1;
+						console.log('Increasing to:', newValue);
+					} else {
+						if (window.toastr) {
+							toastr.warning(`Cannot exceed available quantity (${availableQuantity})`);
+						} else {
+							alert(`Cannot exceed available quantity (${availableQuantity})`);
+						}
+						return;
+					}
+				} else {
+					if (currentValue > 1) {
+						newValue = currentValue - 1;
+						console.log('Decreasing to:', newValue);
+					} else {
+						if (window.toastr) {
+							toastr.warning('Quantity cannot be less than 1');
+						} else {
+							alert('Quantity cannot be less than 1');
+						}
+						return;
+					}
+				}
+
+				if (newValue !== currentValue) {
+					console.log('Updating quantity to:', newValue);
+					input.value = newValue;
+					updateCartQuantity(productId, newValue);
+				}
+			}
+
+			// Add click handlers for plus and minus buttons
+			document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+				btn.addEventListener('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					handleQuantityUpdate(this, true);
+				});
+			});
+
+			document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+				btn.addEventListener('click', function(e) {
+					e.preventDefault();
+					e.stopPropagation();
+					handleQuantityUpdate(this, false);
+				});
+			});
+
+			// Initialize quantity inputs for manual changes
+			document.querySelectorAll('.quantity-input').forEach(input => {
+				// Make input readonly to prevent direct editing
+				input.readOnly = true;
+			});
+
+			// Add event listener for delete buttons
+			document.querySelectorAll('.delete-cart-item').forEach(button => {
+				button.addEventListener('click', function() {
+					const productId = this.dataset.productId;
+					console.log('Delete button clicked for product:', productId);
+
+					fetch('/removecart', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ id: productId })
+					})
+					.then(response => response.json())
+					.then(data => {
+						console.log('Delete response:', data);
+						
+						if (data.success) {
+							// Remove the row from the table
+							const row = document.getElementById(`cart-item-${productId}`);
+							if (row) {
+								row.remove();
+							}
+
+							// Update cart total
+							updateCartTotal();
+
+							// Show success message
+							if (window.toastr) {
+								toastr.success(data.message);
+							} else {
+								alert(data.message);
+							}
+
+							// If cart is now empty, show empty cart message
+							const tableBody = document.querySelector('.table-shopping-cart tbody');
+							if (tableBody.children.length === 0) {
+								tableBody.innerHTML = `
+									<tr>
+										<td colspan="6" class="text-center p-4">
+											<p class="h5">Your cart is empty</p>
+											<a href="/product" class="btn btn-primary mt-3">Continue Shopping</a>
+										</td>
+									</tr>
+								`;
+							}
+						} else {
+							// Show error message
+							if (window.toastr) {
+								toastr.error(data.message);
+							} else {
+								alert(data.message);
+							}
+						}
+					})
+					.catch(error => {
+						console.error('Error deleting product:', error);
+						if (window.toastr) {
+							toastr.error('Failed to remove product from cart');
+						} else {
+							alert('Failed to remove product from cart');
+						}
+					});
+				});
+			});
+
+			// Initialize delete buttons
+			document.querySelectorAll('.delete-cart-item').forEach(button => {
+				button.addEventListener('click', function(e) {
+					e.preventDefault();
+					const productId = this.dataset.productId;
+					removeCartItem(productId);
+				});
+			});
+
+			function updateCartQuantity(productId, quantity) {
+				console.log('Sending update request:', { productId, quantity });
+				
+				fetch('/updatecart', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ productId, quantity })
+				})
+				.then(response => {
+					console.log('Got response:', response.status);
+					return response.json();
+				})
+				.then(data => {
+					console.log('Update response:', data);
+					
+					if (data.success) {
+						// Update quantity input
+						const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+						if (input) {
+							input.value = data.quantity;
+						}
+						
+						// Update total price for this item
+						const totalPriceElement = document.querySelector(`#cart-item-${productId} .product-total`);
+						if (totalPriceElement) {
+							totalPriceElement.textContent = '₹' + data.totalPrice;
+						}
+						
+						// Update cart total
+						updateCartTotal();
+						
+						if (window.toastr) {
+							toastr.success(data.message);
+						}
+					} else {
+						console.error('Update failed:', data.message);
+						
+						// Handle error cases
+						if (data.message.includes('out of stock')) {
+							const row = document.querySelector(`#cart-item-${productId}`);
+							if (row) {
+								// Update quantity cell
+								const quantityCell = row.querySelector('.column-4');
+								if (quantityCell) {
+									quantityCell.innerHTML = '<span class="text-danger font-weight-bold">Out of Stock</span>' +
+										'<input type="hidden" class="quantity-input" ' +
+										`data-product-id="${productId}" ` +
+										'data-available-quantity="0" value="0">';
+								}
+								// Update total price cell
+								const totalPriceCell = row.querySelector('.product-total');
+								if (totalPriceCell) {
+									totalPriceCell.innerHTML = '<span class="text-danger">Out of Stock</span>';
+								}
+								// Update cart total since this item is now out of stock
+								updateCartTotal();
+							}
+						} else if (data.message.includes('exceeds available stock')) {
+							const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+							if (input) {
+								input.value = data.availableQuantity;
+								if (window.toastr) {
+									toastr.warning(`Quantity adjusted to maximum available stock (${data.availableQuantity})`);
+								}
+								updateCartQuantity(productId, data.availableQuantity);
+							}
+						}
+						
+						if (window.toastr) {
+							toastr.error(data.message);
+						} else {
+							alert(data.message);
+						}
+					}
+				})
+				.catch(error => {
+					console.error('Error updating quantity:', error);
+					if (window.toastr) {
+						toastr.error('Failed to update quantity');
+					} else {
+						alert('Failed to update quantity');
+					}
+				});
+			}
+
+			function updateCartTotal() {
+				let total = 0;
+				document.querySelectorAll('.product-total').forEach(el => {
+					const priceText = el.textContent.trim();
+					if (priceText.startsWith('₹')) {
+						const price = parseFloat(priceText.replace('₹', '')) || 0;
+						console.log('Adding price to total:', price);
+						total += price;
+					}
+				});
+				console.log('New total:', total);
+				const totalEl = document.getElementById('cart-total');
+				if (totalEl) {
+					totalEl.textContent = total.toFixed(2);
+				}
+			}
+		});
+	</script>
+</body>
+</html>

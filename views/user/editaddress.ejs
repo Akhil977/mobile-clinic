@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+    <%- include ('component/head.ejs') %>
+<body>
+    <%- include ('component/header.ejs') %>
+    <div class="page-container">
+        <div class="user-aside">
+            <%- include ('component/useraside.ejs') %>
+        </div>
+
+        <section class="main-content">
+            <div class="container mt-4">
+                <div class="form-container">
+                    <h4 class="mb-4">Edit Address</h4>
+                    <form action="/editaddress/<%= address._id %>" method="POST">
+                        <!-- Add method override for PUT if needed -->
+                        <input type="hidden" name="_method" value="PUT">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Address Type</label>
+                                <select class="form-select" name="addressType" required>
+                                    <option value="Home" <%= address.addressType === 'Home' ? 'selected' : '' %>>Home</option>
+                                    <option value="Work" <%= address.addressType === 'Work' ? 'selected' : '' %>>Work</option>
+                                    <option value="Other" <%= address.addressType === 'Other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" name="name" 
+                                       value="<%= address.name %>" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" name="city" 
+                                       value="<%= address.city %>" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Landmark</label>
+                                <input type="text" class="form-control" name="landMark" 
+                                       value="<%= address.landMark %>" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">State</label>
+                                <input type="text" class="form-control" name="state" 
+                                       value="<%= address.state %>" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pincode</label>
+                                <input type="number" class="form-control" name="pincode" 
+                                       value="<%= address.pincode %>" maxlength="6" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" name="phone" 
+                                       value="<%= address.phone %>" maxlength="10" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Alternative Phone</label>
+                                <input type="tel" class="form-control" name="altPhone" 
+                                       value="<%= address.altPhone %>" maxlength="10" required>
+                            </div>
+                        </div>
+                        <div class="action-buttons mt-4">
+                            <a href="/user-address" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Address</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Keep the same styles as original -->
+    <style>
+    .page-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .user-aside {
+        width: 220px;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .main-content {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .form-container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .action-buttons {
+        display: flex;
+        justify-content: flex-end;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    </style>
+</body>
+</html>

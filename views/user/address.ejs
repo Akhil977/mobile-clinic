@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <%- include ('component/head.ejs') %>
+<body>
+    <%- include ('component/header.ejs') %>
+    <div class="page-container">
+        <!-- Sidebar -->
+        <div class="user-aside">
+            <%- include ('component/useraside.ejs') %>
+        </div>
+
+        <!-- Main Content -->
+        <section class="main-content">
+            <div class="container mt-4">
+                <div class="add-address-section">
+                    <div class="address-box" data-bs-toggle="modal" data-bs-target="#addressModal">
+                        <div class="plus-icon">+</div>
+                        <p>Add Address</p>
+                    </div>
+                </div>
+
+                <div class="address-list-section mt-4">
+                    <h5 class="section-title">Your Addresses</h5>
+                    <div class="address-divider"></div>
+                    
+                    <% if (addresses && addresses.length > 0) { %>
+                        <div class="row mt-3">
+                            <% addresses.forEach((address, index) => { %>
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <h6>Address <%= index + 1 %></h6>
+                                                <div class="address-actions">
+                                                    <a href="/editaddress?id=<%= address._id %>" class="btn btn-sm btn-warning">
+                                                        <i class="fa-solid fa-edit"></i>
+                                                    </a>
+                                                    <button class="btn btn-sm btn-link text-danger" onclick="deleteAddress('<%= address._id %>')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="address-details">
+                                                <p class="type-label"><%= address.addressType %></p>
+                                                <p><%= address.name %></p>
+                                                <p><%= address.landMark %></p>
+                                                <p><%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
+                                                <p>Phone: <%= address.phone %></p>
+                                                <p>Alt: <%= address.altPhone %></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="no-address text-center mt-3">
+                            <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
+                            <p>No addresses added yet</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal for Add/Edit Address -->
+   
+
+    <!-- Styles -->
+    <style>
+    .page-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .user-aside {
+        width: 220px;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .main-content {
+        flex: 1; 
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .add-address-section {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+    }
+    .address-box {
+        width: 200px;
+        height: 200px;
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background-color: white;
+    }
+    .address-box:hover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .plus-icon {
+        font-size: 48px;
+        color: #6c757d;
+        line-height: 1;
+        margin-bottom: 10px;
+    }
+    .address-divider {
+        height: 1px;
+        background-color: #dee2e6;
+        margin: 15px 0;
+    }
+    .section-title {
+        color: #495057;
+        font-weight: 500;
+        margin-left: 15px;
+    }
+    .address-details p {
+        margin-bottom: 0.3rem;
+        font-size: 0.9rem;
+    }
+    .type-label {
+        color: #6c757d;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.8rem !important;
+    }
+    .no-address {
+        color: #6c757d;
+        padding: 30px;
+        background-color: white;
+        border-radius: 8px;
+        margin: 0 15px;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .address-actions button {
+        padding: 0.25rem 0.5rem;
+    }
+    .address-actions button:hover {
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    </style>
+
+    <!-- Scripts -->
+    <script>
+    function editAddress(id) {
+        fetch(`/address/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('addressForm').action = `/address/edit/${id}`;
+                for (let key in data) {
+                    const input = document.querySelector(`[name="${key}"]`);
+                    if (input) input.value = data[key];
+                }
+                new bootstrap.Modal(document.getElementById('addressModal')).show();
+            });
+    }
+
+    function deleteAddress(id) {
+        if (confirm('Are you sure you want to delete this address?')) {
+            fetch(`/deleteaddress/${id}`, { method: 'DELETE' })
+                .then(() => location.reload());
+        }
+    }
+    document.querySelector('.address-box').addEventListener('click', () => {
+    window.location.href = '/add-address';
+});
+    </script>
+</body>
+</html>

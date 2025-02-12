@@ -11,26 +11,26 @@ const path = require('path');
 
 const imageDir = path.join(__dirname,"../public/uploads");
 
-// Admin Login and Dashboard
+
 router.get('/login', adminAuth.adminAuth, adminController.loadlogin);
 router.post("/login", adminController.login);
 router.get("/", adminAuth.adminCheck, adminController.loadDashboard);
 router.get("/logout-admin", adminAuth.adminCheck, adminController.adminLogout);
 
-// User Management
 router.get("/userManagement", adminAuth.adminCheck, customerController.customerInfo);
 router.post('/blockCustomer', adminAuth.adminCheck, customerController.blockUnblockCustomer);
 
-// Category Management'/admin/addCategory'
+
 
 router.get('/category', adminAuth.adminCheck, categoryController.categoryInfo);
 router.post('/addCategory', adminAuth.adminCheck, categoryController.addCategory);
-router.post('/addCategoryOffer',adminAuth.adminCheck,categoryController.addCategoryOffer);
-  router.post('/removeCategoryOffer',adminAuth.adminCheck,categoryController.removeCategoryOffer);
+
   router.get('/listCategory', adminAuth.adminCheck, categoryController.getListCategory);
   router.get('/unlistCategory', adminAuth.adminCheck, categoryController.getUnlistCategory);
-  // router.get('/editCategory', adminAuth.adminCheck, categoryController.getEditCategory);
-  // router.post('/editCategory/:id', adminAuth.adminCheck, categoryController.editCategory)
+  router.get('/editCategory', adminAuth.adminCheck, categoryController.getEditCategory);
+  
+router.put('/categories/update/:id', categoryController.updateCategory);
+
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -54,8 +54,8 @@ const uploads = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB file size limit
-      files: 10 // Maximum 10 files allowed
+      fileSize: 10 * 1024 * 1024, 
+      files: 10 
   }
 })
 
@@ -65,8 +65,7 @@ router.get('/products', adminAuth.adminCheck, productController.getAllProducts)
 router.patch('/toggle-list/:id', adminAuth.adminCheck, productController.toggleProductList)
 router.patch('/toggleCategory/:id', adminAuth.adminCheck, categoryController.toggleCategory)
 
-router.get('/editCategory',  categoryController.getEditCategory);
-router.put('/categories/update/:id', categoryController.updateCategory);
+
 
 
 router.get("/editProduct",adminAuth.adminCheck,productController.getEditProduct)

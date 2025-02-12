@@ -99,6 +99,12 @@ const checkBlockedUser = (req, res, next) => {
     }
 };
 
+const protectUserProfile = (req, res, next) => {
+    if (req.session.isLoggedIn && req.session.user) {
+        return next(); 
+    }
+    return res.redirect('/'); 
+};
 
 
 const preventBackAfterLogout = (req, res, next) => {
@@ -108,4 +114,4 @@ const preventBackAfterLogout = (req, res, next) => {
     next();
 };
 
-module.exports = { preventBackToLogin, protectRoutes, preventBackAfterLogout,checkBlockedUser  };
+module.exports = { preventBackToLogin, protectRoutes, preventBackAfterLogout,checkBlockedUser,protectUserProfile  };

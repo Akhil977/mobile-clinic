@@ -51,6 +51,32 @@ const productDetails = async (req, res) => {
     }
 };
 
+
+
+const getProduct= async(req,res)=>{
+    
+    let currentcat=req.query.category
+    const cart = [
+        { name: "Product 1", price: 100, quantity: 2 },
+        { name: "Product 2", price: 150, quantity: 1 },
+    ];
+   try {
+    const isLoggedIn = req.session.isLoggedIn || false; 
+    const val = req.query.search || ""; 
+    const sortby = req.query.sortby || "default";
+    const price = req.query.price || "all";
+    const color = req.query.color || "all";
+    const tags = req.query.tags || []; // Default empty tags array
+    const category = await Category.findOne({ name:currentcat})
+    category_id= category._id
+    const product = await Product.find({ isListed: true,category:category_id})
+    res.render("product",{cart,isLoggedIn,val,sortby,price,color,tags,product})
+   } catch (error) {
+    
+   }
+}
+
 module.exports = {
-    productDetails
+    productDetails,
+    getProduct
 };
