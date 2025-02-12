@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<%- include ('component/head.ejs') %> 
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+  <%- include ('component/header.ejs') %> 
+  <%- include ('component/aside.ejs') %> 
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+        Order Management
+        <small>Admin Control Panel</small>
+      </h1>
+      <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Order Management</li>
+      </ol>
+    </section>
+
+    <!-- Main Content -->
+    <section class="content">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="box">
+                    <div class="box-body">
+                        <div class="order-details-container">
+                            <h5 class="section-title">Order Details</h5>
+                            <div class="address-divider"></div>
+
+                            <!-- Order Information Card -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- Order Header -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6>Order #<%= order.orderId %></h6>
+                                        <span class="badge 
+                                            <% switch(order.status) {
+                                                case 'Pending': %> bg-warning <%
+                                                    break;
+                                                case 'Processing': %> bg-info <%
+                                                    break;
+                                                case 'Shipped': %> bg-primary <%
+                                                    break;
+                                                case 'Delivered': %> bg-success <%
+                                                    break;
+                                                case 'Cancelled': %> bg-danger <%
+                                                    break;
+                                                case 'Request Return': %> bg-info <%
+                                                    break;
+                                                case 'Return Approved': %> bg-secondary <%
+                                                    break;
+                                                case 'Return Rejected': %> bg-secondary <%
+                                                    break;
+                                                case 'Return Completed': %> bg-secondary <%
+                                                    break;
+                                                default: %> bg-secondary <%
+                                            } %>
+                                        "><%= order.status %></span>
+                                    </div>
+
+                                    <!-- Order Information -->
+                                    <div class="order-info mb-4">
+                                        <% if(order) { %>
+                                            <p><strong>Invoice Date:</strong> <%= new Date(order.invoiceDate).toLocaleString('en-IN', { 
+                                                weekday: 'long', 
+                                                year: 'numeric', 
+                                                month: 'long', 
+                                                day: 'numeric' 
+                                            }) %></p>
+                                            <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+                                            <p><strong>Coupon Applied:</strong> <%= order.couponApplied ? 'Yes' : 'No' %></p>
+                                            
+                                            <!-- Delivery Address -->
+                                            <div class="delivery-address mt-3">
+                                                <h6>Delivery Address:</h6>
+                                                <% if(address) { %>
+                                                    <p class="mb-0"><%= address.name %></p>
+                                                    <p class="mb-0"><%= address.landmark %> <%= address.city %> <%= address.state %></p>
+                                                    <p class="mb-0"><%= address.country %> <%= address.pincode %></p>
+                                                    <p><%= address.phone %></p>
+                                                <% } else { %>
+                                                    <p>No address available</p>
+                                                <% } %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Ordered Items -->
+                                    <h6 class="mb-3">Ordered Items</h6>
+                                    <div class="ordered-items">
+                                        <% if(products && products.length > 0) { %>
+                                            <div class="row">
+                                                <% products.forEach(function(item) { %>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="product-card p-3 border rounded">
+                                                            <div class="d-flex">
+                                                                <img class="product-image me-3" 
+                                                                     src="/uploads/product-images/<%= item.productImage %>" 
+                                                                     alt="<%= item.productName %>" 
+                                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                                                <div class="product-info">
+                                                                    <h6 class="mb-1"><%= item.productName %></h6>
+                                                                    <p class="mb-1">Quantity: <%= item.quantity %></p>
+                                                                    <p class="mb-1">Price: ₹<%= item.price %></p>
+                                                                    <p class="mb-0"><strong>Total: ₹<%= item.total %></strong></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
+                                        <% } else { %>
+                                            <p>No items in the order.</p>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Order Totals -->
+                                    <div class="order-totals mt-4 pt-3 border-top">
+                                        <div class="row">
+                                            <div class="col-md-6 ms-auto">
+                                                <p class="d-flex justify-content-between mb-2">
+                                                    <span>Total Price:</span>
+                                                    <strong>₹<%= order.totalPrice %></strong>
+                                                </p>
+                                                <p class="d-flex justify-content-between mb-2">
+                                                    <span>Discount:</span>
+                                                    <strong>₹<%= order.discount %></strong>
+                                                </p>
+                                                <p class="d-flex justify-content-between mb-0">
+                                                    <span>Final Amount:</span>
+                                                    <strong>₹<%= order.finalAmount %></strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+    <!-- Styles -->
+    <style>
+        .content {
+            padding: 15px;
+            background-color: #eef2f7;
+        }
+
+        .box {
+            position: relative;
+            border-radius: 3px;
+            background: #ffffff;
+            border-top: 3px solid #d2d6de;
+            margin-bottom: 20px;
+            width: 100%;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+
+        .box-body {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 3px;
+            border-bottom-left-radius: 3px;
+            padding: 10px;
+        }
+
+        .order-details-container {
+            padding: 20px;
+        }
+
+        .section-title {
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .address-divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 15px 0;
+        }
+
+        .card {
+            background-color: #fff;
+            border: 1px solid rgba(0,0,0,.125);
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .product-card {
+            background-color: #fff;
+            transition: transform 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .product-image {
+            border-radius: 8px;
+        }
+
+        .delivery-address {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .order-totals {
+            font-size: 0.95rem;
+        }
+
+        .order-info p {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+    </style>
+    <%- include ('component/footer.ejs') %>
+</body>
+</html>

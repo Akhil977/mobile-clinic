@@ -54,11 +54,16 @@ const orderSchema = new Schema({
     invoiceDate: {
         type: Date
     },
+    date: {
+        type: Date,
+        default: Date.now
+    },
     status: {
         type: String,
-        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned'],
+        enum: ['Pending', 'Processing', 'Shipped', 'Cancelled', 'Delivered','Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'],
         default: 'Pending'
     },
+ 
     cancelReason: {
         type: String,
         required: false,

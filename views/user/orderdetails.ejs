@@ -117,12 +117,20 @@
                         <div class="order-actions mt-4 text-end">
     <% if (order.status !== 'Cancelled') { %>
         <% if (order.status === 'Delivered') { %>
-            <button class="btn btn-warning" onclick="handleReturn('<%= order.orderId %>')">
-                <i class="fas fa-undo-alt me-2"></i>Return Order
+            <!-- If order is Delivered, show the Return Order button -->
+            <button class="btn btn-warning" onclick="handleReturn('<%= order._id %>')">
+                <i class="fas fa-undo-alt me-2"></i> Return Order
             </button>
+        <% } else if (order.status === 'Request Return') { %>
+         
+            <span class="badge bg-info">Return Requested</span>
+        <% } else if (['Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
+            
+            <span class="badge bg-secondary"><%= order.status %></span>
         <% } else { %>
-            <button class="btn btn-danger" onclick="handleCancel('<%= order.orderId %>')">
-                <i class="fas fa-times-circle me-2"></i>Cancel Order
+           
+            <button class="btn btn-danger" onclick="handleCancel('<%= order._id %>')">
+                <i class="fas fa-times-circle me-2"></i> Cancel Order
             </button>
         <% } %>
     <% } %>
@@ -209,15 +217,15 @@
         let currentOrderId = '';
 
         // Cancel Order Modal Trigger
-        function handleCancel(orderId) {
-            currentOrderId = orderId;
+        function handleCancel(_id) {
+            currentOrderId = _id;
             const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
             cancelModal.show();
         }
 
         // Return Order Modal Trigger
-        function handleReturn(orderId) {
-            currentOrderId = orderId;
+        function handleReturn(_id) {
+            currentOrderId = _id;
             const returnModal = new bootstrap.Modal(document.getElementById('returnModal'));
             returnModal.show();
         }
@@ -264,7 +272,7 @@
                 }
 
                 try {
-                    const response = await fetch(`/orders/cancel?orderId=${currentOrderId}`, {
+                    const response = await fetch(`/orders/cancel?_id=${currentOrderId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -305,7 +313,7 @@
                 }
 
                 try {
-                    const response = await fetch(`/orders/return?orderId=${currentOrderId}`, {
+                    const response = await fetch(`/orders/return?_id=${currentOrderId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

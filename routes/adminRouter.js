@@ -6,6 +6,7 @@ const customerController = require("../controller/admin/coustomerController");
 const categoryController = require('../controller/admin/categoryController');
 const adminAuth = require("../middlewares/adminmiddleware");
 const productController= require("../controller/admin/productController");
+const orderController = require("../controller/admin/adminOrderController");
 
 const path = require('path');
 
@@ -74,5 +75,10 @@ router.post('/editProduct/:id', uploads.array('images', 10), productController.e
 
 
 router.post('/deleteImage', productController.deleteSingleImage);
+
+router.get('/view-order',orderController.viewOrders)
+router.patch("/update-order-status",orderController.updateStatus)
+router.get("/orderDetails",orderController.showOrderDetails)
+
 
 module.exports = router

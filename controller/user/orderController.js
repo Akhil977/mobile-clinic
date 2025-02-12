@@ -390,6 +390,7 @@ const loadOrderDetails = async (req, res) => {
 
         res.render('orderdetails', {
             order: {
+                _id:order._id,
                 orderId: order.orderId,
                 status: order.status,
                 totalPrice: order.totalPrice,
@@ -435,8 +436,8 @@ const loadOrderDetails = async (req, res) => {
 const cancelOrder = async (req, res) => {
     try {
         const userId = req.session.user;
-        const { orderId } = req.query;
-        console.log(`this is the object isd ${orderId}`)
+        const {_id}= req.query;
+        console.log(`this is the object isd ${_id}`)
         const { reason } = req.body;
 
         // Validate input
@@ -447,7 +448,7 @@ const cancelOrder = async (req, res) => {
             });
         }
 
-        if (!orderId || !reason) {
+        if (!_id|| !reason) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Order ID and cancellation reason are required' 
@@ -456,7 +457,7 @@ const cancelOrder = async (req, res) => {
 
         // Find the order and verify ownership
         const order = await Order.findOne({ 
-            _id: orderId, 
+            _id:_id, 
             userId: userId 
         });
 
@@ -493,7 +494,7 @@ const cancelOrder = async (req, res) => {
         }
 
         // Log the cancellation
-        console.log(`Order ${orderId} cancelled by user ${userId}. Reason: ${reason}`);
+        console.log(`Order ${_id} cancelled by user ${userId}. Reason: ${reason}`);
 
         res.status(200).json({ 
             success: true, 
@@ -512,8 +513,9 @@ const cancelOrder = async (req, res) => {
 
 const returnOrder = async (req, res) => {
     try {
+        console.log("kedhflikqehbflukjiqwahbfljhkeabfcvljkahb")
         const userId = req.session.user;
-        const { orderId } = req.query;
+        const {_id}= req.query;
         const { reason } = req.body;
 
         // Validate input
@@ -524,7 +526,7 @@ const returnOrder = async (req, res) => {
             });
         }
 
-        if (!orderId || !reason) {
+        if (!_id || !reason) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Order ID and return reason are required' 
@@ -533,7 +535,7 @@ const returnOrder = async (req, res) => {
 
         // Find the order and verify ownership
         const order = await Order.findOne({ 
-            _id: orderId, 
+            _id: _id, 
             userId: userId 
         });
 
@@ -554,15 +556,15 @@ const returnOrder = async (req, res) => {
         }
 
         // Update order status and add return details
-        order.status = 'Return Request';
-        order.returnReason = reason;
+        order.status = 'Request Return';
+        order.returnReason= reason;
         order.returnedAt = new Date();
 
         // Save the updated order
         await order.save();
 
         // Log the return request
-        console.log(`Return requested for order ${orderId} by user ${userId}. Reason: ${reason}`);
+        console.log(`Return requested for order ${_id} by user ${userId}. Reason: ${reason}`);
 
         res.status(200).json({ 
             success: true, 
