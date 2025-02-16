@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+	<%- include ('../partials/user/head.ejs') %> 
+	<link rel="stylesheet" href="/css/jquery-ui.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+	<script src="/js/jquery-ui.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<body class="animsition">
+	
+	<!-- Header -->
+	<%- include ('../partials/user/header.ejs') %> 
+
+	<!-- Cart -->
+
+
+	<!-- Wishlist Content -->
+	<section class="bg0 p-t-23 p-b-140">
+		<div class="container">
+			<div class="p-b-10">
+				<h3 class="ltext-103 cl5">
+					My Wishlist
+				</h3>
+			</div>
+
+			<div class="product-grid-container">
+				<div class="row">
+					<% if (wishlistProducts && wishlistProducts.length > 0) { %>
+						<% for (let i = 0; i < wishlistProducts.length; i++) { %>
+							<div class="col-sm-6 col-md-4 col-lg-3 p-b-35">
+								<div class="block2">
+									<div class="block2-pic hov-img0">
+										<a href="/productdetail?id=<%= wishlistProducts[i]._id %>">
+											<img src="/uploads/product-images/<%= wishlistProducts[i].productImages[0] %>" alt="IMG-PRODUCT" class="img-fluid" />
+										</a>
+									
+										<div class="button-container">
+											<a href="/carthandler?id=<%= wishlistProducts[i]._id %>" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 add-to-cart-btn">
+												Add to Cart
+											</a>
+										</div>
+									</div>
+
+									<div class="block2-txt flex-w flex-t p-t-14">
+										<div class="block2-txt-child1 flex-col-l">
+											<a href="/productdetail?id=<%= wishlistProducts[i]._id %>"
+											   class="stext-104 cl4 hov-cl1 trans-04 js-name-b2 p-b-6">
+											   <%= wishlistProducts[i].productName %>
+											</a>
+											<span class="stext-105 cl3">
+												$<%= wishlistProducts[i].regularPrice %>
+											</span>
+										</div>
+										<div class="block2-txt-child2 flex-c p-t-3">
+											<button onclick="removeFromWishlist('<%= wishlistProducts[i]._id %>', this)" class="btn-addwish-b2 dis-block pos-relative in-wishlist">
+												<img class="icon-heart1 dis-block trans-04" src="/images/icons/icon-heart-01.png" alt="ICON" style="opacity: 0;" />
+												<img class="icon-heart2 dis-block trans-04" src="/images/icons/icon-heart-02.png" alt="ICON" style="opacity: 1;" />
+											</button>
+										</div>                    
+									</div>
+								</div>
+							</div>
+						<% } %>
+					<% } else { %>
+						<div class="col-12 text-center p-t-20">
+							<p class="stext-102 cl6">Your wishlist is empty.</p>
+							<a href="/products" class="flex-c-m stext-101 cl0 size-103 bg1 bor1 hov-btn2 p-lr-15 trans-04 m-t-20">
+								Continue Shopping
+							</a>
+						</div>
+					<% } %>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<%- include ('../partials/user/footer.ejs') %>
+
+	<!-- Back to top -->
+	<div class="btn-back-to-top" id="myBtn">
+		<span class="symbol-btn-back-to-top">
+			<i class="zmdi zmdi-chevron-up"></i>
+		</span>
+	</div>
+
+	<!-- Scripts -->
+	<script>
+		// Initialize toastr options
+		$(document).ready(function() {
+			toastr.options = {
+				"positionClass": "toast-top-right",
+				"closeButton": true,
+				"progressBar": true,
+				"timeOut": "3000"
+			};
+		});
+
+		async function removeFromWishlist(productId, button) {
+			try {
+				const response = await fetch('/removeFromWishlist', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ productId })
+				});
+
+				const data = await response.json();
+				if (data.success) {
+					// Find and remove the product card
+					const productCard = button.closest('.col-sm-6');
+					if (productCard) {
+						productCard.remove();
+					}
+
+					// Show success message
+					toastr.success('Product removed from wishlist');
+
+					// If no products left, show empty wishlist message
+					const remainingProducts = document.querySelectorAll('.col-sm-6').length;
+					if (remainingProducts === 0) {
+						const container = document.querySelector('.row');
+						container.innerHTML = `
+							<div class="col-12 text-center p-t-20">
+								<p class="stext-102 cl6">Your wishlist is empty.</p>
+								<a href="/products" class="flex-c-m stext-101 cl0 size-103 bg1 bor1 hov-btn2 p-lr-15 trans-04 m-t-20">
+									Continue Shopping
+								</a>
+							</div>
+						`;
+					}
+				} else {
+					toastr.error(data.message || 'Failed to remove from wishlist');
+				}
+			} catch (error) {
+				console.error('Error:', error);
+				toastr.error('An error occurred');
+			}
+		}
+	</script>
+	<style>
+		.btn-addwish-b2 .icon-heart1,
+		.btn-addwish-b2 .icon-heart2 {
+			transition: opacity 0.3s ease;
+		}
+
+		.btn-addwish-b2.in-wishlist .icon-heart1 {
+			opacity: 0 !important;
+		}
+
+		.btn-addwish-b2.in-wishlist .icon-heart2 {
+			opacity: 1 !important;
+		}
+	</style>
+</body>
+</html>

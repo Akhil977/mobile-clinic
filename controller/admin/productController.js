@@ -6,12 +6,14 @@ const path = require('path')
 const sharp = require('sharp')
 const { addCategory } = require('./categoryController')
 const Product = require('../../model/productShema')
+const BRAND = require("../../model/brandschema")
 
 const getProductAddPage = async (req, res) => {
     try {
  
        const category = await Category.find({})
-       res.render('product-add', { cat: category })
+       const Brand = await BRAND.find({});
+       res.render('product-add', { cat: category,Brand })
  
     } catch (error) {
        res.redirect('/pageerror')

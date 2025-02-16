@@ -7,7 +7,8 @@ const categoryController = require('../controller/admin/categoryController');
 const adminAuth = require("../middlewares/adminmiddleware");
 const productController= require("../controller/admin/productController");
 const orderController = require("../controller/admin/adminOrderController");
-
+const brandController = require("../controller/admin/BrandController")
+const CouponController = require("../controller/admin/couponController")
 const path = require('path');
 
 const imageDir = path.join(__dirname,"../public/uploads");
@@ -24,6 +25,7 @@ router.post('/blockCustomer', adminAuth.adminCheck, customerController.blockUnbl
 
 
 router.get('/category', adminAuth.adminCheck, categoryController.categoryInfo);
+
 router.post('/addCategory', adminAuth.adminCheck, categoryController.addCategory);
 
   router.get('/listCategory', adminAuth.adminCheck, categoryController.getListCategory);
@@ -31,6 +33,18 @@ router.post('/addCategory', adminAuth.adminCheck, categoryController.addCategory
   router.get('/editCategory', adminAuth.adminCheck, categoryController.getEditCategory);
   
 router.put('/categories/update/:id', categoryController.updateCategory);
+  
+
+
+
+router.get('/brand', adminAuth.adminCheck, brandController.brandInfo);
+router.post('/addBrand', adminAuth.adminCheck, brandController.addBrand);
+
+router.get('/blockBrand', adminAuth.adminCheck, brandController.getUnlistBrand);
+router.get('/unblockBrand', adminAuth.adminCheck, brandController.getListBrand);
+router.get('/editBrand', adminAuth.adminCheck, brandController.getEditBrand);
+
+router.put('/brands/update/:id', brandController.updateBrand);
 
 
 const storage = multer.diskStorage({
@@ -79,6 +93,8 @@ router.post('/deleteImage', productController.deleteSingleImage);
 router.get('/view-order',orderController.viewOrders)
 router.patch("/update-order-status",orderController.updateStatus)
 router.get("/orderDetails",orderController.showOrderDetails)
+router.get("/coupon",CouponController.getCoupon)
+
 
 
 module.exports = router

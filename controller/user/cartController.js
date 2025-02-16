@@ -25,66 +25,68 @@ const getCart = async (req, res) => {
 const addcart = async (req, res) => {
     const productId = req.query.id; // Get the product ID from query params
     const userId = req.session.user; // Get the user ID from session
-  
+    const quantity = parseInt(req.query.quantity) || 1; // Default to 1 if not provided
+
     try {
-      // Fetch the product details from the database
-      const product = await Product.findById(productId);
-      if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-  
-      // Check if the product is available
-      if (product.status !== "available") {
-        return res.status(400).json({ message: 'Product is not available' });
-      }
-  
-      let userCart = await Cart.findOne({ userId: userId });
-  
-      if (userCart) {
-        // Check if the product already exists in the cart
-        const existingProductIndex = userCart.item.findIndex(
-          (item) => item.productId.toString() === productId
-        );
-  
-        if (existingProductIndex !== -1) {
-          // If the product exists, increase the quantity
-          userCart.item[existingProductIndex].quantity += 1;
-          userCart.item[existingProductIndex].totalPrice =
-            userCart.item[existingProductIndex].quantity * userCart.item[existingProductIndex].price;
-  
-          await userCart.save();
-          return res.status(200).json({ message: 'Product quantity updated in the cart' });
-        } else {
-          // If the product doesn't exist, add it to the cart
-          userCart.item.push({
-            productId: productId,
-            quantity: 1,
-            price: product.salePrice, // Fetch price from product schema
-            totalPrice: product.salePrice, // Quantity * Price (1 * salePrice)
-          });
-  
-          await userCart.save();
-          return res.status(200).json({ message: 'Product added to the cart' });
+        // Fetch the product details from the database
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
         }
-      } else {
-        // If the cart doesn't exist, create a new cart with the product
-        const newCart = new Cart({
-          userId: userId,
-          item: [{
-            productId: productId,
-            quantity: 1,
-            price: product.salePrice, // Fetch price from product schema
-            totalPrice: product.salePrice, 
-          }]
-        });
-  
-        await newCart.save();
-        return res.status(200).json({ message: 'Cart created and product added' });
-      }
+
+        // Check if the product is available
+        if (product.status !== "available") {
+            return res.status(400).json({ message: 'Product is not available' });
+        }
+
+        let userCart = await Cart.findOne({ userId: userId });
+
+        if (userCart) {
+            // Check if the product already exists in the cart
+            const existingProductIndex = userCart.item.findIndex(
+                (item) => item.productId.toString() === productId
+            );
+
+            if (existingProductIndex !== -1) {
+                // If the product exists, increase the quantity
+                userCart.item[existingProductIndex].quantity += quantity;
+                userCart.item[existingProductIndex].totalPrice =
+                    userCart.item[existingProductIndex].quantity * userCart.item[existingProductIndex].price;
+
+                await userCart.save();
+                return res.status(200).json({ message: 'Product quantity updated in the cart' });
+            } else {
+                // If the product doesn't exist, add it to the cart
+                userCart.item.push({
+                    productId: productId,
+                    quantity: quantity,
+                    price: product.salePrice, // Fetch price from product schema
+                    totalPrice: quantity * product.salePrice, // Quantity * Price
+                });
+
+                await userCart.save();
+                return res.status(200).json({
+                     message: 'Product added to the cart' });
+            }
+        } else {
+            // If the cart doesn't exist, create a new cart with the product
+            const newCart = new Cart({
+                userId: userId,
+                item: [{
+                    productId: productId,
+                    quantity: quantity,
+                    price: product.salePrice, // Fetch price from product schema
+                    totalPrice: quantity * product.salePrice, 
+                }]
+            });
+
+            await newCart.save();
+            return res.status(200).json({ message: 'Cart created and product added' });
+        }
     } catch (err) {
-      return res.status(500).json({ message: 'An error occurred while adding product to the cart', error: err.message });
+        return res.status(500).json({ message: 'An error occurred while adding product to the cart', error: err.message });
     }
-  };
+};
   
   const deleteitem = async (req, res) => {
     try {

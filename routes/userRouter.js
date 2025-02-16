@@ -7,6 +7,7 @@ const { protectUserProfile,preventBackToLogin, protectRoutes, preventBackAfterLo
 const profileCotrller = require("../controller/user/profileCotrller")
 const cartController = require("../controller/user/cartController")
 const checkout = require("../controller/user/orderController")
+const whishlist = require("../controller/user/wishlistController")
 
 
 router.use(preventBackAfterLogout);
@@ -91,17 +92,28 @@ router.get("/cart",cartController.getCart)
 
 ///////////checkout
 router.get("/checkout", protectUserProfile, checkout.getcheckout)
+router.get("/order/buy-now", protectUserProfile, checkout.getdirectcheackout)
 router.post("/placeOrder", protectUserProfile, checkout.placeOrder)
 router.post("/add-checkout-address", protectUserProfile, checkout.addAddress)
 router.post("/edit-checkout-address", protectUserProfile, checkout.editAddress)
 
 
-
+/////////////ORDERS
 
 router.get("/user-orders", protectRoutes, checkout.loadUserOrders);
 router.get("/order-details", protectRoutes, checkout.loadOrderDetails);
 router.post("/orders/cancel", protectRoutes, checkout.cancelOrder);
 router.post("/orders/return", protectRoutes, checkout.returnOrder);
+
+// Wishlist routes
+router.get("/checkWishlist", whishlist.checkWishlist);
+router.post("/addWishlist", whishlist.addwishlist);
+router.post("/removeFromWishlist", whishlist.removeFromWishlist);
+router.get("/wishlist", whishlist.getWishlist);
+
+/////////////whishlist
+// router.get("/wishlist",whishlist.getWishlist)
+// router.post("/addWishlist",whishlist.addwishlist)
 
 // Blocked User Page
 router.get('/blockedByAdmin', userController.adminBlocked);

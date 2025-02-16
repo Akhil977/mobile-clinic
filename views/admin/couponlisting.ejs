@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Bootstrap 3.3.7 -->
+  <link rel="stylesheet" href="/admin/bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <%- include ('component/head.ejs') %>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+  <%- include ('component/header.ejs') %> 
+  <%- include ('component/aside.ejs') %> 
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+        Coupon Management
+        <small>Admin Control Panel</small>
+      </h1>
+      <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Coupon Management</li>
+      </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <!-- Coupons Table -->
+      <div class="box">
+        <div class="box-header">
+          <h3 class="box-title">Coupons</h3>
+          <div class="pull-right">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCouponModal">
+              <i class="fa fa-plus"></i> Add Coupon
+            </button>
+          </div>
+        </div>
+        <div class="box-body">
+          <% if (coupons && coupons.length > 0) { %>
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Coupon Name</th>
+                  <th>Created On</th>
+                  <th>Expires On</th>
+                  <th>Offer Price</th>
+                  <th>Minimum Price</th>
+                  <th>Usage Limit</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% coupons.forEach(coupon => { %>
+                <tr>
+                  <td><%= coupon.name %></td>
+                  <td><%= new Date(coupon.createdOn).toLocaleDateString() %></td>
+                  <td><%= new Date(coupon.expireOn).toLocaleDateString() %></td>
+                  <td>$<%= coupon.offerPrice %></td>
+                  <td>$<%= coupon.minimumPrice %></td>
+                  <td><%= coupon.usageLimit %></td>
+                  <td>
+                    <span class="label <%= coupon.islist ? 'label-success' : 'label-danger' %>">
+                      <%= coupon.islist ? 'Active' : 'Inactive' %>
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-warning btn-sm" onclick="editCoupon('<%= coupon._id %>')">
+                      <i class="fa fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-<%= coupon.islist ? 'danger' : 'success' %> btn-sm" onclick="toggleCouponStatus('<%= coupon._id %>', <%= coupon.islist %>)">
+                      <i class="fa fa-<%= coupon.islist ? 'times' : 'check' %>"></i> 
+                      <%= coupon.islist ? 'Deactivate' : 'Activate' %>
+                    </button>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          <% } else { %>
+            <div class="text-center">
+              <p>No coupons available.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <!-- Add Coupon Modal -->
+  <div class="modal fade" id="addCouponModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title">Add New Coupon</h4>
+        </div>
+        <div class="modal-body">
+          <form id="addCouponForm">
+            <div class="form-group">
+              <label for="couponName">Coupon Name*</label>
+              <input type="text" class="form-control" id="couponName" name="name" required pattern="[A-Za-z0-9]+" title="Only letters and numbers allowed">
+              <small class="text-muted">Only letters and numbers allowed</small>
+            </div>
+            <div class="form-group">
+              <label for="expireOn">Expiry Date*</label>
+              <input type="date" class="form-control" id="expireOn" name="expireOn" required min="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div class="form-group">
+              <label for="offerPrice">Offer Price ($)*</label>
+              <input type="number" class="form-control" id="offerPrice" name="offerPrice" required min="1" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="minimumPrice">Minimum Purchase Amount ($)*</label>
+              <input type="number" class="form-control" id="minimumPrice" name="minimumPrice" required min="1" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="usageLimit">Usage Limit*</label>
+              <input type="number" class="form-control" id="usageLimit" name="usageLimit" required min="1" step="1">
+              <small class="text-muted">Maximum number of times this coupon can be used</small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="saveCouponBtn">Save Coupon</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('component/footer.ejs') %> 
+
+  <!-- jQuery 3 -->
+  <script src="/admin/bower_components/jquery/dist/jquery.min.js"></script>
+  <!-- Bootstrap 3.3.7 -->
+  <script src="/admin/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <!-- AdminLTE App -->
+  <script src="/admin/dist/js/adminlte.min.js"></script>
+  <!-- Toastr -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+</div>
+
+<script>
+  $(document).ready(function() {
+    // Initialize toastr
+    toastr.options = {
+      "closeButton": true,
+      "progressBar": true,
+      "positionClass": "toast-top-right",
+      "timeOut": "3000"
+    };
+
+    // Prevent form submission on enter
+    $('#addCouponForm').on('keypress', function(e) {
+      if (e.which === 13) { // Enter key
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // Handle save button click
+    $('#saveCouponBtn').on('click', function() {
+      saveCoupon();
+    });
+  });
+
+  // Validate minimum price is greater than offer price
+  document.getElementById('addCouponForm').addEventListener('input', function(e) {
+    const offerPrice = parseFloat(document.getElementById('offerPrice').value);
+    const minimumPrice = parseFloat(document.getElementById('minimumPrice').value);
+    
+    if (offerPrice && minimumPrice && offerPrice >= minimumPrice) {
+      document.getElementById('minimumPrice').setCustomValidity('Minimum purchase amount must be greater than offer price');
+    } else {
+      document.getElementById('minimumPrice').setCustomValidity('');
+    }
+  });
+
+  // Save new coupon
+  async function saveCoupon() {
+    try {
+      const form = document.getElementById('addCouponForm');
+      
+      // Check form validity
+      if (!form.checkValidity()) {
+        // Trigger HTML5 validation
+        $('<input type="submit">').hide().appendTo(form).click().remove();
+        return;
+      }
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Convert string values to numbers where needed
+      data.offerPrice = parseFloat(data.offerPrice);
+      data.minimumPrice = parseFloat(data.minimumPrice);
+      data.usageLimit = parseInt(data.usageLimit);
+
+      // Validate minimum price
+      if (data.offerPrice >= data.minimumPrice) {
+        toastr.error('Minimum purchase amount must be greater than offer price');
+        return;
+      }
+      
+      const response = await fetch('/admin/addCoupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toastr.success('Coupon added successfully');
+        setTimeout(() => {
+          $('#addCouponModal').modal('hide');
+          location.reload();
+        }, 1000);
+      } else {
+        toastr.error(result.message || 'Failed to add coupon');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toastr.error('An error occurred while saving the coupon');
+    }
+  }
+
+  // Toggle coupon status
+  async function toggleCouponStatus(couponId, currentStatus) {
+    try {
+      const response = await fetch('/admin/toggleCouponStatus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ couponId, status: !currentStatus })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toastr.success(`Coupon ${currentStatus ? 'deactivated' : 'activated'} successfully`);
+        location.reload();
+      } else {
+        toastr.error(result.message || 'Failed to update coupon status');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toastr.error('An error occurred while updating coupon status');
+    }
+  }
+
+  // Edit coupon
+  function editCoupon(couponId) {
+    // Implement edit functionality
+    console.log('Edit coupon:', couponId);
+  }
+</script>
+
+</body>
+</html>

@@ -1,15 +1,125 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
-<%- include ('component/head.ejs') %>
+	<%- include ('component/head.ejs') %>
+	<link rel="stylesheet" href="css/jquery-ui.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+	<script
+		src="https://code.jquery.com/jquery-3.6.0.min.js"
+		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+		crossorigin="anonymous"
+	></script>
+	<script src="js/jquery-ui.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<style>
+		/* Cart Notification Modal Styles */
+		.cart-notification-modal {
+			display: none;
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			z-index: 9999;
+			animation: slideIn 0.3s ease-out;
+		}
+
+		.cart-notification-content {
+			background: #fff;
+			border-radius: 8px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+			padding: 15px 20px;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-width: 300px;
+			border-left: 4px solid #717fe0;
+		}
+
+		.cart-notification-icon {
+			font-size: 24px;
+			color: #717fe0;
+		}
+
+		.cart-notification-icon i {
+			animation: scaleIn 0.3s ease-out;
+		}
+
+		.cart-notification-message {
+			color: #333;
+			font-size: 14px;
+			flex-grow: 1;
+		}
+
+		.cart-notification-content.success {
+			border-left-color: #4CAF50;
+		}
+
+		.cart-notification-content.success .cart-notification-icon {
+			color: #4CAF50;
+		}
+
+		.cart-notification-content.error {
+			border-left-color: #f44336;
+		}
+
+		.cart-notification-content.error .cart-notification-icon {
+			color: #f44336;
+		}
+
+		.cart-notification-content.error .cart-notification-icon i:before {
+			content: "\f057"; /* Font Awesome error icon */
+		}
+
+		@keyframes slideIn {
+			from {
+				transform: translateX(100%);
+				opacity: 0;
+			}
+			to {
+				transform: translateX(0);
+				opacity: 1;
+			}
+		}
+
+		@keyframes slideOut {
+			from {
+				transform: translateX(0);
+				opacity: 1;
+			}
+			to {
+				transform: translateX(100%);
+				opacity: 0;
+			}
+		}
+
+		@keyframes scaleIn {
+			from {
+				transform: scale(0);
+			}
+			to {
+				transform: scale(1);
+			}
+		}
+
+		.cart-notification-modal.slide-out {
+			animation: slideOut 0.3s ease-in forwards;
+		}
+	</style>
 <body class="animsition">
 	
+	<!-- Custom Cart Notification Modal -->
+	<div id="cartNotificationModal" class="cart-notification-modal">
+		<div class="cart-notification-content">
+			<div class="cart-notification-icon">
+				<i class="fa fa-check-circle"></i>
+			</div>
+			<div class="cart-notification-message"></div>
+		</div>
+	</div>
+
 	<!-- Header -->
 	<%- include ('component/header.ejs') %>
 
 	<!-- Cart -->
-	<%- include ('component/cart.ejs') %>
+	<%- include ('component/cart.ejs')%>
 
 
 	<!-- breadcrumb -->
@@ -134,12 +244,17 @@
 
 										<div class="btn-num-product-add btn-num-product-up cl8 hov-btn3 trans-04 flex-c-m">
 											<i class="fs-16 zmdi zmdi-plus"></i>
-										</div>
+										</div>id=<%= product._id %>,&quantity=${document.getElementById('quantity').value}
 									</div>
 
-									<button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail" onclick="location.href=`carthandler?id=<%= product._id %>&name=<%= product.name %>&price=<%= product.price %>&quantity=${document.getElementById('quantity').value}&image=<%= product.image %>`">
-										Add to cart
-									</button>
+									<div class="product-actions w-100">
+										<button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail mb-2 w-100 add-to-cart-btn" onclick="location.href=`carthandler?id=<%= product._id %>&name=<%= product.name %>&price=<%= product.price %>&quantity=${document.getElementById('quantity').value}&image=<%= product.image %>`">
+											Add to cart
+										</button>
+										<button class="flex-c-m stext-101 cl0 size-101 bg3 bor1 hov-btn2 p-lr-15 trans-04 w-100" style="background-color: #28a745;" onclick="location.href=`/order/buy-now?productId=<%= product._id %>&quantity=${document.getElementById('quantity').value}`">
+											Buy Now
+										</button>
+									</div>
 								</div>
 							</div>	
 						</div>
@@ -441,6 +556,7 @@
 		});
 	});
 	</script>
+	
 	<!-- Footer -->
 	<%- include ('component/footer.ejs') %>
 
@@ -450,6 +566,78 @@
 <!-- Script -->
 <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <%- include ('component/script.ejs') %> 
+
+<script>
+	$(document).ready(function () {
+		toastr.options = {
+			"positionClass": "toast-top-right",
+			"closeButton": true,
+			"progressBar": true,
+			"timeOut": "3000"
+		};
+
+		function showCartNotification(message, type = 'success') {
+			const modal = $('#cartNotificationModal');
+			const content = modal.find('.cart-notification-content');
+			const messageDiv = modal.find('.cart-notification-message');
+			
+			// Reset classes and set new ones
+			content.removeClass('success error').addClass(type);
+			messageDiv.text(message);
+			
+			// Show the modal
+			modal.css('display', 'block');
+			
+			// Hide after 3 seconds
+			setTimeout(() => {
+				modal.addClass('slide-out');
+				setTimeout(() => {
+					modal.removeClass('slide-out').css('display', 'none');
+				}, 300);
+			}, 3000);
+		}
+
+		// Handle Add to Cart button click
+		$(document).on('click', '.js-addcart-detail', function(e) {
+			e.preventDefault();
+			
+			// Get the quantity
+			const quantity = $('#quantity').val() || 1;
+			
+			// Extract the base URL from the onclick attribute
+			const baseUrl = $(this).attr('onclick').match(/carthandler\?[^'"`]+/)[0];
+			
+			// Add quantity parameter to URL
+			const url = `${baseUrl}&quantity=${quantity}`;
+			
+			$.ajax({
+				url: url,
+				method: 'GET',
+				dataType: 'json',
+				success: function(response) {
+					showCartNotification(response.message || 'Product added to cart successfully!', 'success');
+					// Reload the page after a delay to update cart count
+					setTimeout(() => {
+						window.location.reload();
+					}, 2000);
+				},
+				error: function(xhr) {
+					const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to add product to cart';
+					showCartNotification(errorMsg, 'error');
+				}
+			});
+		});
+
+		// Handle quantity changes
+		$('.btn-num-product-down, .btn-num-product-up').on('click', function() {
+			// Add a small delay to ensure the quantity is updated
+			setTimeout(() => {
+				const newQuantity = $('#quantity').val();
+				console.log('Quantity updated:', newQuantity);
+			}, 100);
+		});
+	});
+</script>
 
 </body>
 </html>

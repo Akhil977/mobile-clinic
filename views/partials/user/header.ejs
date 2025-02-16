@@ -1,4 +1,4 @@
-<header class="header-v4">
+<header class="header-v4 fixed-top">
     <!-- Header desktop -->
     <div class="container-menu-desktop">
         <!-- Topbar -->
@@ -214,3 +214,22 @@
         </div>
     </div>
 </header>
+
+<style>
+    body {
+        padding-top: 120px; /* Adjust this value based on your header's height */
+    }
+    .fixed-top {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1030;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Ensure content doesn't get hidden behind fixed header */
+    .header-spacer {
+        height: 120px; /* Same as body padding-top */
+    }
+</style>

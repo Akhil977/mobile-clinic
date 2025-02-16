@@ -24,6 +24,11 @@ const couponSchema =new mongoose.Schema({
         type:Number,
         required:true
     },
+    usageLimit: {
+        type: Number,
+        required: true,
+        min: 1
+    },
     islist:{
         type:Boolean,
         default:true

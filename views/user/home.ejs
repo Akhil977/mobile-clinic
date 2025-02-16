@@ -10,6 +10,7 @@
 	></script>
 	<script src="js/jquery-ui.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<script>
 		$(document).ready(function () {
 			toastr.options = {
@@ -28,6 +29,9 @@
 					method: 'GET',
 					success: function(response) {
 						toastr.success(response.message || 'Product added to cart successfully!');
+						setTimeout(function() {
+                window.location.reload();
+            }, 2000);
 					},
 					error: function(xhr) {
 						const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to add product to cart';
@@ -75,535 +79,486 @@
 
 						</div>
 
-						<div class="flex-w flex-c-m m-tb-10">
-							<div
-								class="flex-c-m stext-106 cl6 size-104 bor4 pointer hov-btn3 trans-04 m-r-8 m-tb-4 js-show-filter"
-							>
-								<i
-									class="icon-filter cl2 m-r-6 fs-15 trans-04 zmdi zmdi-filter-list"
-								></i>
-								<i
-									class="icon-close-filter cl2 m-r-6 fs-15 trans-04 zmdi zmdi-close dis-none"
-								></i>
-								Filter
-							</div>
+					
 
-							<div
-								class="flex-c-m stext-106 cl6 size-105 bor4 pointer hov-btn3 trans-04 m-tb-4 js-show-search"
-							>
-								<i
-									class="icon-search cl2 m-r-6 fs-15 trans-04 zmdi zmdi-search"
-								></i>
-								<i
-									class="icon-close-search cl2 m-r-6 fs-15 trans-04 zmdi zmdi-close dis-none"
-								></i>
-								Search
-							</div>
-						</div>
-
-						<!-- Search product -->
-						<div class="dis-none panel-search w-full p-t-10 p-b-15">
-							<form action="search" method="get">
-								<div class="bor8 dis-flex p-l-15 ui-widget">
-									<input
-										class="mtext-107 cl2 size-114 plh3 p-r-15"
-										type="text"
-										id="productsearch"
-										name="name"
-										placeholder="Search product, brand or category. . ."
-									/>
-									<button
-										type="submit"
-										class="size-113 flex-c-m fs-16 cl2 hov-cl1 trans-04 hov-search"
-										style="width: 50px"
-									>
-										<i class="zmdi zmdi-search"></i>
-									</button>
-								</div>
-							</form>
-						</div>
-
-						<!-- Filter -->
-						<div class="dis-none panel-filter w-full p-t-10">
-							<div
-								class="wrap-filter flex-w bg6 w-full p-lr-40 p-t-27 p-lr-15-sm"
-							>
-								<div class="filter-col1 p-r-15 p-b-27">
-									<div class="mtext-102 cl2 p-b-15">Sort By</div>
-
-									<ul>
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="default"
-												name="sortby"
-												id="default"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="default"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												Default
-											</label>
-										</li>
-
-										<!-- <li class="p-b-6">
-									<input type="radio" value="popularity" name="sortby" id="popularity" style="display: none;" class="filter">
-									<label for="popularity" class="filter-link stext-106 trans-04" style="border-bottom: unset;">
-										Popularity	
-									</label>
-								</li>
-
-								<li class="p-b-6">
-									<input type="radio" value="avrrating" name="sortby" id="avrrating" style="display: none;" class="filter">
-									<label for="avrrating" class="filter-link stext-106 trans-04" style="border-bottom: unset;">
-										Average rating	
-									</label>
-								</li> -->
-
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="newness"
-												name="sortby"
-												id="newness"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="newness"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												Newness
-											</label>
-										</li>
-
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="lowhigh"
-												name="sortby"
-												id="lowhigh"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="lowhigh"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												Price: Low to High
-											</label>
-										</li>
-
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="highlow"
-												name="sortby"
-												id="highlow"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="highlow"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												Price: High to Low
-											</label>
-										</li>
-									</ul>
-								</div>
-
-								<div class="filter-col2 p-r-15 p-b-27">
-									<div class="mtext-102 cl2 p-b-15">Price</div>
-
-									<ul>
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="all"
-												name="price"
-												id="all"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="all"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												All
-											</label>
-										</li>
-
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="price1"
-												name="price"
-												id="price1"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="price1"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												N 0.00 - N 2000.00
-											</label>
-										</li>
-
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="price2"
-												name="price"
-												id="price2"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="price2"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												N 2000.00 - N 4000.00
-											</label>
-										</li>
-
-										<!-- <li class="p-b-6">
-									<input type="radio" value="price3" name="price" id="price3" style="display: none;" class="filter">
-									<label for="price3" class="filter-link stext-106 trans-04" style="border-bottom: unset;">
-										N 3000.00 - N 4500.00
-									</label>
-								</li> -->
-
-										<!-- <li class="p-b-6">
-									<input type="radio" value="price4" name="price" id="price4" style="display: none;" class="filter">
-									<label for="price4" class="filter-link stext-106 trans-04" style="border-bottom: unset;">
-										N 3000.00 - N 4000.00
-									</label>
-								</li> -->
-
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="price3"
-												name="price"
-												id="price5"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="price5"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset"
-											>
-												N 4000.00+
-											</label>
-										</li>
-									</ul>
-								</div>
-
-								<div class="filter-col3 p-r-15 p-b-27">
-									<div class="mtext-102 cl2 p-b-15">Color</div>
-
-									<ul>
-										<li class="p-b-6">
-											<input
-												type="radio"
-												value="all"
-												name="color"
-												id="colordef"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="colordef"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset; display: inline"
-											>
-												All
-											</label>
-										</li>
-										<li class="p-b-6">
-											<span class="fs-15 lh-12 m-r-6" style="color: #222">
-												<i class="zmdi zmdi-circle"></i>
-											</span>
-											<input
-												type="radio"
-												value="black"
-												name="color"
-												id="black"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="black"
-												class="filter-link stext-106 trans-04"
-												style="
-													border-bottom: unset;
-													display: inline;
-													display: inline;
-												"
-											>
-												Black
-											</label>
-										</li>
-
-										<li class="p-b-6">
-											<span class="fs-15 lh-12 m-r-6" style="color: #4272d7">
-												<i class="zmdi zmdi-circle"></i>
-											</span>
-											<input
-												type="radio"
-												value="blue"
-												name="color"
-												id="blue"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="blue"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset; display: inline"
-											>
-												Blue
-											</label>
-										</li>
-
-										<!-- <li class="p-b-6">
-									<span class="fs-15 lh-12 m-r-6" style="color: #b3b3b3;">
-										<i class="zmdi zmdi-circle"></i>
-									</span>
-									<input type="radio" value="grey" name="color" id="grey" style="display: none;" class="filter">
-									<label for="grey" class="filter-link stext-106 trans-04" style="border-bottom: unset; display: inline;">
-										Grey
-									</label>
-								</li> -->
-
-										<li class="p-b-6">
-											<span
-												class="fs-15 lh-12 m-r-6"
-												style="color: hsl(0, 59%, 20%)"
-											>
-												<i class="zmdi zmdi-circle"></i>
-											</span>
-											<input
-												type="radio"
-												value="brown"
-												name="color"
-												id="brown"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="brown"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset; display: inline"
-											>
-												Brown
-											</label>
-										</li>
-
-										<!-- <li class="p-b-6">
-									<span class="fs-15 lh-12 m-r-6" style="color: #fa4251;">
-										<i class="zmdi zmdi-circle"></i>
-									</span>
-									<input type="radio" value="red" name="color" id="red" style="display: none;" class="filter">
-									<label for="red" class="filter-link stext-106 trans-04" style="border-bottom: unset; display: inline;">
-										Red
-									</label>
-								</li> -->
-
-										<li class="p-b-6">
-											<span
-												class="fs-15 lh-12 m-r-6"
-												style="color: rgb(255, 255, 255)"
-											>
-												<i class="zmdi zmdi-circle"></i>
-											</span>
-											<input
-												type="radio"
-												value="white"
-												name="color"
-												id="white"
-												style="display: none"
-												class="filter"
-											/>
-											<label
-												for="white"
-												class="filter-link stext-106 trans-04"
-												style="border-bottom: unset; display: inline"
-											>
-												White
-											</label>
-										</li>
-									</ul>
-								</div>
-
-								<div class="filter-col4 p-b-27">
-									<div class="mtext-102 cl2 p-b-15">Tags</div>
-
-									<div class="flex-w p-t-4 m-r--5">
-										<input
-											type="radio"
-											value="all"
-											name="tags"
-											id="tagdef"
-											style="display: none"
-											class="br-filter"
-										/>
-										<label
-											for="tagdef"
-											class="flex-c-m stext-107 cl6 size-301 bor7 p-lr-15 hov-tag1 trans-04 m-r-5 m-b-5"
-										>
-											All
-										</label>
-
-										<input
-											type="radio"
-											value="fashion"
-											name="tags"
-											id="fashion"
-											style="display: none"
-											class="br-filter"
-										/>
-										<label
-											for="fashion"
-											class="flex-c-m stext-107 cl6 size-301 bor7 p-lr-15 hov-tag1 trans-04 m-r-5 m-b-5"
-										>
-											Fashion
-										</label>
-
-										<input
-											type="radio"
-											value="livestyle"
-											name="tags"
-											id="livestyle"
-											style="display: none"
-											class="br-filter"
-										/>
-										<label
-											for="livestyle"
-											class="flex-c-m stext-107 cl6 size-301 bor7 p-lr-15 hov-tag1 trans-04 m-r-5 m-b-5"
-										>
-											Livestyle
-										</label>
-
-										<input
-											type="radio"
-											value="denim"
-											name="tags"
-											id="denim"
-											style="display: none"
-											class="br-filter"
-										/>
-										<label
-											for="denim"
-											class="flex-c-m stext-107 cl6 size-301 bor7 p-lr-15 hov-tag1 trans-04 m-r-5 m-b-5"
-										>
-											Denim
-										</label>
-
-										<input
-											type="radio"
-											value="streetstyle"
-											name="tags"
-											id="streetstyle"
-											style="display: none"
-											class="br-filter"
-										/>
-										<label
-											for="streetstyle"
-											class="flex-c-m stext-107 cl6 size-301 bor7 p-lr-15 hov-tag1 trans-04 m-r-5 m-b-5"
-										>
-											Streetstyle
-										</label>
-
-										<!-- <input type="radio" value="crafts" name="tags" id="crafts" style="display: none;" class="br-filter">
-								<label for="crafts" class="flex-c-m stext-107 cl6 size-301 bor7 p-lr-15 hov-tag1 trans-04 m-r-5 m-b-5">
-									Crafts
-								</label> -->
+						<!-- add filtershere -->
+						<div class="search-sort-container">
+							<div class="flex-w flex-c-m m-tb-20">
+								<!-- Search Form -->
+								<form action="/" method="GET" class="flex-c-m m-r-20">
+									<div class="wrap-search flex-c-m">
+										<input type="text" 
+											   class="search-input stext-104 cl2 plh4" 
+											   name="search" 
+											   placeholder="Search products..."
+											   value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
+										<button type="submit" class="search-btn flex-c-m trans-04">
+											<i class="fa fa-search cl2"></i>
+										</button>
 									</div>
+								</form>
+							
+								<!-- Sorting Filter -->
+								<div class="flex-c-m">
+									<form action="/" method="GET" class="flex-c-m">
+										<% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+											<input type="hidden" name="search" value="<%= searchQuery %>">
+										<% } %>
+										
+										<select name="sort" class="elegant-select" onchange="this.form.submit()">
+											<option value="all" <%= currentSort === 'all' ? 'selected' : '' %>>All Products</option>
+											<option value="newest" <%= currentSort === 'newest' ? 'selected' : '' %>>Newest First</option>
+											<option value="price-low" <%= currentSort === 'price-low' ? 'selected' : '' %>>Price: Low to High</option>
+											<option value="price-high" <%= currentSort === 'price-high' ? 'selected' : '' %>>Price: High to Low</option>
+											<option value="a-z" <%= currentSort === 'a-z' ? 'selected' : '' %>>Name: A to Z</option>
+											<option value="z-a" <%= currentSort === 'z-a' ? 'selected' : '' %>>Name: Z to A</option>
+										</select>
+									</form>
 								</div>
 							</div>
 						</div>
-					</div>
 
-					<div class="row isotope-grid">
-						<% if (products && products.length > 0) { %>
-							<% for (let i = 0; i < products.length; i++) { %>
-								<div class="col-sm-6 col-md-4 col-lg-3 p-b-35 isotope-item">
-									<!-- Block2 -->
-									<div class="block2">
-										<div class="block2-pic hov-img0">
-											<a href="/productdetail?id=<%= products[i]._id %>">
-											<img src="/uploads/product-images/<%= products[i].productImages[0] %>" alt="IMG-PRODUCT" />
-										</a>
-										
-											<!-- Button Container to Keep Layout Consistent -->
-											<div class="button-container">
-												<!-- Quick View Button -->
+						<!-- Clear float and ensure new row -->
+						<div style="clear: both;"></div>
+
+						<!-- Product Grid Container -->
+						<div class="product-grid-container">
+							<div class="row">
+								<% if (products && products.length > 0) { %>
+									<% for (let i = 0; i < products.length; i++) { %>
+										<div class="col-sm-6 col-md-4 col-lg-3 p-b-35">
+											<!-- Block2 -->
+											<div class="block2">
+												<div class="block2-pic hov-img0">
+													<a href="/productdetail?id=<%= products[i]._id %>">
+														<img src="/uploads/product-images/<%= products[i].productImages[0] %>" alt="IMG-PRODUCT" class="img-fluid" />
+													</a>
 												
-										
-												<!-- Add to Cart Button -->
-												<a href="/carthandler?id=<%= products[i]._id %>" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 add-to-cart-btn">
-													Add to Cart
-												</a>
+													<!-- Button Container to Keep Layout Consistent -->
+													<div class="button-container">
+														<!-- Add to Cart Button -->
+														<a href="/carthandler?id=<%= products[i]._id %>" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 add-to-cart-btn">
+															Add to Cart
+														</a>
+													</div>
+												</div>
+												<div class="block2-txt flex-w flex-t p-t-14">
+													<div class="block2-txt-child1 flex-col-l">
+														<a href="/productdetail?id=<%= products[i]._id %>"
+														   class="stext-104 cl4 hov-cl1 trans-04 js-name-b2 p-b-6">
+														   <%= products[i].productName %>
+														</a>
+														<span class="stext-105 cl3">
+															$<%= products[i].regularPrice %>
+														</span>
+													</div>
+													<div class="block2-txt-child2 flex-c p-t-3">
+														<button onclick="addToWishlist('<%= products[i]._id %>')" class="btn-addwish-b2 dis-block pos-relative js-addwish-b2">
+															<img class="icon-heart1 dis-block trans-04" src="images/icons/icon-heart-01.png" alt="ICON" />
+															<img class="icon-heart2 dis-block trans-04 ab-t-l" src="images/icons/icon-heart-02.png" alt="ICON" />
+														</button>
+													</div>                   
+												</div>
 											</div>
 										</div>
-										<div class="block2-txt flex-w flex-t p-t-14">
-											<div class="block2-txt-child1 flex-col-l">
-												<a href="/productdetail?id=<%= products[i]._id %>"
-												   class="stext-104 cl4 hov-cl1 trans-04 js-name-b2 p-b-6">
-												   <%= products[i].productName %>
-												</a>
-												<span class="stext-105 cl3">
-													$<%= products[i].regularPrice %>
-												</span>
-											</div>
-											<div class="block2-txt-child2 flex-c p-t-3">
-												<a href="#" class="btn-addwish-b2 dis-block pos-relative js-addwish-b2">
-													<img class="icon-heart1 dis-block trans-04" src="images/icons/icon-heart-01.png" alt="ICON" />
-													<img class="icon-heart2 dis-block trans-04 ab-t-l" src="images/icons/icon-heart-02.png" alt="ICON" />
-												</a>
-											
-											
-											</div>                    
-										</div>
-										
-										<!-- Add to Cart Button -->
-									
+									<% } %>
+								<% } else { %>
+									<div class="col-12 text-center p-t-20">
+										<p class="stext-102 cl6">No products available.</p>
 									</div>
-								</div>
-							<% } %>
-						<% } else { %>
-							<p>No products available.</p>
-						<% } %>
-					</div>
-					
-					
+								<% } %>
+							</div>
+						</div>
 
-					<!-- Load more -->
-					<div class="flex-c-m flex-w w-full p-t-45">
-						<a
-							href="#"
-							class="flex-c-m stext-101 cl5 size-103 bg2 bor1 hov-btn1 p-lr-15 trans-04"
-						>
-							Load More
-						</a>
+						<!-- Load more -->
+						<div class="flex-c-m flex-w w-full p-t-45">
+							<% if (totalPages > 1) { %>
+								<nav class="flex-w flex-c-m w-full">
+									<% if (hasPreviousPage) { %>
+										<a href="/?page=<%= previousPage %>" 
+										   class="flex-c-m stext-101 cl5 size-103 bg2 bor1 hov-btn1 p-lr-15 trans-04 m-r-8">
+											Previous
+										</a>
+									<% } %>
+		
+									<% for(let i = 1; i <= totalPages; i++) { %>
+										<a href="/?page=<%= i %>" 
+										   class="flex-c-m stext-101 size-103 bg2 bor1 hov-btn1 p-lr-15 trans-04 m-r-8 <%= currentPage === i ? 'how-active1' : '' %>">
+											<%= i %>
+										</a>
+									<% } %>
+		
+									<% if (hasNextPage) { %>
+										<a href="/?page=<%= nextPage %>" 
+										   class="flex-c-m stext-101 cl5 size-103 bg2 bor1 hov-btn1 p-lr-15 trans-04 m-l-8">
+											Next
+										</a>
+									<% } %>
+								</nav>
+							<% } %>
+						</div>
 					</div>
-				</div>
-			</div>
-		</section>
+				</section>
+				<style>
+				.wrap-search {
+    display: flex;
+    align-items: center;
+    padding: 12px 25px;
+    background: #ffffff;
+    border-radius: 50px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(113, 127, 224, 0.1);
+    margin-right: 20px;
+}
+
+.wrap-search:hover,
+.wrap-search:focus-within {
+    box-shadow: 0 5px 20px rgba(113, 127, 224, 0.15);
+    border-color: rgba(113, 127, 224, 0.3);
+    transform: translateY(-1px);
+}
+
+.search-input {
+    border: none;
+    background: transparent;
+    padding: 8px 0;
+    width: 260px;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.search-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.search-input:focus {
+    outline: none;
+}
+
+.search-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+}
+
+.search-btn:hover {
+    opacity: 1;
+    color: #717fe0;
+    transform: scale(1.1);
+}
+
+/* Elegant Select Styles */
+.elegant-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 12px 45px 12px 25px;
+    border-radius: 50px;
+    border: 1px solid rgba(113, 127, 224, 0.1);
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23717fe0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 20px center;
+    cursor: pointer;
+    font-size: 15px;
+    min-width: 220px;
+    color: #333;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.3px;
+}
+
+.elegant-select:hover,
+.elegant-select:focus {
+    border-color: rgba(113, 127, 224, 0.3);
+    box-shadow: 0 5px 20px rgba(113, 127, 224, 0.15);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.elegant-select option {
+    padding: 12px;
+    font-size: 14px;
+    background: #fff;
+    color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .flex-w.flex-c-m {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+    
+    .wrap-search {
+        margin-right: 0;
+        margin-bottom: 15px;
+        width: 100%;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .elegant-select {
+        width: 100%;
+    }
+}
+
+/* Animation for Focus States */
+@keyframes gentle-glow {
+    0% { box-shadow: 0 3px 15px rgba(113, 127, 224, 0.05); }
+    50% { box-shadow: 0 5px 20px rgba(113, 127, 224, 0.2); }
+    100% { box-shadow: 0 3px 15px rgba(113, 127, 224, 0.05); }
+}
+
+.wrap-search:focus-within,
+.elegant-select:focus {
+    animation: gentle-glow 2s infinite;
+}
+			/* Search and Filter Container */
+			.search-sort-container {
+				width: 100%;
+				margin-bottom: 2rem;
+				display: flex;
+				justify-content: flex-end;
+			}
+
+			.flex-w.flex-c-m.m-tb-20 {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 1rem;
+				width: 100%;
+				justify-content: flex-end;
+			}
+
+			/* Product Grid Container */
+			.product-grid-container {
+				width: 100%;
+				margin-top: 2rem;
+				clear: both;
+				float: none;
+			}
+
+			.product-grid-container .row {
+				display: flex;
+				flex-wrap: wrap;
+				margin-right: -15px;
+				margin-left: -15px;
+				width: 100%;
+			}
+
+			/* Product Card Styles */
+			.block2 {
+				height: 100%;
+				display: flex;
+				flex-direction: column;
+				background: #fff;
+				border-radius: 8px;
+				overflow: hidden;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+				margin-bottom: 1rem;
+			}
+
+			.block2:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+			}
+
+			.block2-pic {
+				position: relative;
+				padding-top: 100%; /* 1:1 Aspect Ratio */
+				overflow: hidden;
+			}
+
+			.block2-pic img {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			.button-container {
+				position: absolute;
+				bottom: 20px;
+				left: 50%;
+				transform: translateX(-50%);
+				width: auto;
+				opacity: 0;
+				transition: all 0.3s ease;
+				z-index: 2;
+			}
+
+			.block2:hover .button-container {
+				opacity: 1;
+				bottom: 30px;
+			}
+
+			.block2-txt {
+				padding: 15px;
+				flex-grow: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+
+			/* Responsive adjustments */
+			@media (max-width: 768px) {
+				.search-sort-container {
+					flex-direction: column;
+					align-items: center;
+				}
+
+				.flex-w.flex-c-m.m-tb-20 {
+					justify-content: center;
+					flex-direction: column;
+					align-items: center;
+				}
+
+				.wrap-search {
+					margin-right: 0;
+					margin-bottom: 1rem;
+					width: 100%;
+					max-width: 300px;
+				}
+
+				.elegant-select {
+					width: 100%;
+					max-width: 300px;
+				}
+
+				.block2-pic {
+					padding-top: 75%; /* 4:3 Aspect Ratio for mobile */
+				}
+
+				.button-container {
+					opacity: 1;
+					bottom: 30px;
+				}
+			}
+			/* Pagination Styles */
+			.pagination-container {
+				width: 100%;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				margin: 2rem 0;
+			}
+		
+			.pagination-link {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				min-width: 36px;
+				height: 36px;
+				margin: 0 5px;
+				border: 1px solid #e6e6e6;
+				border-radius: 3px;
+				color: #666666;
+				font-size: 14px;
+				transition: all 0.3s;
+			}
+		
+			.pagination-link:hover {
+				background-color: #717fe0;
+				color: white;
+				border-color: #717fe0;
+			}
+		
+			.pagination-link.active {
+				background-color: #717fe0;
+				color: white;
+				border-color: #717fe0;
+			}
+		
+			/* Make sure buttons are visible */
+			.hov-btn1:hover {
+				background-color: #717fe0;
+				color: white;
+			}
+		
+			.how-active1 {
+				background-color: #717fe0;
+				color: white !important;
+			}
+
+			/* Product Grid Styles */
+			.block2 {
+				height: 100%;
+				display: flex;
+				flex-direction: column;
+				background: #fff;
+				border-radius: 8px;
+				overflow: hidden;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+			}
+
+			.block2:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+			}
+
+			.block2-pic {
+				position: relative;
+				padding-top: 100%; /* 1:1 Aspect Ratio */
+				overflow: hidden;
+			}
+
+			.block2-pic img {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			.button-container {
+				position: absolute;
+				bottom: 20px;
+				left: 50%;
+				transform: translateX(-50%);
+				width: auto;
+				opacity: 0;
+				transition: all 0.3s ease;
+			}
+
+			.block2:hover .button-container {
+				opacity: 1;
+				bottom: 30px;
+			}
+
+			.block2-txt {
+				padding: 15px;
+				flex-grow: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+
+			/* Responsive adjustments */
+			@media (max-width: 768px) {
+				.block2-pic {
+					padding-top: 75%; /* 4:3 Aspect Ratio for mobile */
+				}
+
+				.button-container {
+					opacity: 1;
+					bottom: 30px;
+				}
+			}
+		</style>
 
 		<!-- Footer -->
 		<%- include ('component/footer.ejs') %>
@@ -612,6 +567,98 @@
 		<%#- include ('component/modal.ejs') %>
 
 		<!-- Script -->
+		<script>
+			async function addToWishlist(productId) {
+				try {
+					const button = event.currentTarget;
+					const icon1 = button.querySelector('.icon-heart1');
+					const icon2 = button.querySelector('.icon-heart2');
+					
+					if (button.classList.contains('in-wishlist')) {
+						// Remove from wishlist
+						const response = await fetch('/removeFromWishlist', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({ productId })
+						});
+						
+						const data = await response.json();
+						if (data.success) {
+							button.classList.remove('in-wishlist');
+							icon1.style.opacity = '1';
+							icon2.style.opacity = '0';
+							toastr.success('Removed from wishlist');
+						} else {
+							toastr.error(data.message || 'Failed to remove from wishlist');
+						}
+					} else {
+						// Add to wishlist
+						const response = await fetch('/addWishlist', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({ productId })
+						});
+						
+						const data = await response.json();
+						if (data.success) {
+							button.classList.add('in-wishlist');
+							icon1.style.opacity = '0';
+							icon2.style.opacity = '1';
+							toastr.success('Added to wishlist');
+						} else {
+							toastr.error(data.message || 'Failed to add to wishlist');
+						}
+					}
+				} catch (error) {
+					console.error('Error:', error);
+					toastr.error('An error occurred');
+				}
+			}
+
+			// Check wishlist status on page load
+			async function checkWishlistStatus() {
+				try {
+					const response = await fetch('/checkWishlist');
+					const data = await response.json();
+					
+					if (data.success && data.wishlistProducts) {
+						data.wishlistProducts.forEach(productId => {
+							const button = document.querySelector(`button[onclick="addToWishlist('${productId}')"]`);
+							if (button) {
+								button.classList.add('in-wishlist');
+								const icon1 = button.querySelector('.icon-heart1');
+								const icon2 = button.querySelector('.icon-heart2');
+								if (icon1) icon1.style.opacity = '0';
+								if (icon2) icon2.style.opacity = '1';
+							}
+						});
+					}
+				} catch (error) {
+					console.error('Error checking wishlist status:', error);
+				}
+			}
+
+			// Call checkWishlistStatus when page loads
+			document.addEventListener('DOMContentLoaded', checkWishlistStatus);
+		</script>
+		<style>
+			.btn-addwish-b2 .icon-heart1,
+			.btn-addwish-b2 .icon-heart2 {
+				transition: opacity 0.3s ease;
+			}
+
+			.btn-addwish-b2.in-wishlist .icon-heart1 {
+				opacity: 0;
+			}
+
+			.btn-addwish-b2.in-wishlist .icon-heart2 {
+				opacity: 1;
+			}
+		</style>
 		<script>
 			$(document).ready(function () {
 				$("#productsearch").autocomplete({

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<%- include ('component/head.ejs') %> 
+<body class="hold-transition skin-blue sidebar-mini">
+<div class="wrapper">
+  <%- include ('component/header.ejs') %> 
+  <%- include ('component/aside.ejs') %> 
+
+  <div class="content-wrapper">
+    <section class="content-header">
+      <h1>
+        Dashboard
+        <small>Control panel</small>
+      </h1>
+      <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Dashboard</li>
+      </ol>
+    </section>
+
+    <section class="content">
+      <section class="content-main">
+        <div class="content-header">
+          <div>
+            <h2 class="content-title card-title">Brand</h2>
+          </div>
+        </div>
+        <header class="card-header text-center mb-20">
+          <form action="/admin/brand" method="get" class="d-inline">
+            <div class="input-group input-group-sm border border-1 border-grey rounded-pill" style="width: 500px; margin-left: 230px">
+              <input type="text" class="form-control border-0 rounded-pill mt-3" placeholder="Search brands" name="search" />
+              <button class="btn" type="submit">Search</button>
+            </div>
+          </form>
+        </header>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <form method="post" action="/admin/addBrand" onsubmit="return handleFormSubmit(event)">
+                  <div class="mb-4">
+                    <label for="brand_name" class="form-label">Name</label>
+                    <input type="text" name="brandName" placeholder="Type here" class="form-control" id="brand_name" />
+                    <div id="name-error" class="error-message text-danger"></div>
+                  </div>
+                  <div class="d-grid">
+                    <button class="btn btn-primary" type="submit">Create Brand</button>
+                  </div>
+                </form>
+              </div>
+              <div class="col-md-8 ml-10">
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th class="text-center"></th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Block/Unblock</th>
+                        <th class="text-start">Edit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% brands.reverse().forEach((brand, index) => { %>
+                      <tr>
+                        <td></td>
+                        <td class="text-start"><%= brand.brandName %></td>
+                        <td class="text-start">
+                          <% if (brand.isBlocked) { %>
+                            <span class="badge rounded-pill alert-danger" style="width: 60px">Blocked</span>
+                          <% } else { %>
+                            <span class="badge rounded-pill alert-success" style="width: 60px">Active</span>
+                          <% } %>
+                        </td>
+                        <td class="text-start">
+                          <% if (brand.isBlocked) { %>
+                            <button class="btn btn-success" style="width: 70px">
+                              <a href="/admin/unblockBrand?id=<%= brand._id %>" class="text-white">Unblock</a>
+                            </button>
+                          <% } else { %>
+                            <button class="btn btn-danger" style="width: 70px">
+                              <a href="/admin/blockBrand?id=<%= brand._id %>" class="text-white">Block</a>
+                            </button>
+                          <% } %>
+                        </td>
+                        <td class="text-start">
+                          <a href="/admin/editBrand?id=<%= brand._id %>" class="btn btn-info text-white">Edit</a>
+                        </td>
+                      </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+</div>
+
+<!-- Add this in your head section or at the top of the body -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+  function handleFormSubmit(event) {
+    event.preventDefault();
+    if (!validateForm()) {
+      return false;
+    }
+
+    const brandName = document.getElementsByName("brandName")[0].value;
+
+    fetch('/admin/addBrand', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ brandName })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Brand added successfully',
+        confirmButtonText: 'OK'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/admin/brand';
+        }
+      });
+    })
+    .catch(error => {
+      let errorMessage = 'An error occurred while adding the brand';
+      if (error.message === 'Brand already exists') {
+        errorMessage = 'Brand already exists!';
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: errorMessage,
+        confirmButtonText: 'OK'
+      });
+    });
+  }
+
+  function validateForm() {
+    clearErrorMessages();
+    const name = document.getElementsByName("brandName")[0].value.trim();
+    let isValid = true;
+
+    if (name === "") {
+      displayErrorMessage("name-error", "Please enter a brand name");
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+      displayErrorMessage("name-error", "Brand name should contain only alphabetic characters");
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  function clearErrorMessages() {
+    document.getElementById("name-error").textContent = "";
+  }
+
+  function displayErrorMessage(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+      errorElement.textContent = message;
+      errorElement.style.color = 'red';
+    }
+  }
+</script>
+
+</div>
+</div>
+</body>
+</html>

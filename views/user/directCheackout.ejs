@@ -169,13 +169,13 @@
             background: #f1f8f1;
         }
     </style>    
-  <form action="/placeOrder" method="POST">
+  <form action="/placeBuyNowOrder" method="POST">
     <div class="checkout-container">
-        <h1 class="section-title text-center mb-5">Secure Checkout</h1>
+        <h1 class="section-title text-center mb-5">Quick Checkout</h1>
 
-        <div class="row">
+        <div class="row g-4">
             <!-- Left Column (Addresses) -->
-            <div class="col-lg-6">
+            <div class="col-lg-7">
                 <div class="address-box">
                     <h2 class="section-title">Delivery Address</h2>
                     <% address.forEach(addr => { %>
@@ -200,7 +200,6 @@
                                     data-landmark="<%= addr.landMark %>"
                                     data-city="<%= addr.city %>"
                                     data-state="<%= addr.state %>"
-                                   
                                     data-pincode="<%= addr.pincode %>"
                                     data-bs-toggle="modal" data-bs-target="#editAddressModal">
                                     <i class="fas fa-edit"></i> Edit
@@ -215,25 +214,29 @@
                 </div>
             </div>
 
-            <!-- Right Column (Order Summary, Payment, Coupon) -->
-            <div class="col-lg-6">
-                <!-- Order Summary Box -->
-                <div class="order-summary">
+            <!-- Right Column (Order Summary, Coupon, Payment) -->
+            <div class="col-lg-5">
+                <div class="order-summary mb-4">
                     <h2 class="section-title">Order Summary</h2>
-                    <% let total = 0; %>
-                    <% if(cart.length > 0){ %>
-                        <% cart.forEach(item => { %>
-                            <div class="summary-item">
-                                <div>
-                                    <h6 class="mb-1"><%= item.productId.productName %></h6>
-                                    <small class="text-muted"><%= item.quantity %> x ₹<%= item.price %></small>
-                                </div>
-                                <span><strong>₹<%= item.quantity * item.price %></strong></span> 
-                                <% total +=item.totalPrice;%> 
+                    
+                    <!-- Product Details -->
+                    <div class="summary-item">
+                        <div class="row align-items-center">
+                            <div class="col-3">
+                                <img src="/uploads/product-images/<%=product.productImages[0]%>" alt="Product Image" 
+                                     class="img-fluid rounded-3" style="border: 1px solid #eee;">
                             </div>
-                        <% }) %>
-                    <% } %>
-
+                            <div class="col-9">
+                                <% let total = 0; %>
+                                <h6 class="mb-1"><%=product.productName %></h6>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted"><%=qunatity %> x <%=product.salePrice %></small>
+                                    <span><strong>₹<%=product.salePrice*qunatity%></strong></span>
+                                    <% total+= product.salePrice*qunatity%>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="summary-item">
                         <span>Shipping</span>
                         <span>Free</span>
@@ -244,12 +247,12 @@
                     </div>
                     <div class="summary-item">
                         <strong>Total</strong>
-                        <strong><%=total %></strong> 
+                        <strong><%=total %></strong>
                     </div>
                 </div>
 
                 <!-- Coupon Section -->
-                <div class="coupon-section mt-3">
+                <div class="coupon-section mb-4">
                     <h2 class="section-title">Have a Coupon?</h2>
                     <div class="input-group">
                         <input type="text" name="coupon" class="coupon-input" placeholder="Enter coupon code">
@@ -258,7 +261,7 @@
                 </div>
 
                 <!-- Payment Method Box -->
-                <div class="product-card mt-3">
+                <div class="product-card">
                     <h2 class="section-title">Payment Method</h2>
                     <div class="payment-methods">
                         <div class="form-check">
@@ -731,7 +734,7 @@
             const paymentMethod = selectedPayment.value;
 
             try {
-                const response = await fetch('/placeOrder', {
+                const response = await fetch('/placeOrder?productId=<%=product._id%>&quantity=<%=qunatity%>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -776,4 +779,4 @@
 	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	
 	<!-- Include other scripts -->
-	<%- include ('../partials/user/script.ejs') %> 
+	<%- include ('component/script.ejs') %> 

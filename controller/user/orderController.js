@@ -31,83 +31,108 @@ const getcheckout = async (req, res) => {
 }
 
 const placeOrder = async (req, res) => {
-   try {
-      console.log("Order placement request received");
-      const userId = req.session.user;
-      const { address, paymentMethod } = req.body;
-      console.log("Address:", address);
-      console.log("Payment Method:", paymentMethod);
-
-      
-      // Get cart items
-      const cart = await Cart.findOne({ userId }).populate('item.productId');
-      if (!cart || cart.item.length === 0) {
-         return res.status(400).json({ success: false, message: 'Cart is empty' });
-      }
-      for (const item of cart.item) {
-         const product = item.productId; // Access the product (not an array, just one object at a time)
-      
-         // Check if stock is enough before reducing
-         if (product.quantity < item.quantity) {
-            return res.status(400).json({ 
-               success: false, 
-               message: `Not enough stock for ${product.name}` 
-            });
-         }
-      
-         // Reduce stock by the ordered quantity
-         product.quantity -= item.quantity; 
-      
-         // Save updated product stock to the database
-         await product.save();
-      }
-
-      // Calculate totals
-      let totalPrice = 0;
-      const orderedItems = cart.item.map(item => {
-         totalPrice += item.totalPrice;
-         return {
-            product: item.productId._id,
-            productName:item.productId.productName,
-            quantity: item.quantity,
-            price: item.price
-         };
-      });
-
-      // Create new order
-      const order = new Order({
-         userId: userId,
-
-         orderedItems,
-         totalPrice,
-         finalAmount: totalPrice, // Add discount logic here if needed
-         address: address,
-         paymentMethod: paymentMethod,
-         status: 'Pending',
-         invoiceDate: new Date()
-      });
-
-      await order.save();
-
-      // Clear cart after successful order
-      cart.item = [];
-      await cart.save();
-
-      res.json({ 
-         success: true, 
-         message: 'Order placed successfully',
-         orderId: order.orderId 
-      });
-
-   } catch (error) {
-      console.error("Error in placing order:", error);
-      res.status(500).json({ 
-         success: false, 
-         message: 'Internal server error',
-         error: error.message 
-      });
-   }
-}
+    try {
+       console.log("Order placement request received");
+       const userId = req.session.user;
+       const { address, paymentMethod } = req.body;
+       const productId = req.query.productId; // For direct product checkout
+       const quantity = parseInt(req.query.quantity) || 1;
+ 
+       console.log("Address:", address);
+       console.log("Payment Method:", paymentMethod);
+       console.log("Direct Product ID:", productId);
+       console.log("Direct Product Quantity:", quantity);
+ 
+       let orderedItems = [];
+       let totalPrice = 0;
+ 
+       if (productId) {
+          // **Direct product checkout**
+          const product = await Product.findById(productId);
+          if (!product) {
+             return res.status(404).json({ success: false, message: "Product not found" });
+          }
+ 
+          if (product.quantity < quantity) {
+             return res.status(400).json({ success: false, message: `Not enough stock for ${product.productName}` });
+          }
+ 
+          product.quantity -= quantity;
+          await product.save();
+ 
+          orderedItems.push({
+             product: product._id,
+             productName: product.productName,
+             quantity: quantity,
+             price: product.salePrice
+          });
+ 
+          totalPrice = quantity * product.salePrice;
+       } else {
+          // **Cart-based checkout**
+          const cart = await Cart.findOne({ userId }).populate('item.productId');
+          if (!cart || cart.item.length === 0) {
+             return res.status(400).json({ success: false, message: 'Cart is empty' });
+          }
+ 
+          for (const item of cart.item) {
+             const product = item.productId;
+             if (product.quantity < item.quantity) {
+                return res.status(400).json({ success: false, message: `Not enough stock for ${product.productName}` });
+             }
+ 
+             product.quantity -= item.quantity;
+             await product.save();
+ 
+             orderedItems.push({
+                product: product._id,
+                productName: product.productName,
+                quantity: item.quantity,
+                price: item.price
+             });
+ 
+             totalPrice += item.totalPrice;
+          }
+ 
+          // **Clear the cart after checkout**
+          cart.item = [];
+          await cart.save();
+       }
+ 
+       // **Calculate final amount (apply discount if needed)**
+       const discount = 0; // Add discount logic here if required
+       const finalAmount = totalPrice - discount;
+ 
+       // **Create a new order**
+       const order = new Order({
+          userId,
+          orderedItems,
+          totalPrice,
+          discount,
+          finalAmount,
+          address,
+          paymentMethod,
+          status: 'Pending',
+          invoiceDate: new Date()
+       });
+ 
+       await order.save();
+ 
+       res.json({ 
+          success: true, 
+          message: 'Order placed successfully', 
+          orderId: order.orderId 
+       });
+ 
+    } catch (error) {
+       console.error("Error in placing order:", error);
+       res.status(500).json({ 
+          success: false, 
+          message: 'Internal server error', 
+          error: error.message 
+       });
+    }
+ };
 
 const addAddress = async (req, res) => {
    try {
@@ -580,6 +605,36 @@ const returnOrder = async (req, res) => {
         });
     }
 };
+const getdirectcheackout=async(req,res)=>{
+    try {
+    const userId = req.session.user;
+    const addressDoc = await Address.findOne({userId:userId})
+    const isLoggedIn = req.session.isLoggedIn || false;
+    const user = await User.findById(userId);
+    const productId=req.query.productId;
+    const product = await Product.findOne({ _id:productId })
+    const cart = await Cart.findOne({ userId: userId })
+    const qunatity = req.query.quantity;
+       
+           
+           
+         
+           
+     
+           res.render("directCheackout", {
+              user,
+              qunatity
+              ,
+              product,
+              isLoggedIn,cart,
+              address: addressDoc ? addressDoc.address : []
+           });
+        } catch (error) {
+           console.error("Error in checkout:", error);
+           res.status(500).render('error', { message: 'Internal server error' });
+        }
+     }
+
 
 module.exports = {
     getcheckout,
@@ -589,5 +644,6 @@ module.exports = {
     loadUserOrders,
     loadOrderDetails,
     cancelOrder,
-    returnOrder
+    returnOrder,
+    getdirectcheackout
 };

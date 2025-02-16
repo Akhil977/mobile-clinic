@@ -6,10 +6,12 @@ const brandSchema = new Schema({
         type:String,
         required:true
     },
-    brandImage:{
-        type:[String],
-        required:true
-    },
+    brandOffer: {
+        type: Number,
+        default: 0,
+        required: false,
+      }
+    ,
     isBlocked :{
         type:Boolean,
         default:false

@@ -17,42 +17,95 @@ const loadHomepage = async (req, res) => {
         // Log session data for debugging
         console.log("Session data:", req.session);
 
-        // Fetch all products that are listed for sale
-        const products = await Product.find({ isListed: true });
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1; // Current page
+        const limit = 12; // Products per page
+        const skip = (page - 1) * limit;
+
+        // Build filter query
+        let filterQuery = { isListed: true };
+
+        // Search by product name
+        if (req.query.search) {
+            filterQuery.productName = { $regex: new RegExp(req.query.search, 'i') };
+        }
+
+        // Sort options
+        let sortOption = {};
+        if (req.query.sort) {
+            switch (req.query.sort) {
+                case 'price-low':
+                    sortOption = { salePrice: 1 };
+                    break;
+                case 'price-high':
+                    sortOption = { salePrice: -1 };
+                    break;
+                case 'newest':
+                    sortOption = { createdAt: -1 };
+                    break;
+                case 'a-z':
+                    sortOption = { productName: 1 };
+                    break;
+                case 'z-a':
+                    sortOption = { productName: -1 };
+                    break;
+                case 'all':
+                default:
+                    sortOption = {}; // No specific sorting for 'all'
+            }
+        }
+
+        // Fetch total number of filtered products for pagination
+        const totalProducts = await Product.countDocuments(filterQuery);
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        // Fetch paginated and filtered products
+        const products = await Product.find(filterQuery)
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limit);
 
         // Fetch the user's cart (only if logged in)
         let cart = [];
         if (req.session.isLoggedIn) {
-            // Ensure userId is passed in the session correctly
-            const userId = req.session.user; 
-
-            // Fetch the cart and populate product details
+            const userId = req.session.user;
             const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
             
-            // If the cart exists, map cart items and include product details
             if (userCart) {
                 cart = userCart.item.map(item => ({
-                    productId: item.productId._id,  // Product ID
-                    name: item.productId.productName,  // Product Name
-                    price: item.price,  // Price of the item in the cart
-                    quantity: item.quantity,  // Quantity of the item
-                    totalPrice: item.totalPrice,  // Calculated total price of the item
-                    image: item.productId.productImages[0]  // Image of the product
+                    productId: item.productId._id,
+                    name: item.productId.productName,
+                    price: item.price,
+                    quantity: item.quantity,
+                    totalPrice: item.totalPrice,
+                    image: item.productId.productImages[0]
                 }));
             }
         }
 
-        // Check if the user is logged in (boolean flag for frontend)
         const isLoggedIn = req.session.isLoggedIn || false;
 
-        // Render the homepage with products and the user's cart
-        res.render("home", { isLoggedIn, cart, products });
+        // Render with pagination data and search query
+        res.render("home", { 
+            isLoggedIn, 
+            cart, 
+            products,
+            currentPage: page,
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1,
+            nextPage: page + 1,
+            previousPage: page - 1,
+            searchQuery: req.query.search || '',
+            currentSort: req.query.sort || 'all'
+        });
 
     } catch (error) {
         console.error("Error loading homepage:", error.message);
         res.status(500).send("Server error");
     }
 };
+
 const loadLogin = (req, res) => {
     try {
         // Simulate session data (you can adjust this based on actual session management)

@@ -365,7 +365,12 @@
                                <div class="row">
                                 <div class="col-lg-4 mb-4">
                                     <label class="form-label">Brand</label>
-                                    <input placeholder="Brand Name" name="brand" type="text" class="form-control">
+                                    <select class="form-select" name="brand">
+                                        <option value="" selected disabled>Select a Brand</option>
+                                        <% for(let i = 0; i < Brand.length; i++) { %>
+                                            <option value="<%= Brand[i].brandName %>"><%= Brand[i].brandName %></option>
+                                        <% } %>
+                                    </select>
                                     <div id="brand-error" class="error-message"></div>
                                 </div>
                             </div>
