@@ -93,7 +93,8 @@ router.get("/cart",cartController.getCart)
 ///////////checkout
 router.get("/checkout", protectUserProfile, checkout.getcheckout)
 router.get("/order/buy-now", protectUserProfile, checkout.getdirectcheackout)
-router.post("/placeOrder", protectUserProfile, checkout.placeOrder)
+router.post("/placeOrder", protectUserProfile, checkout.placeOrder);
+router.patch('/apply-coupon', protectUserProfile, checkout.applyCoupon);
 router.post("/add-checkout-address", protectUserProfile, checkout.addAddress)
 router.post("/edit-checkout-address", protectUserProfile, checkout.editAddress)
 
@@ -111,9 +112,7 @@ router.post("/addWishlist", whishlist.addwishlist);
 router.post("/removeFromWishlist", whishlist.removeFromWishlist);
 router.get("/wishlist", whishlist.getWishlist);
 
-/////////////whishlist
-// router.get("/wishlist",whishlist.getWishlist)
-// router.post("/addWishlist",whishlist.addwishlist)
+
 
 // Blocked User Page
 router.get('/blockedByAdmin', userController.adminBlocked);

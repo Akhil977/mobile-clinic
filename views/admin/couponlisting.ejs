@@ -35,6 +35,9 @@
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCouponModal">
               <i class="fa fa-plus"></i> Add Coupon
             </button>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addOfferModal">
+              <i class="fa fa-plus"></i> Add Offer
+            </button>
           </div>
         </div>
         <div class="box-body">
@@ -43,10 +46,12 @@
               <thead>
                 <tr>
                   <th>Coupon Name</th>
+                  <th>Type</th>
                   <th>Created On</th>
                   <th>Expires On</th>
-                  <th>Offer Price</th>
-                  <th>Minimum Price</th>
+                  <th>Discount</th>
+                  <th>Max Discount</th>
+                  <th>Min. Purchase</th>
                   <th>Usage Limit</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -56,10 +61,24 @@
                 <% coupons.forEach(coupon => { %>
                 <tr>
                   <td><%= coupon.name %></td>
+                  <td><%= coupon.couponType.charAt(0).toUpperCase() + coupon.couponType.slice(1) %></td>
                   <td><%= new Date(coupon.createdOn).toLocaleDateString() %></td>
                   <td><%= new Date(coupon.expireOn).toLocaleDateString() %></td>
-                  <td>$<%= coupon.offerPrice %></td>
-                  <td>$<%= coupon.minimumPrice %></td>
+                  <td>
+                    <% if (coupon.couponType === 'percentage') { %>
+                      <%= coupon.offerPrice %>%
+                    <% } else { %>
+                      ₹<%= coupon.offerPrice %>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (coupon.couponType === 'percentage') { %>
+                      ₹<%= coupon.maximumDiscountAmount %>
+                    <% } else { %>
+                      -
+                    <% } %>
+                  </td>
+                  <td>₹<%= coupon.minimumPrice %></td>
                   <td><%= coupon.usageLimit %></td>
                   <td>
                     <span class="label <%= coupon.islist ? 'label-success' : 'label-danger' %>">
@@ -67,10 +86,10 @@
                     </span>
                   </td>
                   <td>
-                    <button class="btn btn-warning btn-sm" onclick="editCoupon('<%= coupon._id %>')">
+                    <button class="btn btn-warning btn-sm editCouponBtn" data-id="<%= coupon._id %>">
                       <i class="fa fa-edit"></i> Edit
                     </button>
-                    <button class="btn btn-<%= coupon.islist ? 'danger' : 'success' %> btn-sm" onclick="toggleCouponStatus('<%= coupon._id %>', <%= coupon.islist %>)">
+                    <button class="btn btn-<%= coupon.islist ? 'danger' : 'success' %> btn-sm toggleStatusBtn" data-id="<%= coupon._id %>" data-status="<%= coupon.islist %>">
                       <i class="fa fa-<%= coupon.islist ? 'times' : 'check' %>"></i> 
                       <%= coupon.islist ? 'Deactivate' : 'Activate' %>
                     </button>
@@ -107,15 +126,28 @@
               <small class="text-muted">Only letters and numbers allowed</small>
             </div>
             <div class="form-group">
+              <label for="couponType">Coupon Type*</label>
+              <select class="form-control" id="couponType" name="couponType" required>
+                <option value="flat">Flat Amount</option>
+                <option value="percentage">Percentage Discount</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="expireOn">Expiry Date*</label>
               <input type="date" class="form-control" id="expireOn" name="expireOn" required min="<%= new Date().toISOString().split('T')[0] %>">
             </div>
             <div class="form-group">
-              <label for="offerPrice">Offer Price ($)*</label>
+              <label for="offerPrice" id="offerPriceLabel">Discount Amount (₹)*</label>
               <input type="number" class="form-control" id="offerPrice" name="offerPrice" required min="1" step="0.01">
+              <small class="text-muted" id="offerPriceHelp">Enter the flat discount amount</small>
+            </div>
+            <div class="form-group" id="maxDiscountGroup" style="display: none;">
+              <label for="maximumDiscountAmount">Maximum Discount Amount (₹)*</label>
+              <input type="number" class="form-control" id="maximumDiscountAmount" name="maximumDiscountAmount" min="1" step="0.01">
+              <small class="text-muted">Maximum discount amount that can be applied</small>
             </div>
             <div class="form-group">
-              <label for="minimumPrice">Minimum Purchase Amount ($)*</label>
+              <label for="minimumPrice">Minimum Purchase Amount (₹)*</label>
               <input type="number" class="form-control" id="minimumPrice" name="minimumPrice" required min="1" step="0.01">
             </div>
             <div class="form-group">
@@ -128,6 +160,96 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary" id="saveCouponBtn">Save Coupon</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Offer Modal -->
+  <div class="modal fade" id="addOfferModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title">Add New Offer</h4>
+        </div>
+        <div class="modal-body">
+          <form id="addOfferForm">
+            <div class="form-group">
+              <label for="offerDiscount">Discount (%)*</label>
+              <input type="number" class="form-control" id="offerDiscount" name="discount" required min="1" max="100" step="1">
+              <small class="text-muted">Enter discount percentage (1-100)</small>
+            </div>
+            <div class="form-group">
+              <label for="offerExpireDate">Expiry Date*</label>
+              <input type="date" class="form-control" id="offerExpireDate" name="expireDate" required min="<%= new Date().toISOString().split('T')[0] %>">
+              <small class="text-muted">Select the offer expiry date</small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="saveOfferBtn">Save Offer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Coupon Modal -->
+  <div class="modal fade" id="editCouponModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title">Edit Coupon</h4>
+        </div>
+        <div class="modal-body">
+          <form id="editCouponForm">
+            <input type="hidden" id="editCouponId" name="_id">
+            <div class="form-group">
+              <label for="editCouponName">Coupon Name*</label>
+              <input type="text" class="form-control" id="editCouponName" name="name" required pattern="[A-Za-z0-9]+" title="Only letters and numbers allowed">
+              <small class="text-muted">Only letters and numbers allowed</small>
+            </div>
+            <div class="form-group">
+              <label for="editCouponType">Coupon Type*</label>
+              <select class="form-control" id="editCouponType" name="couponType" required>
+                <option value="flat">Flat Amount</option>
+                <option value="percentage">Percentage Discount</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editExpireOn">Expiry Date*</label>
+              <input type="date" class="form-control" id="editExpireOn" name="expireOn" required min="<%= new Date().toISOString().split('T')[0] %>">
+            </div>
+            <div class="form-group">
+              <label for="editOfferPrice" id="editOfferPriceLabel">Discount Amount (₹)*</label>
+              <input type="number" class="form-control" id="editOfferPrice" name="offerPrice" required min="1" step="0.01">
+              <small class="text-muted" id="editOfferPriceHelp">Enter the flat discount amount</small>
+            </div>
+            <div class="form-group" id="editMaxDiscountGroup" style="display: none;">
+              <label for="editMaximumDiscountAmount">Maximum Discount Amount (₹)*</label>
+              <input type="number" class="form-control" id="editMaximumDiscountAmount" name="maximumDiscountAmount" min="1" step="0.01">
+              <small class="text-muted">Maximum discount amount that can be applied</small>
+            </div>
+            <div class="form-group">
+              <label for="editMinimumPrice">Minimum Purchase Amount (₹)*</label>
+              <input type="number" class="form-control" id="editMinimumPrice" name="minimumPrice" required min="1" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="editUsageLimit">Usage Limit*</label>
+              <input type="number" class="form-control" id="editUsageLimit" name="usageLimit" required min="1" step="1">
+              <small class="text-muted">Maximum number of times this coupon can be used</small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="updateCouponBtn">Update Coupon</button>
         </div>
       </div>
     </div>
@@ -149,11 +271,33 @@
   $(document).ready(function() {
     // Initialize toastr
     toastr.options = {
-      "closeButton": true,
-      "progressBar": true,
-      "positionClass": "toast-top-right",
-      "timeOut": "3000"
+      closeButton: true,
+      progressBar: true,
+      positionClass: "toast-top-right",
     };
+
+    // Handle coupon type change
+    $('#couponType').change(function() {
+      const type = $(this).val();
+      const offerPriceLabel = $('#offerPriceLabel');
+      const offerPriceHelp = $('#offerPriceHelp');
+      const maxDiscountGroup = $('#maxDiscountGroup');
+      const offerPriceInput = $('#offerPrice');
+      
+      if (type === 'percentage') {
+        offerPriceLabel.text('Discount Percentage (%)*');
+        offerPriceHelp.text('Enter percentage between 1-100');
+        maxDiscountGroup.show();
+        offerPriceInput.attr('max', '100');
+        $('#maximumDiscountAmount').prop('required', true);
+      } else {
+        offerPriceLabel.text('Discount Amount (₹)*');
+        offerPriceHelp.text('Enter the flat discount amount');
+        maxDiscountGroup.hide();
+        offerPriceInput.removeAttr('max');
+        $('#maximumDiscountAmount').prop('required', false);
+      }
+    });
 
     // Prevent form submission on enter
     $('#addCouponForm').on('keypress', function(e) {
@@ -164,21 +308,160 @@
     });
 
     // Handle save button click
-    $('#saveCouponBtn').on('click', function() {
-      saveCoupon();
-    });
-  });
+    $('#saveCouponBtn').on('click', saveCoupon);
 
-  // Validate minimum price is greater than offer price
-  document.getElementById('addCouponForm').addEventListener('input', function(e) {
-    const offerPrice = parseFloat(document.getElementById('offerPrice').value);
-    const minimumPrice = parseFloat(document.getElementById('minimumPrice').value);
-    
-    if (offerPrice && minimumPrice && offerPrice >= minimumPrice) {
-      document.getElementById('minimumPrice').setCustomValidity('Minimum purchase amount must be greater than offer price');
-    } else {
-      document.getElementById('minimumPrice').setCustomValidity('');
-    }
+    // Validate minimum price is greater than offer price
+    $('#addCouponForm').on('input', function() {
+      const offerPrice = parseFloat($('#offerPrice').val());
+      const minimumPrice = parseFloat($('#minimumPrice').val());
+      const offerType = $('#couponType').val();
+      
+      if (offerType === 'flat' && offerPrice && minimumPrice && offerPrice >= minimumPrice) {
+        $('#minimumPrice')[0].setCustomValidity('Minimum purchase amount must be greater than discount amount');
+      } else {
+        $('#minimumPrice')[0].setCustomValidity('');
+      }
+    });
+
+    // Handle edit button click
+    $(document).on('click', '.editCouponBtn', function() {
+      const couponId = $(this).data('id');
+      
+      // Fetch coupon details
+      $.ajax({
+        url: `/admin/getCoupon/${couponId}`,
+        method: 'GET',
+        success: function(response) {
+          if (response.success) {
+            const coupon = response.coupon;
+            
+            // Populate edit form
+            $('#editCouponId').val(coupon._id);
+            $('#editCouponName').val(coupon.name);
+            $('#editCouponType').val(coupon.couponType).trigger('change');
+            $('#editExpireOn').val(new Date(coupon.expireOn).toISOString().split('T')[0]);
+            $('#editOfferPrice').val(coupon.offerPrice);
+            if (coupon.couponType === 'percentage') {
+              $('#editMaximumDiscountAmount').val(coupon.maximumDiscountAmount);
+              $('#editMaxDiscountGroup').show();
+            } else {
+              $('#editMaxDiscountGroup').hide();
+            }
+            $('#editMinimumPrice').val(coupon.minimumPrice);
+            $('#editUsageLimit').val(coupon.usageLimit);
+            
+            // Show edit modal
+            $('#editCouponModal').modal('show');
+          } else {
+            toastr.error('Failed to fetch coupon details');
+          }
+        },
+        error: function() {
+          toastr.error('An error occurred while fetching coupon details');
+        }
+      });
+    });
+
+    // Handle coupon type change in edit form
+    $('#editCouponType').change(function() {
+      const type = $(this).val();
+      const offerPriceLabel = $('#editOfferPriceLabel');
+      const offerPriceHelp = $('#editOfferPriceHelp');
+      const maxDiscountGroup = $('#editMaxDiscountGroup');
+      const offerPriceInput = $('#editOfferPrice');
+      
+      if (type === 'percentage') {
+        offerPriceLabel.text('Discount Percentage (%)*');
+        offerPriceHelp.text('Enter percentage between 1-100');
+        maxDiscountGroup.show();
+        offerPriceInput.attr('max', '100');
+        $('#editMaximumDiscountAmount').prop('required', true);
+      } else {
+        offerPriceLabel.text('Discount Amount (₹)*');
+        offerPriceHelp.text('Enter the flat discount amount');
+        maxDiscountGroup.hide();
+        offerPriceInput.removeAttr('max');
+        $('#editMaximumDiscountAmount').prop('required', false);
+      }
+    });
+
+    // Handle update coupon
+    $('#updateCouponBtn').click(function() {
+      const form = $('#editCouponForm')[0];
+      if (form.checkValidity()) {
+        const couponId = $('#editCouponId').val();
+        const formData = {
+          name: $('#editCouponName').val(),
+          couponType: $('#editCouponType').val(),
+          expireOn: $('#editExpireOn').val(),
+          offerPrice: $('#editOfferPrice').val(),
+          minimumPrice: $('#editMinimumPrice').val(),
+          usageLimit: $('#editUsageLimit').val()
+        };
+
+        if (formData.couponType === 'percentage') {
+          formData.maximumDiscountAmount = $('#editMaximumDiscountAmount').val();
+        }
+
+        $.ajax({
+          url: `/admin/editCoupon/${couponId}`,
+          method: 'PUT',
+          data: formData,
+          success: function(response) {
+            if (response.success) {
+              toastr.success('Coupon updated successfully');
+              $('#editCouponModal').modal('hide');
+              location.reload();
+            } else {
+              toastr.error(response.message || 'Failed to update coupon');
+            }
+          },
+          error: function() {
+            toastr.error('An error occurred while updating the coupon');
+          }
+        });
+      } else {
+        form.reportValidity();
+      }
+    });
+
+    // Handle status toggle
+    $(document).on('click', '.toggleStatusBtn', function() {
+      const couponId = $(this).data('id');
+      const button = $(this);
+      
+      $.ajax({
+        url: `/admin/toggleCouponStatus/${couponId}`,
+        method: 'PATCH',
+        success: function(response) {
+          if (response.success) {
+            toastr.success(response.message);
+            
+            // Update button appearance
+            const newStatus = response.islist;
+            button
+              .removeClass('btn-success btn-danger')
+              .addClass(newStatus ? 'btn-danger' : 'btn-success')
+              .html(`
+                <i class="fa fa-${newStatus ? 'times' : 'check'}"></i> 
+                ${newStatus ? 'Deactivate' : 'Activate'}
+              `);
+            
+            // Update status label
+            const statusLabel = button.closest('tr').find('.label');
+            statusLabel
+              .removeClass('label-success label-danger')
+              .addClass(newStatus ? 'label-success' : 'label-danger')
+              .text(newStatus ? 'Active' : 'Inactive');
+          } else {
+            toastr.error(response.message);
+          }
+        },
+        error: function() {
+          toastr.error('Failed to toggle coupon status');
+        }
+      });
+    });
   });
 
   // Save new coupon
@@ -188,26 +471,33 @@
       
       // Check form validity
       if (!form.checkValidity()) {
-        // Trigger HTML5 validation
-        $('<input type="submit">').hide().appendTo(form).click().remove();
+        form.reportValidity();
         return;
       }
 
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
       
-      // Convert string values to numbers where needed
+      // Convert string values to numbers
       data.offerPrice = parseFloat(data.offerPrice);
       data.minimumPrice = parseFloat(data.minimumPrice);
       data.usageLimit = parseInt(data.usageLimit);
+      if (data.maximumDiscountAmount) {
+        data.maximumDiscountAmount = parseFloat(data.maximumDiscountAmount);
+      }
 
-      // Validate minimum price
-      if (data.offerPrice >= data.minimumPrice) {
-        toastr.error('Minimum purchase amount must be greater than offer price');
+      // Additional validations
+      if (data.couponType === 'flat' && data.offerPrice >= data.minimumPrice) {
+        toastr.error('Minimum purchase amount must be greater than discount amount');
+        return;
+      }
+
+      if (data.couponType === 'percentage' && !data.maximumDiscountAmount) {
+        toastr.error('Maximum discount amount is required for percentage coupons');
         return;
       }
       
-      const response = await fetch('/admin/addCoupon', {
+      const response = await fetch('/admin/couponadd', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

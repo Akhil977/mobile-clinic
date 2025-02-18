@@ -3,6 +3,7 @@ const Product = require('../../model/productShema')
 const Cart = require("../../model/cartSchema")
 const Order = require("../../model/orderSchema")
 const Address = require('../../model/addressSchema')
+const Coupon = require("../../model/couponSchema")
 const mongoose = require('mongoose')
 
 const getcheckout = async (req, res) => {
@@ -32,107 +33,103 @@ const getcheckout = async (req, res) => {
 
 const placeOrder = async (req, res) => {
     try {
-       console.log("Order placement request received");
-       const userId = req.session.user;
-       const { address, paymentMethod } = req.body;
-       const productId = req.query.productId; // For direct product checkout
-       const quantity = parseInt(req.query.quantity) || 1;
- 
-       console.log("Address:", address);
-       console.log("Payment Method:", paymentMethod);
-       console.log("Direct Product ID:", productId);
-       console.log("Direct Product Quantity:", quantity);
- 
-       let orderedItems = [];
-       let totalPrice = 0;
- 
-       if (productId) {
-          // **Direct product checkout**
-          const product = await Product.findById(productId);
-          if (!product) {
-             return res.status(404).json({ success: false, message: "Product not found" });
-          }
- 
-          if (product.quantity < quantity) {
-             return res.status(400).json({ success: false, message: `Not enough stock for ${product.productName}` });
-          }
- 
-          product.quantity -= quantity;
-          await product.save();
- 
-          orderedItems.push({
-             product: product._id,
-             productName: product.productName,
-             quantity: quantity,
-             price: product.salePrice
-          });
- 
-          totalPrice = quantity * product.salePrice;
-       } else {
-          // **Cart-based checkout**
-          const cart = await Cart.findOne({ userId }).populate('item.productId');
-          if (!cart || cart.item.length === 0) {
-             return res.status(400).json({ success: false, message: 'Cart is empty' });
-          }
- 
-          for (const item of cart.item) {
-             const product = item.productId;
-             if (product.quantity < item.quantity) {
-                return res.status(400).json({ success: false, message: `Not enough stock for ${product.productName}` });
-             }
- 
-             product.quantity -= item.quantity;
-             await product.save();
- 
-             orderedItems.push({
-                product: product._id,
-                productName: product.productName,
-                quantity: item.quantity,
-                price: item.price
-             });
- 
-             totalPrice += item.totalPrice;
-          }
- 
-          // **Clear the cart after checkout**
-          cart.item = [];
-          await cart.save();
-       }
- 
-       // **Calculate final amount (apply discount if needed)**
-       const discount = 0; // Add discount logic here if required
-       const finalAmount = totalPrice - discount;
- 
-       // **Create a new order**
-       const order = new Order({
-          userId,
-          orderedItems,
-          totalPrice,
-          discount,
-          finalAmount,
-          address,
-          paymentMethod,
-          status: 'Pending',
-          invoiceDate: new Date()
-       });
- 
-       await order.save();
- 
-       res.json({ 
-          success: true, 
-          message: 'Order placed successfully', 
-          orderId: order.orderId 
-       });
- 
+        const { productId } = req.query;
+        const { quantity } = req.query;
+        const { address, paymentMethod, appliedCoupon } = req.body;
+        const userId = req.session.user;
+
+        // Find the product
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        // Calculate total price
+        const total = product.salePrice * quantity;
+        let discountAmount = 0;
+        let couponApplied = false;
+        let couponId = null;
+
+        // Check and apply coupon if provided
+        if (appliedCoupon) {
+            const coupon = await Coupon.findOne({ 
+                name: appliedCoupon,
+                islist: true,
+                expireOn: { $gt: new Date() },
+                minimumPrice: { $lte: total },
+                $or: [
+                    { UserId: { $exists: false } },
+                    { UserId: { $nin: [userId] } }
+                ]
+            });
+
+            if (coupon) {
+                // Calculate discount
+                if (coupon.couponType === 'percentage') {
+                    discountAmount = (total * coupon.offerPrice) / 100;
+                    // Apply maximum discount cap for percentage coupons
+                    if (discountAmount > coupon.maximumDiscountAmount) {
+                        discountAmount = coupon.maximumDiscountAmount;
+                    }
+                } else {
+                    discountAmount = coupon.offerPrice;
+                }
+
+                // Set coupon applied flag and ID
+                couponApplied = true;
+                couponId = coupon._id;
+            }
+        }
+
+        // Calculate final price after discount
+        const finalPrice = total - discountAmount;
+
+        // Create order
+        const newOrder = new Order({
+            userId: userId,
+            orderedItems: [{
+                product: productId,
+                quantity: quantity,
+                price: product.salePrice
+            }],
+            totalPrice: total,
+            discount: discountAmount,
+            finalAmount: finalPrice,
+            address: address,
+            paymentMethod: paymentMethod,
+            couponApplied: couponApplied,
+            couponId: couponId
+        });
+
+        await newOrder.save();
+
+        // Update product stock
+        await Product.findByIdAndUpdate(productId, { 
+            $inc: { stock: -quantity } 
+        });
+
+        // If a coupon was used, mark it as used by this user
+        if (couponApplied && couponId) {
+            await Coupon.findByIdAndUpdate(couponId, {
+                $push: { UserId: userId }
+            });
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Order placed successfully',
+            orderId: newOrder._id 
+        });
+
     } catch (error) {
-       console.error("Error in placing order:", error);
-       res.status(500).json({ 
-          success: false, 
-          message: 'Internal server error', 
-          error: error.message 
-       });
+        console.error('Error in placeOrder:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to place order',
+            error: error.message 
+        });
     }
- };
+};
 
 const addAddress = async (req, res) => {
    try {
@@ -325,7 +322,6 @@ const loadUserOrders = async (req, res) => {
         res.status(500).send(errorHtml);
     }
 };
-
 const loadOrderDetails = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -457,7 +453,6 @@ const loadOrderDetails = async (req, res) => {
         res.status(500).send(errorHtml);
     }
 };
-
 const cancelOrder = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -607,34 +602,103 @@ const returnOrder = async (req, res) => {
 };
 const getdirectcheackout=async(req,res)=>{
     try {
-    const userId = req.session.user;
-    const addressDoc = await Address.findOne({userId:userId})
-    const isLoggedIn = req.session.isLoggedIn || false;
-    const user = await User.findById(userId);
-    const productId=req.query.productId;
-    const product = await Product.findOne({ _id:productId })
-    const cart = await Cart.findOne({ userId: userId })
-    const qunatity = req.query.quantity;
-       
-           
-           
-         
-           
-     
-           res.render("directCheackout", {
-              user,
-              qunatity
-              ,
-              product,
-              isLoggedIn,cart,
-              address: addressDoc ? addressDoc.address : []
-           });
-        } catch (error) {
-           console.error("Error in checkout:", error);
-           res.status(500).render('error', { message: 'Internal server error' });
-        }
-     }
+        const userId = req.session.user;
+        const addressDoc = await Address.findOne({userId:userId})
+        const isLoggedIn = req.session.isLoggedIn || false;
+        const user = await User.findById(userId);
+        const productId = req.query.productId;
+        const product = await Product.findOne({ _id:productId })
+        const cart = await Cart.findOne({ userId: userId })
+        const quantity = req.query.quantity;
+        const total = product.salePrice * quantity;
+        
+        // Fetch available coupons
+        const currentDate = new Date();
+        const availableCoupons = await Coupon.find({
+            islist: true,
+            expireOn: { $gt: currentDate },
+            minimumPrice: { $lte: total },
+            $or: [
+                { UserId: { $exists: false } },
+                { UserId: { $nin: [userId] } }
+            ]
+        }).sort({ createdOn: -1 });
 
+        res.render("directCheackout", {
+            user,
+            quantity,
+            product,
+            isLoggedIn,
+            cart,
+            coupons: availableCoupons,
+            address: addressDoc ? addressDoc.address : []
+        });
+    } catch (error) {
+        console.error("Error in checkout:", error);
+        res.status(500).render('error', { message: 'Internal server error' });
+    }
+}
+
+const applyCoupon = async(req,res)=>{
+    try {
+        const { couponCode, total } = req.body;
+        const userId = req.session.user;
+        console.log("its inside the apply coupon")
+
+        // Find the coupon
+        const coupon = await Coupon.findOne({ 
+            name: couponCode,
+            islist: true,
+            expireOn: { $gt: new Date() },
+            minimumPrice: { $lte: total },
+            $or: [
+                { UserId: { $exists: false } },
+                { UserId: { $nin: [userId] } }
+            ]
+        });
+
+        if (!coupon) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid or expired coupon"
+            });
+        }
+
+        // Calculate discount
+        let discountAmount = 0;
+        if (coupon.couponType === 'percentage') {
+            discountAmount = (total * coupon.offerPrice) / 100;
+            // Apply maximum discount cap for percentage coupons
+            if (discountAmount > coupon.maximumDiscountAmount) {
+                discountAmount = coupon.maximumDiscountAmount;
+            }
+        } else {
+            discountAmount = coupon.offerPrice;
+        }
+
+        // Calculate final amount
+        const finalAmount = total - discountAmount;
+
+        res.status(200).json({
+            success: true,
+            message: "Coupon applied successfully",
+            discount: discountAmount,
+            finalAmount: finalAmount,
+            couponDetails: {
+                code: coupon.name,
+                type: coupon.couponType,
+                value: coupon.offerPrice
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in applyCoupon:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to apply coupon"
+        });
+    }
+}
 
 module.exports = {
     getcheckout,
@@ -645,5 +709,6 @@ module.exports = {
     loadOrderDetails,
     cancelOrder,
     returnOrder,
-    getdirectcheackout
+    getdirectcheackout,
+    applyCoupon
 };

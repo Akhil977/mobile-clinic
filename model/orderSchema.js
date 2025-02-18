@@ -13,6 +13,11 @@ const orderSchema = new Schema({
         ref: "User",
         required: true,
     },
+    couponId:{
+        type:Schema.Types.ObjectId,
+        ref:"Coupon",
+        required:false,
+    },
   
     orderedItems: [{
         product: {
@@ -20,11 +25,7 @@ const orderSchema = new Schema({
             ref: 'Product', 
             required: true
         },
-        productName: {
-            type: String,
-            required: true,
-        },
-  
+       
         quantity: {
             type: Number,
             required: true

@@ -20,9 +20,13 @@ const categorySchema = new Schema({
       },
       CategoryOffer: {
         type: Number,
-        default: 0,
+        default: null,
         required: false,
       },
+      expireOn:{
+        type:Date,
+        required:false,
+      }
     },
     { timestamps: true })
 const Category = mongoose.model("Category",categorySchema);

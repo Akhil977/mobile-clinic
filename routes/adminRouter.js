@@ -46,6 +46,12 @@ router.get('/editBrand', adminAuth.adminCheck, brandController.getEditBrand);
 
 router.put('/brands/update/:id', brandController.updateBrand);
 
+// Coupon Routes
+router.get('/coupon', adminAuth.adminCheck, CouponController.getCoupon);
+router.post('/couponadd', adminAuth.adminCheck, CouponController.addCoupon);
+router.get('/getCoupon/:id', adminAuth.adminCheck, CouponController.getCouponById);
+router.put('/editCoupon/:id', adminAuth.adminCheck, CouponController.editCoupon);
+router.patch('/toggleCouponStatus/:id', adminAuth.adminCheck, CouponController.toggleCouponStatus);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -91,10 +97,9 @@ router.post('/editProduct/:id', uploads.array('images', 10), productController.e
 router.post('/deleteImage', productController.deleteSingleImage);
 
 router.get('/view-order',orderController.viewOrders)
+
+
 router.patch("/update-order-status",orderController.updateStatus)
 router.get("/orderDetails",orderController.showOrderDetails)
-router.get("/coupon",CouponController.getCoupon)
-
-
 
 module.exports = router

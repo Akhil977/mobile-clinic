@@ -163,6 +163,7 @@
                         <th class="text-center"></th>
                         <th>Name</th>
                         <th>Description</th>
+                        <th>Offers</th>
                         <th>Status</th>
                         <th>List/Unlist</th>
                         <th class="text-start">Edit</th>
@@ -174,6 +175,13 @@
                         <td></td>
                         <td class="text-start"><%= category.name%></td>
                         <td class="text-start"><%= category.description%></td>
+                        <td class="text-start">
+                          <% if (category.CategoryOffer != null) { %>
+                            <span class="badge rounded-pill alert-success" style="width: 80px">Offer Added</span>
+                          <% } else { %>
+                            <span class="badge rounded-pill alert-danger" style="width: 80px">No Offer</span>
+                          <% } %>
+                        </td>
                         <td class="text-start">
                           <% if(category.isListed){ %>
                             <span class="badge rounded-pill alert-success" style="width: 60px">Listed</span>

@@ -168,8 +168,61 @@
         .add-address-btn:hover {
             background: #f1f8f1;
         }
+
+        /* Available Coupons Styling */
+        .available-coupons {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .coupon-card {
+            border: 1px dashed #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .coupon-card:hover {
+            border-color: #4CAF50;
+            background: #f1f8f1;
+            transform: translateY(-2px);
+        }
+
+        .coupon-code {
+            font-family: monospace;
+            font-weight: 600;
+            color: #2d3436;
+            background: #fff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .coupon-details {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .coupon-expiry {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .no-coupons {
+            text-align: center;
+            padding: 1rem;
+            color: #64748b;
+        }
     </style>    
   <form action="/placeBuyNowOrder" method="POST">
+    <input type="hidden" name="appliedCouponId" id="appliedCouponId" value="">
+    <input type="hidden" name="discountAmount" id="hidden-discount-amount" value="0">
+    <input type="hidden" name="finalAmount" id="hidden-final-amount" value="<%=product.salePrice*quantity%>">
     <div class="checkout-container">
         <h1 class="section-title text-center mb-5">Quick Checkout</h1>
 
@@ -230,9 +283,9 @@
                                 <% let total = 0; %>
                                 <h6 class="mb-1"><%=product.productName %></h6>
                                 <div class="d-flex justify-content-between">
-                                    <small class="text-muted"><%=qunatity %> x <%=product.salePrice %></small>
-                                    <span><strong>₹<%=product.salePrice*qunatity%></strong></span>
-                                    <% total+= product.salePrice*qunatity%>
+                                    <small class="text-muted"><%=quantity %> x <%=product.salePrice %></small>
+                                    <span><strong>₹<%=product.salePrice*quantity%></strong></span>
+                                    <% total+= product.salePrice*quantity%>
                                 </div>
                             </div>
                         </div>
@@ -243,11 +296,11 @@
                     </div>
                     <div class="summary-item">
                         <span>Discount</span>
-                        <span class="text-success">-₹0</span>
+                        <span class="text-success" id="discount-amount">-₹0</span>
                     </div>
                     <div class="summary-item">
                         <strong>Total</strong>
-                        <strong><%=total %></strong>
+                        <strong id="final-amount">₹<%=product.salePrice*quantity%></strong>
                     </div>
                 </div>
 
@@ -255,8 +308,42 @@
                 <div class="coupon-section mb-4">
                     <h2 class="section-title">Have a Coupon?</h2>
                     <div class="input-group">
-                        <input type="text" name="coupon" class="coupon-input" placeholder="Enter coupon code">
-                        <button class="apply-btn ms-2">Apply</button>
+                        <input type="text" name="coupon" id="couponInput" class="coupon-input" placeholder="Enter coupon code">
+                        <button type="button" id="apply-coupon" class="apply-btn ms-2">Apply</button>
+                    </div>
+                    <div id="coupon-error" style="color: red; display: none;"></div>
+                    
+                    <!-- Available Coupons -->
+                    <div class="available-coupons mt-3">
+                        <h6 class="mb-3">Available Coupons</h6>
+                        <% if (typeof coupons !== 'undefined' && coupons.length > 0) { %>
+                            <% coupons.forEach(coupon => { %>
+                                <div class="coupon-card" onclick="selectCoupon('<%= coupon.name %>')">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="coupon-code"><%= coupon.name %></span>
+                                        <span class="badge bg-success">
+                                            <%= coupon.couponType === 'percentage' ? coupon.offerPrice + '%' : '₹' + coupon.offerPrice %>
+                                        </span>
+                                    </div>
+                                    <div class="coupon-details">
+                                        <% if (coupon.couponType === 'percentage') { %>
+                                            <%= coupon.offerPrice %>% off up to ₹<%= coupon.maximumDiscountAmount %>
+                                        <% } else { %>
+                                            Flat ₹<%= coupon.offerPrice %> off
+                                        <% } %>
+                                        | Min. Purchase: ₹<%= coupon.minimumPrice %>
+                                    </div>
+                                    <div class="coupon-expiry">
+                                        Valid till: <%= new Date(coupon.expireOn).toLocaleDateString() %>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="no-coupons">
+                                <i class="fas fa-ticket-alt me-2"></i>
+                                No coupons available at the moment
+                            </div>
+                        <% } %>
                     </div>
                 </div>
 
@@ -724,6 +811,10 @@
 
             const selectedAddress = document.querySelector("input[name='address']:checked");
             const selectedPayment = document.querySelector("input[name='paymentMethod']:checked");
+            
+            // Get the applied coupon name
+            const appliedCouponInput = document.getElementById('couponInput');
+            const appliedCouponName = appliedCouponInput ? appliedCouponInput.value.trim() : '';
 
             if (!selectedAddress || !selectedPayment) {
                 Swal.fire("Error!", "Please select an address and payment method.", "error");
@@ -734,14 +825,15 @@
             const paymentMethod = selectedPayment.value;
 
             try {
-                const response = await fetch('/placeOrder?productId=<%=product._id%>&quantity=<%=qunatity%>', {
+                const response = await fetch('/placeOrder?productId=<%=product._id%>&quantity=<%=quantity%>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         address: addressId,
-                        paymentMethod: paymentMethod
+                        paymentMethod: paymentMethod,
+                        appliedCoupon: appliedCouponName // Add applied coupon to the request
                     })
                 });
 
@@ -769,8 +861,112 @@
 
 </script>
 
+<script>
+    function selectCoupon(couponCode) {
+        document.getElementById('couponInput').value = couponCode;
+        // Scroll to the coupon input
+        document.getElementById('couponInput').scrollIntoView({ behavior: 'smooth' });
+    }
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const couponInput = document.getElementById('couponInput');
+        const applyButton = document.getElementById('apply-coupon');
+        const discountAmount = document.getElementById('discount-amount');
+        const finalAmount = document.getElementById('final-amount');
+        const errorDiv = document.getElementById('coupon-error');
+        const appliedCouponId = document.getElementById('appliedCouponId');
+        const hiddenDiscountAmount = document.getElementById('hidden-discount-amount');
+        const hiddenFinalAmount = document.getElementById('hidden-final-amount');
 
+        const total = <%=product.salePrice*quantity%>;
+
+        // Function to show error/success message
+        const showMessage = (message, isError = true) => {
+            errorDiv.textContent = message;
+            errorDiv.style.color = isError ? 'red' : 'green';
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        };
+
+        // Function to apply coupon
+        async function applyCoupon() {
+            const couponCode = couponInput.value.trim();
+            if (!couponCode) {
+                showMessage('Please enter a coupon code');
+                return;
+            }
+
+            try {
+                const response = await fetch('/apply-coupon', {
+                    method: 'PATCH', 
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        couponCode,
+                        total: Number(total) 
+                    })
+                });
+
+                // Log the raw response for debugging
+                console.log('Response status:', response.status);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    // Update displayed values
+                    discountAmount.textContent = '-₹' + data.discount;
+                    finalAmount.textContent = '₹' + data.finalAmount;
+                    
+                    // Update hidden fields
+                    appliedCouponId.value = data.couponDetails.code;
+                    hiddenDiscountAmount.value = data.discount;
+                    hiddenFinalAmount.value = data.finalAmount;
+
+                    // Show success message
+                    showMessage('Coupon applied successfully!', false);
+                    
+                    // Disable coupon input and apply button
+                    couponInput.disabled = true;
+                    applyButton.disabled = true;
+                } else {
+                    showMessage(data.message || 'Invalid coupon');
+                    
+                    // Reset values if coupon is invalid
+                    appliedCouponId.value = '';
+                    hiddenDiscountAmount.value = '0';
+                    hiddenFinalAmount.value = total;
+                }
+            } catch (error) {
+                console.error('Detailed error applying coupon:', error);
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                
+                showMessage('Failed to apply coupon. Please check console for details.');
+                
+                // Reset values on error
+                appliedCouponId.value = '';
+                hiddenDiscountAmount.value = '0';
+                hiddenFinalAmount.value = total;
+            }
+        }
+
+        // Event listener for apply button
+        applyButton.addEventListener('click', applyCoupon);
+
+        // Event listener for coupon input (apply on Enter key)
+        couponInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyCoupon();
+            }
+        });
+    });
+</script>
 
 	<!-- Footer -->
 	<%- include ('../partials/user/footer.ejs') %> 

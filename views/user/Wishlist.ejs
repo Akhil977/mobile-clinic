@@ -35,9 +35,9 @@
 										</a>
 									
 										<div class="button-container">
-											<a href="/carthandler?id=<%= wishlistProducts[i]._id %>" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 add-to-cart-btn">
+											<button onclick="addToCart('<%= wishlistProducts[i]._id %>', this)" class="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04 add-to-cart-btn">
 												Add to Cart
-											</a>
+											</button>
 										</div>
 									</div>
 
@@ -95,6 +95,45 @@
 				"timeOut": "3000"
 			};
 		});
+
+		async function addToCart(productId, button) {
+			try {
+				const response = await fetch(`/carthandler?id=${productId}&fromWishlist=true`, {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				});
+
+				const data = await response.json();
+				
+				if (data.success) {
+					toastr.success(data.message);
+					// Remove the product card from the wishlist UI
+					const productCard = button.closest('.col-sm-6');
+					productCard.remove();
+
+					// Check if wishlist is empty after removal
+					const remainingProducts = document.querySelectorAll('.col-sm-6');
+					if (remainingProducts.length === 0) {
+						const container = document.querySelector('.product-grid-container .row');
+						container.innerHTML = `
+							<div class="col-12 text-center p-t-20">
+								<p class="stext-102 cl6">Your wishlist is empty.</p>
+								<a href="/products" class="flex-c-m stext-101 cl0 size-103 bg1 bor1 hov-btn2 p-lr-15 trans-04 m-t-20">
+									Continue Shopping
+								</a>
+							</div>
+						`;
+					}
+				} else {
+					toastr.error(data.message);
+				}
+			} catch (error) {
+				console.error('Error adding to cart:', error);
+				toastr.error('An error occurred while adding the product to cart');
+			}
+		}
 
 		async function removeFromWishlist(productId, button) {
 			try {
