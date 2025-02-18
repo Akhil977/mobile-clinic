@@ -27,6 +27,8 @@ router.post('/blockCustomer', adminAuth.adminCheck, customerController.blockUnbl
 router.get('/category', adminAuth.adminCheck, categoryController.categoryInfo);
 
 router.post('/addCategory', adminAuth.adminCheck, categoryController.addCategory);
+router.post("/addCategoryOffer",adminAuth.adminCheck,categoryController.addCategoryOffers)
+router.post("/removeCategoryOffer", adminAuth.adminCheck, categoryController.removeCategoryOffer);
 
   router.get('/listCategory', adminAuth.adminCheck, categoryController.getListCategory);
   router.get('/unlistCategory', adminAuth.adminCheck, categoryController.getUnlistCategory);

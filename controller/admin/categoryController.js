@@ -25,23 +25,39 @@ const categoryInfo = async (req, res) => {
   };
   const addCategory = async (req, res) => {
     const { name, description } = req.body;
-    console.log("its insdie the catregory",name,description);
+    console.log("Adding category:", name, description);
+    
+    // Validate input
+    if (!name || !description) {
+      return res.status(400).json({ error: 'Name and description are required' });
+    }
+
     try {
-        console.log("its insdie the catregory",name,description);
       const existingCategory = await Category.findOne({
         name: { $regex: new RegExp(`^${name}$`, 'i') },
       });
+      
       if (existingCategory) {
         return res.status(400).json({ error: 'Category already exists' });
       }
+      
       const newCategory = new Category({
-        name,
-        description,
+        name: name.trim(),
+        description: description.trim(),
       });
+      
       await newCategory.save();
-      return res.json({ message: 'Category added successfully' });
+      
+      return res.status(201).json({ 
+        message: 'Category added successfully', 
+        category: newCategory 
+      });
     } catch (error) {
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error('Error adding category:', error);
+      return res.status(500).json({ 
+        error: 'Internal server error', 
+        details: error.message 
+      });
     }
   };
 
@@ -136,6 +152,121 @@ const updateCategory = async (req, res) => {
        return res.status(500).json({ message: "Internal server error" })
     }
  }
+
+ const addCategoryOffers = async (req, res) => {
+  try {
+    const { categoryId, discountPercentage, expiryDate } = req.body;
+    
+    // Validate input
+    if (!categoryId || !discountPercentage || !expiryDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required fields" 
+      });
+    }
+
+    // Validate discount percentage
+    const discount = parseFloat(discountPercentage);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid discount percentage" 
+      });
+    }
+
+    // Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Category not found" 
+      });
+    }
+
+    // Update category with offer
+    const offercategory = await Category.updateOne(
+      { _id: categoryId },
+      { 
+        $set: { 
+          CategoryOffer: discount, 
+          expireOn: new Date(expiryDate) 
+        } 
+      }
+    );
+
+    if (offercategory.modifiedCount > 0) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "Offer added to category successfully" 
+      });
+    } else {
+      return res.status(200).json({ 
+        success: false, 
+        message: "No changes made to category" 
+      });
+    }
+  } catch (error) {
+    console.error('Error adding category offer:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
+const removeCategoryOffer = async (req, res) => {
+  try {
+    const { categoryId } = req.body;
+
+    // Validate input
+    if (!categoryId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Category ID is required" 
+      });
+    }
+
+    // Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Category not found" 
+      });
+    }
+
+    // Remove offer by setting CategoryOffer and expireOn to null
+    const result = await Category.updateOne(
+      { _id: categoryId },
+      { 
+        $set: { 
+          CategoryOffer: null, 
+          expireOn: null 
+        } 
+      }
+    );
+
+    if (result.modifiedCount > 0) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "Category offer removed successfully" 
+      });
+    } else {
+      return res.status(200).json({ 
+        success: false, 
+        message: "No changes made to category" 
+      });
+    }
+  } catch (error) {
+    console.error('Error removing category offer:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
   module.exports = {
     categoryInfo,
     addCategory,
@@ -145,7 +276,7 @@ const updateCategory = async (req, res) => {
     
     
     toggleCategory,
-    updateCategory,getEditCategory
+    updateCategory,getEditCategory,addCategoryOffers,removeCategoryOffer
    
     
   };

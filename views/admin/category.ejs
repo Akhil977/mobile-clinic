@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
 <%- include ('component/head.ejs') %> 
+
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
   <%- include ('component/header.ejs') %> 
   <%- include ('component/aside.ejs') %> 
+ 
 
   <div class="content-wrapper">
     <section class="content-header">
@@ -164,6 +166,7 @@
                         <th>Name</th>
                         <th>Description</th>
                         <th>Offers</th>
+                        <th>OffersADD/OfferRemove</th>
                         <th>Status</th>
                         <th>List/Unlist</th>
                         <th class="text-start">Edit</th>
@@ -175,11 +178,23 @@
                         <td></td>
                         <td class="text-start"><%= category.name%></td>
                         <td class="text-start"><%= category.description%></td>
+                        <% if (category.CategoryOffer != null && category.CategoryOffer > 0) { %>
+                        <td class="text-start"><%= category.CategoryOffer%>%</td>
+                        <% } else { %>
+                          <td class="text-start">NO Offers</td>
+                          <% } %>
                         <td class="text-start">
-                          <% if (category.CategoryOffer != null) { %>
-                            <span class="badge rounded-pill alert-success" style="width: 80px">Offer Added</span>
+                          <% if (category.CategoryOffer != null && category.CategoryOffer > 0) { %>
+                            <button class="btn btn-danger" style="width: 120px" 
+                                    onclick="handleOfferAction('<%= category._id %>', false)">
+                              Remove Offer
+                            </button>
                           <% } else { %>
-                            <span class="badge rounded-pill alert-danger" style="width: 80px">No Offer</span>
+                            <button class="btn btn-primary" style="width: 120px" 
+                                    data-toggle="modal" data-target="#offerModal" 
+                                    onclick="openOfferModal('<%= category._id %>', false)">
+                              Add Offer
+                            </button>
                           <% } %>
                         </td>
                         <td class="text-start">
@@ -212,6 +227,41 @@
             </div>
           </div>
         </div>
+        <!-- Add Modal -->
+  <div class="modal fade" id="offerModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title" id="modalTitle">Category Offer</h4>
+        </div>
+        <div class="modal-body">
+          <form id="offerForm" method="post" action="/admin/addCategoryOffer" onsubmit="return addCategoryOffer(event)">
+            <input type="hidden" id="categoryId" name="categoryId">
+            <div class="form-group">
+              <label for="discountPercentage">Discount (%)*</label>
+              <input type="number" class="form-control" id="discountPercentage" name="discountPercentage" 
+                     required min="1" max="99" placeholder="Enter discount percentage">
+              <small class="text-muted">Enter discount percentage (1-99)</small>
+              <div id="discount-error" class="text-danger"></div>
+            </div>
+            <div class="form-group">
+              <label for="expiryDate">Expiry Date*</label>
+              <input type="date" class="form-control" id="expiryDate" name="expiryDate" required>
+              <small class="text-muted">Select the offer expiry date</small>
+              <div id="expiry-error" class="text-danger"></div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" form="offerForm" class="btn btn-primary">Save Offer</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
         <!-- Pagination -->
         <div class="pagination-container">
@@ -236,55 +286,213 @@
       </section>
 
       <!-- Scripts -->
+      <link rel="stylesheet" href="/admin/bower_components/bootstrap/dist/css/bootstrap.min.css">
+      <script src="/admin/bower_components/jquery/dist/jquery.min.js"></script>
+      <script src="/admin/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
       
-      <script>
+     
+
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script>
+
+function openOfferModal(categoryId, isUpdate) {
+  try {
+    console.log('Opening modal for category:', categoryId);
+    console.log('Is Update:', isUpdate);
+
+    // If it's an update (remove offer), directly call remove function
+    if (isUpdate) {
+      // Directly remove offer without modal or alert
+      fetch('/admin/removeCategoryOffer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          categoryId: categoryId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Silently reload the page
+        location.reload();
+      })
+      .catch(error => {
+        console.error('Error removing offer:', error);
+      });
+      return;
+    }
+
+    // Set the category ID in the hidden input
+    document.getElementById('categoryId').value = categoryId;
+
+    // Update modal title and button text for adding offer
+    const modalTitle = document.getElementById('modalTitle');
+    const saveButton = document.querySelector('#offerForm + .modal-footer button[type="submit"]');
+    
+    modalTitle.textContent = 'Add Category Offer';
+    saveButton.textContent = 'Add Offer';
+
+    // Open the modal
+    $('#offerModal').modal('show');
+  } catch (error) {
+    console.error('Error opening offer modal:', error);
+  }
+}
+
+    function validateOfferForm() {
+      const discountPercentage = document.getElementById('discountPercentage').value;
+      const expiryDate = document.getElementById('expiryDate').value;
+      let isValid = true;
+
+      // Clear previous errors
+      document.getElementById('discount-error').textContent = '';
+      document.getElementById('expiry-error').textContent = '';
+
+      if (!discountPercentage || discountPercentage < 1 || discountPercentage > 99) {
+        document.getElementById('discount-error').textContent = 
+          'Please enter a valid discount percentage between 1 and 99';
+        isValid = false;
+      }
+
+      if (!expiryDate) {
+        document.getElementById('expiry-error').textContent = 
+          'Please select an expiry date';
+        isValid = false;
+      } else {
+        const selectedDate = new Date(expiryDate);
+        const today = new Date();
+        if (selectedDate < today) {
+          document.getElementById('expiry-error').textContent = 
+            'Expiry date cannot be in the past';
+          isValid = false;
+        }
+      }
+
+      return isValid;
+    }
+
+    function submitOffer() {
+      if (!validateOfferForm()) {
+        return;
+      }
+
+      const formData = {
+        categoryId: document.getElementById('categoryId').value,
+        discountPercentage: document.getElementById('discountPercentage').value,
+        expiryDate: document.getElementById('expiryDate').value
+      };
+
+      fetch('/admin/addCategoryOffer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Server Response:', data);
+        
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: data.message,
+            showConfirmButton: false,
+            timer: 1500
+          }).then(() => {
+            // Close modal and reload or update page
+            $('#offerModal').modal('hide');
+            location.reload();
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.message,
+            showConfirmButton: true
+          });
+        }
+      })
+      .catch(error => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: error.message || 'An error occurred while adding the offer',
+          confirmButtonText: 'OK'
+        });
+      });
+    }
+
         function handleFormSubmit(event) {
           event.preventDefault();
           
-          if (!validateForm()) {
-            return false;
+          const form = event.target;
+          const formData = new FormData(form);
+          const nameInput = document.getElementById('product_name');
+          const descriptionInput = document.getElementById('descriptionId');
+          const nameError = document.getElementById('name-error');
+          const descriptionError = document.getElementById('description-error');
+
+          // Reset previous error messages
+          nameError.textContent = '';
+          descriptionError.textContent = '';
+
+          // Basic client-side validation
+          let isValid = true;
+          if (!nameInput.value.trim()) {
+            nameError.textContent = 'Category name is required';
+            isValid = false;
+          }
+          if (!descriptionInput.value.trim()) {
+            descriptionError.textContent = 'Description is required';
+            isValid = false;
           }
 
-          const name = document.getElementsByName("name")[0].value;
-          const description = document.getElementById("descriptionId").value;
+          if (!isValid) return;
 
           fetch('/admin/addCategory', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, description })
+            body: formData
           })
           .then(response => response.json())
           .then(data => {
             if (data.error) {
-              throw new Error(data.error);
+              // Handle error case
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error,
+                showConfirmButton: true,
+                timer: 3000
+              });
+            } else {
+              // Success case
+              Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: data.message,
+                showConfirmButton: false,
+                timer: 1500
+              }).then(() => {
+                // Optional: Reload the page or update the category list
+                location.reload();
+              });
             }
-            
-            Swal.fire({
-              icon: 'success',
-              title: 'Success!',
-              text: 'Category added successfully',
-              confirmButtonText: 'OK'
-            }).then((result) => {
-              if (result.isConfirmed) {
-                window.location.href = '/admin/category';
-              }
-            });
           })
           .catch(error => {
-            let errorMessage = 'An error occurred while adding the category';
-            if (error.message === 'Category already exists') {
-              errorMessage = 'Category already exists!';
-            }
-            
+            console.error('Error:', error);
             Swal.fire({
               icon: 'error',
-              title: 'Oops...',
-              text: errorMessage,
-              confirmButtonText: 'OK'
+              title: 'Network Error',
+              text: 'Could not add category. Please try again.',
+              showConfirmButton: true,
+              timer: 3000
             });
           });
         }
@@ -330,6 +538,165 @@
           if (errorElement) {
             errorElement.textContent = message;
             errorElement.style.color = 'red';
+          }
+        }
+      </script>
+      <script>
+      $(document).ready(function() {
+        // Set minimum date to today
+        var today = new Date().toISOString().split('T')[0];
+        $('#expiryDate').attr('min', today);
+      });
+
+      function openOfferModal(categoryId, isUpdate) {
+        $('#categoryId').val(categoryId);
+        $('#modalTitle').text(isUpdate ? 'Update Offer' : 'Add Offer');
+        
+        // Clear previous values
+        $('#discountPercentage').val('');
+        $('#expiryDate').val('');
+        
+        // Clear previous errors
+        $('#discount-error').text('');
+        $('#expiry-error').text('');
+        
+        // Show modal
+        $('#offerModal').modal('show');
+      }
+
+      function validateOfferForm() {
+        var discountPercentage = $('#discountPercentage').val();
+        var expiryDate = $('#expiryDate').val();
+        var isValid = true;
+
+        // Clear previous errors
+        $('#discount-error').text('');
+        $('#expiry-error').text('');
+
+        if (!discountPercentage || discountPercentage < 1 || discountPercentage > 99) {
+          $('#discount-error').text('Please enter a valid discount percentage between 1 and 99');
+          isValid = false;
+        }
+
+        if (!expiryDate) {
+          $('#expiry-error').text('Please select an expiry date');
+          isValid = false;
+        }
+
+        if (isValid) {
+          $('#offerForm').submit();
+        }
+      }
+      </script>
+      <script>
+        function addCategoryOffer(event) {
+          // If no event passed, prevent default form submission
+          if (event) {
+            event.preventDefault();
+          }
+          
+          const categoryId = document.getElementById('categoryId').value;
+          const discountPercentage = document.getElementById('discountPercentage').value;
+          const expiryDate = document.getElementById('expiryDate').value;
+
+          console.log('Adding Category Offer:', { categoryId, discountPercentage, expiryDate });
+
+          // Basic client-side validation
+          if (!categoryId || !discountPercentage || !expiryDate) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Validation Error',
+              text: 'Please fill all required fields',
+              showConfirmButton: true
+            });
+            return false;
+          }
+
+          const discount = parseFloat(discountPercentage);
+          if (isNaN(discount) || discount < 0 || discount > 100) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Invalid Discount',
+              text: 'Discount must be a number between 0 and 100',
+              showConfirmButton: true
+            });
+            return false;
+          }
+
+          fetch('/admin/addCategoryOffer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              categoryId,
+              discountPercentage,
+              expiryDate
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Server Response:', data);
+            
+            if (data.success) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: data.message,
+                showConfirmButton: false,
+                timer: 1500
+              }).then(() => {
+                // Close modal and reload or update page
+                $('#offerModal').modal('hide');
+                location.reload();
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message,
+                showConfirmButton: true
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Network Error',
+              text: 'Could not add category offer. Please try again.',
+              showConfirmButton: true
+            });
+          });
+
+          return false;
+        }
+      </script>
+      <script>
+        function handleOfferAction(categoryId, isAddOffer) {
+          // If it's a remove offer action
+          if (!isAddOffer) {
+            // Directly remove offer without modal
+            fetch('/admin/removeCategoryOffer', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                categoryId: categoryId
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              // Silently reload the page
+              location.reload();
+            })
+            .catch(error => {
+              console.error('Error removing offer:', error);
+            });
+          } else {
+            // If it's an add offer action, open the modal
+            openOfferModal(categoryId, false);
           }
         }
       </script>
