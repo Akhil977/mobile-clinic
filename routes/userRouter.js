@@ -8,6 +8,7 @@ const profileCotrller = require("../controller/user/profileCotrller")
 const cartController = require("../controller/user/cartController")
 const checkout = require("../controller/user/orderController")
 const whishlist = require("../controller/user/wishlistController")
+const wallet = require("../controller/user/walletController")
 
 
 router.use(preventBackAfterLogout);
@@ -111,6 +112,10 @@ router.get("/checkWishlist", whishlist.checkWishlist);
 router.post("/addWishlist", whishlist.addwishlist);
 router.post("/removeFromWishlist", whishlist.removeFromWishlist);
 router.get("/wishlist", whishlist.getWishlist);
+
+//Wallet
+router.get("/user-wallet",wallet.getWallet)
+router.post("/add-wallet-money",wallet.addmoney)
 
 
 
