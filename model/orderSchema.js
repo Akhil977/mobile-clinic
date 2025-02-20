@@ -61,7 +61,7 @@ const orderSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Processing', 'Shipped', 'Cancelled', 'Delivered','Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'],
+        enum: ['Pending', 'Processing',`Placed`,'Shipped', 'Cancelled', 'Delivered','Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'],
         default: 'Pending'
     },
  
@@ -94,13 +94,13 @@ const orderSchema = new Schema({
     },
     paymentMethod: {
         type: String,
-        required: true,
-        enum: [
-            'Cash on Delivery',
-            'Wallet Balance',
-            'UPI Payment',
-            'Credit/Debit Card'
-        ]
+        enum: ['UPI', 'Cash on Delivery'],
+        required: true
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['Pending', 'Paid', 'Failed'],
+        default: 'Pending'
     }
 }, { 
     timestamps: true 

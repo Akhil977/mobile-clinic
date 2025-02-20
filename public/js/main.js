@@ -260,4 +260,19 @@
 			$("#addrfield input").val("");
 		}
 	});
+
+	/*==================================================================
+    [ Parallax100 ]*/
+	$('.parallax100').parallax100();
+
+	$.fn.parallax100 = function(){
+		var parallax0 = $('.parallax100');
+		parallax0.each(function(){
+			$(this).parallax({
+				imageSrc: $(this).data('parallax-img'),
+				zIndex: 1
+			});
+		});
+	};
+
 })(jQuery);

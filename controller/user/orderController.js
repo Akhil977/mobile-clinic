@@ -5,6 +5,7 @@ const Order = require("../../model/orderSchema")
 const Address = require('../../model/addressSchema')
 const Coupon = require("../../model/couponSchema")
 const mongoose = require('mongoose')
+const Wallet = require("../../model/walletSchema")
 
 const getcheckout = async (req, res) => {
    try {
@@ -35,8 +36,11 @@ const placeOrder = async (req, res) => {
     try {
         const { productId } = req.query;
         const { quantity } = req.query;
-        const { address, paymentMethod, appliedCoupon } = req.body;
+        const { address, paymentMethod, appliedCoupon, razorpay_payment_id, razorpay_order_id } = req.body;
         const userId = req.session.user;
+
+        // Normalize payment method
+        const normalizedPaymentMethod = paymentMethod === 'COD' ? 'Cash on Delivery' : paymentMethod;
 
         // Find the product
         const product = await Product.findById(productId);
@@ -50,43 +54,14 @@ const placeOrder = async (req, res) => {
         let couponApplied = false;
         let couponId = null;
 
-        // Check and apply coupon if provided
-        if (appliedCoupon) {
-            const coupon = await Coupon.findOne({ 
-                name: appliedCoupon,
-                islist: true,
-                expireOn: { $gt: new Date() },
-                minimumPrice: { $lte: total },
-                $or: [
-                    { UserId: { $exists: false } },
-                    { UserId: { $nin: [userId] } }
-                ]
-            });
-
-            if (coupon) {
-                // Calculate discount
-                if (coupon.couponType === 'percentage') {
-                    discountAmount = (total * coupon.offerPrice) / 100;
-                    // Apply maximum discount cap for percentage coupons
-                    if (discountAmount > coupon.maximumDiscountAmount) {
-                        discountAmount = coupon.maximumDiscountAmount;
-                    }
-                } else {
-                    discountAmount = coupon.offerPrice;
-                }
-
-                // Set coupon applied flag and ID
-                couponApplied = true;
-                couponId = coupon._id;
-            }
+        // Validate payment method
+        if (normalizedPaymentMethod === 'UPI' && (!razorpay_payment_id || !razorpay_order_id)) {
+            return res.status(400).json({ success: false, message: 'Payment verification failed' });
         }
 
-        // Calculate final price after discount
-        const finalPrice = total - discountAmount;
-
-        // Create order
-        const newOrder = new Order({
-            userId: userId,
+        // Create the order
+        const order = new Order({
+            userId,
             orderedItems: [{
                 product: productId,
                 quantity: quantity,
@@ -94,14 +69,23 @@ const placeOrder = async (req, res) => {
             }],
             totalPrice: total,
             discount: discountAmount,
-            finalAmount: finalPrice,
+            finalAmount: total - discountAmount,
             address: address,
-            paymentMethod: paymentMethod,
-            couponApplied: couponApplied,
-            couponId: couponId
+            paymentMethod: normalizedPaymentMethod,
+            paymentStatus: normalizedPaymentMethod === 'UPI' ? 'Paid' : 'Pending',
+            status: 'Placed',
+            couponApplied,
+            couponId
         });
 
-        await newOrder.save();
+        if (normalizedPaymentMethod === 'UPI') {
+            order.paymentDetails = {
+                razorpay_payment_id,
+                razorpay_order_id
+            };
+        }
+
+        await order.save();
 
         // Update product stock
         await Product.findByIdAndUpdate(productId, { 
@@ -115,14 +99,14 @@ const placeOrder = async (req, res) => {
             });
         }
 
+        // If payment is successful, redirect to success page
         res.status(200).json({ 
             success: true, 
             message: 'Order placed successfully',
-            orderId: newOrder._id 
+            orderId: order._id 
         });
-
     } catch (error) {
-        console.error('Error in placeOrder:', error);
+        console.error("Error in placeOrder:", error);
         res.status(500).json({ 
             success: false, 
             message: 'Failed to place order',
@@ -489,11 +473,12 @@ const cancelOrder = async (req, res) => {
         }
 
         // Check if order can be cancelled
-        const cancelableStatuses = ['Pending', 'Processing'];
+        const cancelableStatuses = ['Pending', 'Processing',`Placed`];
         if (!cancelableStatuses.includes(order.status)) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'This order cannot be cancelled' 
+                message: 'This order cannot be cancelled',
+                
             });
         }
 
@@ -501,6 +486,25 @@ const cancelOrder = async (req, res) => {
         order.status = 'Cancelled';
         order.cancelReason = reason;
         order.cancelledAt = new Date();
+
+        if(order.paymentMethod=='UPI'){
+         let returnamount=order.finalAmount;
+         
+        let transaction={amount: returnamount,
+            type:"credit", 
+            description: `return fund from order`,
+            date:new Date()}
+
+            let walletUpdate=await Wallet.findOneAndUpdate({userId:userId},{$push:{transactions:transaction}})
+            if(!walletUpdate){
+            return res.status(404).json({ 
+               success: false, 
+               message: 'wallet not found' 
+           });}
+
+
+
+        }
 
         // Save the updated order
         await order.save();

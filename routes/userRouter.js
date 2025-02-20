@@ -9,7 +9,12 @@ const cartController = require("../controller/user/cartController")
 const checkout = require("../controller/user/orderController")
 const whishlist = require("../controller/user/wishlistController")
 const wallet = require("../controller/user/walletController")
+const razorpayController = require("../controller/user/razorpayController")
 
+
+// Razorpay routes
+router.post('/razorpay/create-order',razorpayController.createOrder);
+router.post('/razorpay/verify-payment',razorpayController.verifyPayment);
 
 router.use(preventBackAfterLogout);
 
@@ -92,13 +97,14 @@ router.get("/category",productController.getProduct)
 router.get("/cart",cartController.getCart)
 
 ///////////checkout
+
 router.get("/checkout", protectUserProfile, checkout.getcheckout)
 router.get("/order/buy-now", protectUserProfile, checkout.getdirectcheackout)
 router.post("/placeOrder", protectUserProfile, checkout.placeOrder);
+router.post("/placeBuyNowOrder", protectUserProfile, checkout.placeOrder)
 router.patch('/apply-coupon', protectUserProfile, checkout.applyCoupon);
 router.post("/add-checkout-address", protectUserProfile, checkout.addAddress)
 router.post("/edit-checkout-address", protectUserProfile, checkout.editAddress)
-
 
 /////////////ORDERS
 
@@ -116,8 +122,6 @@ router.get("/wishlist", whishlist.getWishlist);
 //Wallet
 router.get("/user-wallet",wallet.getWallet)
 router.post("/add-wallet-money",wallet.addmoney)
-
-
 
 // Blocked User Page
 router.get('/blockedByAdmin', userController.adminBlocked);

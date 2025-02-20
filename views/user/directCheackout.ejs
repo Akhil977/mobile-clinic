@@ -219,10 +219,12 @@
             color: #64748b;
         }
     </style>    
-  <form action="/placeBuyNowOrder" method="POST">
+  <form id="orderForm" action="/placeBuyNowOrder" method="POST">
     <input type="hidden" name="appliedCouponId" id="appliedCouponId" value="">
     <input type="hidden" name="discountAmount" id="hidden-discount-amount" value="0">
     <input type="hidden" name="finalAmount" id="hidden-final-amount" value="<%=product.salePrice*quantity%>">
+    <input type="hidden" name="productId" value="<%=product._id%>">
+    <input type="hidden" name="quantity" value="<%=quantity%>">
     <div class="checkout-container">
         <h1 class="section-title text-center mb-5">Quick Checkout</h1>
 
@@ -350,35 +352,29 @@
                 <!-- Payment Method Box -->
                 <div class="product-card">
                     <h2 class="section-title">Payment Method</h2>
-                    <div class="payment-methods">
+                    
+                    <!-- Add UPI Payment Option -->
+                    <div class="payment-methods mb-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="Cash on Delivery">
-                            <label class="form-check-label" for="cod">
-                                Cash on Delivery
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="wallet" value="Wallet Balance">
-                            <label class="form-check-label" for="wallet">
-                                Wallet Balance
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="upi" value="UPI Payment">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="upi" value="UPI">
                             <label class="form-check-label" for="upi">
-                                UPI Payment
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="Credit/Debit Card">
-                            <label class="form-check-label" for="card">
-                                Credit/Debit Card
+                                <i class="fas fa-mobile-alt me-2"></i> UPI Payment
                             </label>
                         </div>
                     </div>
 
-                    <!-- Place Order Button Inside Payment Method -->
-                    <button type="submit" class="btn btn-success mt-4 w-100" id="placeOrderBtn">
+                    <!-- Add COD Option -->
+                    <div class="payment-methods mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="Cash on Delivery">
+                            <label class="form-check-label" for="cod">
+                                <i class="fas fa-money-bill-wave me-2"></i> Cash on Delivery
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Place Order Button -->
+                    <button type="submit" class="place-order-btn" id="placeOrderBtn">
                         <i class="fas fa-check me-2"></i> Place Order
                     </button>
                 </div>
@@ -387,6 +383,171 @@
     </div>
 </form>
 
+<!-- Add Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('orderForm');
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        let isProcessing = false;
+
+        placeOrderBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            console.log('Place order button clicked');
+
+            if (isProcessing) {
+                console.log('Order is already processing');
+                return;
+            }
+
+            // Get selected payment method
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+            if (!paymentMethod) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Payment Method Required',
+                    text: 'Please select a payment method'
+                });
+                return;
+            }
+
+            // Get selected address
+            const selectedAddress = document.querySelector('input[name="address"]:checked')?.value;
+            if (!selectedAddress) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Address Required',
+                    text: 'Please select a delivery address'
+                });
+                return;
+            }
+
+            if (paymentMethod === 'UPI') {
+                try {
+                    console.log('Starting UPI payment flow');
+                    isProcessing = true;
+                    placeOrderBtn.disabled = true;
+
+                    // Get the final amount from the hidden input
+                    const amount = document.getElementById('hidden-final-amount').value;
+                    console.log('Amount to be paid:', amount);
+
+                    // Create Razorpay order
+                    const response = await fetch('/razorpay/create-order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            amount: parseFloat(amount)
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to create order');
+                    }
+
+                    const data = await response.json();
+                    console.log('Order created:', data);
+
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to create order');
+                    }
+
+                    // Initialize Razorpay payment
+                    const options = {
+                        key: data.key,
+                        amount: data.order.amount,
+                        currency: "INR",
+                        name: "Mobile Clinic",
+                        description: "Product Purchase",
+                        order_id: data.order.id,
+                        handler: async function (response) {
+                            console.log('Payment successful:', response);
+                            try {
+                                // Verify payment
+                                const verifyResponse = await fetch('/razorpay/verify-payment', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        addressId: selectedAddress,
+                                        totalPrice: amount,
+                                        productId: '<%= product._id %>',
+                                        quantity: <%= quantity %>,
+                                        appliedCouponId: document.getElementById('appliedCouponId').value || null,
+                                        discountAmount: parseFloat(document.getElementById('hidden-discount-amount').value) || 0,
+                                        finalAmount: parseFloat(document.getElementById('hidden-final-amount').value)
+                                    })
+                                });
+
+                                const verifyResult = await verifyResponse.json();
+                                console.log('Payment verification result:', verifyResult);
+
+                                if (verifyResult.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Payment Successful!',
+                                        text: 'Your order has been placed successfully.',
+                                        showConfirmButton: false,
+                                        timer: 2000
+                                    }).then(() => {
+                                        window.location.href = '/orders'; // Redirect to orders page
+                                    });
+                                } else {
+                                    throw new Error(verifyResult.message || 'Payment verification failed');
+                                }
+                            } catch (error) {
+                                console.error('Verification error:', error);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Payment Verification Failed',
+                                    text: error.message || 'Failed to verify payment. Please contact support.'
+                                });
+                            }
+                        },
+                        prefill: {
+                            name: '<%= user.name %>',
+                            email: '<%= user.email %>',
+                            contact: '<%= user.mobile %>' // Add user's phone number if available
+                        },
+                        theme: {
+                            color: "#3399cc"
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                console.log('Payment modal closed');
+                                isProcessing = false;
+                                placeOrderBtn.disabled = false;
+                            }
+                        }
+                    };
+
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+
+                } catch (error) {
+                    console.error('Payment error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Failed',
+                        text: error.message || 'Unable to process payment. Please try again.'
+                    });
+                    isProcessing = false;
+                    placeOrderBtn.disabled = false;
+                }
+            } else {
+                console.log('Submitting form for COD payment');
+                form.submit();
+            }
+        });
+    });
+</script>
 
 <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -902,7 +1063,7 @@
                 const response = await fetch('/apply-coupon', {
                     method: 'PATCH', 
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ 
                         couponCode,
