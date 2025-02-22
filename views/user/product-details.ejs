@@ -239,21 +239,35 @@
 										<div class="btn-num-product-sub btn-num-product-down cl8 hov-btn3 trans-04 flex-c-m">
 											<i class="fs-16 zmdi zmdi-minus"></i>
 										</div>
-
-										<input class="mtext-104 cl3 txt-center num-product" type="number" name="num-product" id="quantity" value="1">
-
+									
+										<input class="mtext-104 cl3 txt-center num-product" 
+											   type="number" 
+											   name="num-product" 
+											   id="quantity" 
+											   value="1" 
+											   min="1" 
+											   max="<%= product.quantity %>">
+									
 										<div class="btn-num-product-add btn-num-product-up cl8 hov-btn3 trans-04 flex-c-m">
 											<i class="fs-16 zmdi zmdi-plus"></i>
-										</div>id=<%= product._id %>,&quantity=${document.getElementById('quantity').value}
+										</div>
 									</div>
-
 									<div class="product-actions w-100">
-										<button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail mb-2 w-100 add-to-cart-btn" onclick="location.href=`carthandler?id=<%= product._id %>&name=<%= product.name %>&price=<%= product.price %>&quantity=${document.getElementById('quantity').value}&image=<%= product.image %>`">
-											Add to cart
-										</button>
-										<button class="flex-c-m stext-101 cl0 size-101 bg3 bor1 hov-btn2 p-lr-15 trans-04 w-100" style="background-color: #28a745;" onclick="location.href=`/order/buy-now?productId=<%= product._id %>&quantity=${document.getElementById('quantity').value}`">
-											Buy Now
-										</button>
+										<% if (product.quantity > 0) { %>
+											<button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail mb-2 w-100 add-to-cart-btn" 
+													onclick="location.href=`carthandler?id=<%= product._id %>&name=<%= product.name %>&price=<%= product.price %>&quantity=${document.getElementById('quantity').value}&image=<%= product.image %>`">
+												Add to cart
+											</button>
+											<button class="flex-c-m stext-101 cl0 size-101 bg3 bor1 hov-btn2 p-lr-15 trans-04 w-100" 
+													style="background-color: #28a745;" 
+													onclick="location.href=`/order/buy-now?productId=<%= product._id %>&quantity=${document.getElementById('quantity').value}`">
+												Buy Now
+											</button>
+										<% } else { %>
+											<button class="flex-c-m stext-101 cl0 size-101 bg-danger bor1 p-lr-15 trans-04 w-100" disabled>
+												Out of Stock
+											</button>
+										<% } %>
 									</div>
 								</div>
 							</div>	
@@ -630,12 +644,20 @@
 
 		// Handle quantity changes
 		$('.btn-num-product-down, .btn-num-product-up').on('click', function() {
-			// Add a small delay to ensure the quantity is updated
-			setTimeout(() => {
-				const newQuantity = $('#quantity').val();
-				console.log('Quantity updated:', newQuantity);
-			}, 100);
-		});
+        setTimeout(() => {
+            const newQuantity = parseInt($('#quantity').val());
+            const maxQuantity = parseInt($('#quantity').attr('max'));
+
+            if (newQuantity > maxQuantity) {
+                $('#quantity').val(maxQuantity);
+                toastr.warning(`Only ${maxQuantity} items available in stock.`);
+            } else if (newQuantity < 1) {
+                $('#quantity').val(1);
+            }
+
+            console.log('Quantity updated:', $('#quantity').val());
+        }, 100);
+    });
 	});
 </script>
 

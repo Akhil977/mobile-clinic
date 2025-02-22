@@ -94,7 +94,7 @@ const orderSchema = new Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['UPI', 'Cash on Delivery'],
+        enum: ['UPI', 'Cash on Delivery',`wallet`],
         required: true
     },
     paymentStatus: {

@@ -100,8 +100,8 @@ router.get("/cart",cartController.getCart)
 
 router.get("/checkout", protectUserProfile, checkout.getcheckout)
 router.get("/order/buy-now", protectUserProfile, checkout.getdirectcheackout)
-router.post("/placeOrder", protectUserProfile, checkout.placeOrder);
-router.post("/placeBuyNowOrder", protectUserProfile, checkout.placeOrder)
+//router.post("/placeOrder", protectUserProfile, checkout.placeOrder);
+ router.post("/placeBuyNowOrder", protectUserProfile, checkout.placeOrder)
 router.patch('/apply-coupon', protectUserProfile, checkout.applyCoupon);
 router.post("/add-checkout-address", protectUserProfile, checkout.addAddress)
 router.post("/edit-checkout-address", protectUserProfile, checkout.editAddress)

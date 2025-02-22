@@ -219,7 +219,7 @@
             color: #64748b;
         }
     </style>    
-  <form id="orderForm" action="/placeBuyNowOrder" method="POST">
+  <form id="orderForm">
     <input type="hidden" name="appliedCouponId" id="appliedCouponId" value="">
     <input type="hidden" name="discountAmount" id="hidden-discount-amount" value="0">
     <input type="hidden" name="finalAmount" id="hidden-final-amount" value="<%=product.salePrice*quantity%>">
@@ -355,23 +355,45 @@
                     
                     <!-- Add UPI Payment Option -->
                     <div class="payment-methods mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="upi" value="UPI">
-                            <label class="form-check-label" for="upi">
-                                <i class="fas fa-mobile-alt me-2"></i> UPI Payment
-                            </label>
-                        </div>
+                        <input type="radio" name="paymentMethod" value="UPI" id="upiPayment">
+                        <label for="upiPayment">
+                            <i class="fas fa-mobile-alt"></i>
+                            UPI Payment
+                        </label>
                     </div>
 
-                    <!-- Add COD Option -->
+                    <!-- Add COD Payment Option -->
                     <div class="payment-methods mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="Cash on Delivery">
-                            <label class="form-check-label" for="cod">
-                                <i class="fas fa-money-bill-wave me-2"></i> Cash on Delivery
+                        <input type="radio" name="paymentMethod" value="COD" id="codPayment">
+                        <label for="codPayment">
+                            <i class="fas fa-money-bill"></i>
+                            Cash on Delivery
+                        </label>
+                    </div>
+
+                    <!-- Add Wallet Payment Option -->
+                    <% if(wallet.length==0)  { %>
+                        <div class="payment-methods mb-3">
+                            <input type="text" name="paymentMethod" value="wallet" id="walletPayment">
+                            <label for="walletPayment">
+                                <i class="fas fa-wallet"></i>
+                                Wallet is not active<br>
+                               
                             </label>
                         </div>
+                    
+                <%}else{%>
+                    <div class="payment-methods mb-3">
+                        <input type="radio" name="paymentMethod" value="wallet" id="walletPayment">
+                        <label for="walletPayment">
+                            <i class="fas fa-wallet"></i>
+                            Wallet Payment<br>
+                            balance:<%=wallet.balance %>
+                        </label>
                     </div>
+                
+                
+                <%} %>
 
                     <!-- Place Order Button -->
                     <button type="submit" class="place-order-btn" id="placeOrderBtn">
@@ -392,8 +414,14 @@
         const placeOrderBtn = document.getElementById('placeOrderBtn');
         let isProcessing = false;
 
-        placeOrderBtn.addEventListener('click', async function(e) {
+        // Remove any existing click listeners
+        placeOrderBtn.replaceWith(placeOrderBtn.cloneNode(true));
+        const newPlaceOrderBtn = document.getElementById('placeOrderBtn');
+
+        newPlaceOrderBtn.addEventListener('click', async function(e) {
             e.preventDefault();
+            e.stopPropagation();  // Stop event propagation
+            
             console.log('Place order button clicked');
 
             if (isProcessing) {
@@ -401,149 +429,185 @@
                 return;
             }
 
-            // Get selected payment method
-            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-            if (!paymentMethod) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Payment Method Required',
-                    text: 'Please select a payment method'
-                });
-                return;
-            }
+            isProcessing = true;  // Set processing flag immediately
+            newPlaceOrderBtn.disabled = true;  // Disable button immediately
 
-            // Get selected address
-            const selectedAddress = document.querySelector('input[name="address"]:checked')?.value;
-            if (!selectedAddress) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Address Required',
-                    text: 'Please select a delivery address'
-                });
-                return;
-            }
+            try {
+                const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+                const addressId = document.querySelector('input[name="address"]:checked')?.value;
+                const productId = document.querySelector('input[name="productId"]').value;
+                const quantity = document.querySelector('input[name="quantity"]').value;
+                const totalPrice = document.querySelector('input[name="finalAmount"]').value;
+                const appliedCouponId = document.getElementById('appliedCouponId').value;
+                const discountAmount = document.getElementById('hidden-discount-amount').value;
+                const finalAmount = document.getElementById('hidden-final-amount').value;
 
-            if (paymentMethod === 'UPI') {
-                try {
+                if (!paymentMethod) {
+                    throw new Error('Please select a payment method');
+                }
+
+                if (!addressId) {
+                    throw new Error('Please select a delivery address');
+                }
+
+                // Handle UPI payments through Razorpay
+                if (paymentMethod === 'UPI') {
                     console.log('Starting UPI payment flow');
-                    isProcessing = true;
-                    placeOrderBtn.disabled = true;
 
-                    // Get the final amount from the hidden input
-                    const amount = document.getElementById('hidden-final-amount').value;
-                    console.log('Amount to be paid:', amount);
-
-                    // Create Razorpay order
-                    const response = await fetch('/razorpay/create-order', {
+                    // First create a Razorpay order
+                    const orderResponse = await fetch('/razorpay/create-order', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            amount: parseFloat(amount)
+                            amount: finalAmount,
+                            productId,
+                            quantity,
+                            addressId,
+                            appliedCouponId,
+                            totalPrice,
+                            discountAmount
                         })
                     });
 
-                    if (!response.ok) {
-                        throw new Error('Failed to create order');
+                    if (!orderResponse.ok) {
+                        const errorData = await orderResponse.json();
+                        throw new Error(errorData.error || 'Failed to create order');
                     }
 
-                    const data = await response.json();
-                    console.log('Order created:', data);
-
+                    const data = await orderResponse.json();
                     if (!data.success) {
                         throw new Error(data.error || 'Failed to create order');
                     }
 
-                    // Initialize Razorpay payment
+                    console.log('Razorpay order created:', data);
+
                     const options = {
                         key: data.key,
                         amount: data.order.amount,
                         currency: "INR",
                         name: "Mobile Clinic",
-                        description: "Product Purchase",
+                        description: "Payment for your order",
                         order_id: data.order.id,
                         handler: async function (response) {
                             console.log('Payment successful:', response);
+                            
                             try {
-                                // Verify payment
+                                // Verify the payment and create order
                                 const verifyResponse = await fetch('/razorpay/verify-payment', {
                                     method: 'POST',
                                     headers: {
-                                        'Content-Type': 'application/json'
+                                        'Content-Type': 'application/json',
                                     },
                                     body: JSON.stringify({
                                         razorpay_payment_id: response.razorpay_payment_id,
                                         razorpay_order_id: response.razorpay_order_id,
                                         razorpay_signature: response.razorpay_signature,
-                                        addressId: selectedAddress,
-                                        totalPrice: amount,
-                                        productId: '<%= product._id %>',
-                                        quantity: <%= quantity %>,
-                                        appliedCouponId: document.getElementById('appliedCouponId').value || null,
-                                        discountAmount: parseFloat(document.getElementById('hidden-discount-amount').value) || 0,
-                                        finalAmount: parseFloat(document.getElementById('hidden-final-amount').value)
+                                        addressId,
+                                        totalPrice,
+                                        productId,
+                                        quantity,
+                                        appliedCouponId,
+                                        discountAmount,
+                                        finalAmount
                                     })
                                 });
 
-                                const verifyResult = await verifyResponse.json();
-                                console.log('Payment verification result:', verifyResult);
+                                if (!verifyResponse.ok) {
+                                    const errorData = await verifyResponse.json();
+                                    throw new Error(errorData.error || 'Payment verification failed');
+                                }
 
-                                if (verifyResult.success) {
+                                const verifyData = await verifyResponse.json();
+                                if (verifyData.success) {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Payment Successful!',
-                                        text: 'Your order has been placed successfully.',
-                                        showConfirmButton: false,
-                                        timer: 2000
+                                        text: 'Your order has been placed.',
+                                        showConfirmButton: true
                                     }).then(() => {
-                                        window.location.href = '/orders'; // Redirect to orders page
+                                        window.location.href = '/';
                                     });
                                 } else {
-                                    throw new Error(verifyResult.message || 'Payment verification failed');
+                                    throw new Error(verifyData.error || 'Payment verification failed');
                                 }
                             } catch (error) {
-                                console.error('Verification error:', error);
+                                console.error('Payment verification error:', error);
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Payment Verification Failed',
-                                    text: error.message || 'Failed to verify payment. Please contact support.'
+                                    text: error.message || 'Failed to verify payment. Please contact support.',
+                                    showConfirmButton: true
                                 });
                             }
                         },
                         prefill: {
-                            name: '<%= user.name %>',
-                            email: '<%= user.email %>',
-                            contact: '<%= user.mobile %>' // Add user's phone number if available
+                            name: "Customer Name",
+                            contact: "",
+                            email: ""
                         },
                         theme: {
                             color: "#3399cc"
-                        },
-                        modal: {
-                            ondismiss: function() {
-                                console.log('Payment modal closed');
-                                isProcessing = false;
-                                placeOrderBtn.disabled = false;
-                            }
                         }
                     };
 
                     const rzp = new Razorpay(options);
                     rzp.open();
 
-                } catch (error) {
-                    console.error('Payment error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Failed',
-                        text: error.message || 'Unable to process payment. Please try again.'
+                } 
+                // Handle COD and Wallet payments through orderController
+                else if (paymentMethod === 'wallet' || paymentMethod === 'COD') {
+                    console.log('Submitting form for ' + paymentMethod + ' payment');
+                    
+                    const response = await fetch('/placeBuyNowOrder', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            productId,
+                            quantity,
+                            address: addressId,
+                            paymentMethod,
+                            appliedCouponId,
+                            totalPrice,
+                            discountAmount,
+                            finalAmount
+                        })
                     });
-                    isProcessing = false;
-                    placeOrderBtn.disabled = false;
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Order Placed Successfully!',
+                            text: 'Thank you for your order.',
+                            showConfirmButton: true
+                        }).then(() => {
+                            window.location.href = '/';
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Order Failed',
+                            text: data.message || 'Something went wrong. Please try again.',
+                            showConfirmButton: true
+                        });
+                    }
                 }
-            } else {
-                console.log('Submitting form for COD payment');
-                form.submit();
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Order Failed',
+                    text: error.message || 'Please try again later',
+                    showConfirmButton: true
+                });
+            } finally {
+                isProcessing = false;
+                newPlaceOrderBtn.disabled = false;
             }
         });
     });
@@ -985,39 +1049,39 @@
             const addressId = selectedAddress.value;
             const paymentMethod = selectedPayment.value;
 
-            try {
-                const response = await fetch('/placeOrder?productId=<%=product._id%>&quantity=<%=quantity%>', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        address: addressId,
-                        paymentMethod: paymentMethod,
-                        appliedCoupon: appliedCouponName // Add applied coupon to the request
-                    })
-                });
+    //         try {
+    //             const response = await fetch('/placeOrder?productId=<%=product._id%>&quantity=<%=quantity%>', {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                 },
+    //                 body: JSON.stringify({
+    //                     address: addressId,
+    //                     paymentMethod: paymentMethod,
+    //                     appliedCoupon: appliedCouponName // Add applied coupon to the request
+    //                 })
+    //             });
 
-                const data = await response.json();
+    //             const data = await response.json();
 
-                if (data.success) {
-                    Swal.fire({
-                        title: 'Order Placed!',
-                        text: 'Your order has been placed successfully.',
-                        icon: 'success',
-                        confirmButtonText: 'Continue Shopping'
-                    }).then(() => {
-                        window.location.href = '/';
-                    });
-                } else {
-                    Swal.fire("Error!", data.message || "Failed to place order.", "error");
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire("Error!", "An unexpected error occurred.", "error");
-            }
-        });
-    });
+    //             if (data.success) {
+    //                 Swal.fire({
+    //                     title: 'Order Placed!',
+    //                     text: 'Your order has been placed successfully.',
+    //                     icon: 'success',
+    //                     confirmButtonText: 'Continue Shopping'
+    //                 }).then(() => {
+    //                     window.location.href = data.orderId ? `/order-details?orderId=${data.orderId}` : '/';
+    //                 });
+    //             } else {
+    //                 Swal.fire("Error!", data.message || "Failed to place order.", "error");
+    //             }
+    //         } catch (error) {
+    //             console.error('Error:', error);
+    //             Swal.fire("Error!", "An unexpected error occurred.", "error");
+    //         }
+    //     });
+    // });
 
 
 </script>

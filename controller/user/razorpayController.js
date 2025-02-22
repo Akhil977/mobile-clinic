@@ -14,13 +14,29 @@ const razorpay = new Razorpay({
 // Create Razorpay order
 const createOrder = async (req, res) => {
     try {
-        const { amount } = req.body;
-        console.log('Creating order with amount:', amount);
+        const { 
+            amount,
+            productId,
+            quantity,
+            addressId,
+            appliedCouponId,
+            totalPrice,
+            discountAmount 
+        } = req.body;
+        
+        console.log('Creating order with details:', req.body);
         
         if (!amount || isNaN(amount) || amount <= 0) {
             return res.status(400).json({
                 success: false,
                 error: 'Invalid amount'
+            });
+        }
+
+        if (!productId || !quantity || !addressId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required order details'
             });
         }
 
@@ -32,7 +48,15 @@ const createOrder = async (req, res) => {
             amount: amountInPaise,
             currency: 'INR',
             receipt: 'order_' + Date.now(),
-            payment_capture: 1 // Auto capture payment
+            payment_capture: 1, // Auto capture payment
+            notes: {
+                productId,
+                quantity,
+                addressId,
+                appliedCouponId: appliedCouponId || '',
+                totalPrice: totalPrice || amount,
+                discountAmount: discountAmount || 0
+            }
         };
 
         console.log('Creating order with options:', options);
@@ -150,15 +174,10 @@ const verifyPayment = async (req, res) => {
                 await Coupon.findByIdAndUpdate(couponId, {
                     $push: { UserId: userId }
                 });
-            } else {
-                console.error('Coupon not found:', appliedCouponId);
-                return res.status(404).json({
-                    success: false,
-                    error: 'Invalid coupon code'
-                });
             }
         }
 
+        // Create the order with verified payment details
         const order = new Order({
             userId,
             orderedItems: [{
@@ -177,7 +196,8 @@ const verifyPayment = async (req, res) => {
             couponId,
             paymentDetails: {
                 razorpay_payment_id,
-                razorpay_order_id
+                razorpay_order_id,
+                razorpay_signature
             }
         });
 
