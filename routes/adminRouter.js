@@ -9,6 +9,7 @@ const productController= require("../controller/admin/productController");
 const orderController = require("../controller/admin/adminOrderController");
 const brandController = require("../controller/admin/BrandController")
 const CouponController = require("../controller/admin/couponController")
+const salesReportController=require("../controller/admin/salereportController")
 const path = require('path');
 
 const imageDir = path.join(__dirname,"../public/uploads");
@@ -99,9 +100,18 @@ router.post('/editProduct/:id', uploads.array('images', 10), productController.e
 router.post('/deleteImage', productController.deleteSingleImage);
 
 router.get('/view-order',orderController.viewOrders)
+router.post("/addProductOffer",productController.addProductOffers)
+router.post('/removeProductOffer',productController.deleteOffers)
 
 
 router.patch("/update-order-status",orderController.updateStatus)
 router.get("/orderDetails",orderController.showOrderDetails)
+
+
+//sale report
+
+//sales report management
+router.get('/sales-report',salesReportController.getSalesReport);
+router.get('/salesReportPDF/pdf', salesReportController.getSalesReportPDF);  
 
 module.exports = router

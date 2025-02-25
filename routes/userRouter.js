@@ -122,6 +122,7 @@ router.get("/wishlist", whishlist.getWishlist);
 //Wallet
 router.get("/user-wallet",wallet.getWallet)
 router.post("/add-wallet-money",wallet.addmoney)
+router.get("/get-wallet-History",wallet.getHistory)
 
 // Blocked User Page
 router.get('/blockedByAdmin', userController.adminBlocked);

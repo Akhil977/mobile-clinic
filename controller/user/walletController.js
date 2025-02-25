@@ -1,6 +1,7 @@
 const Wallet= require("../../model/walletSchema");
 const User= require("../../model/userSchema");
-const Cart = require("../../model/cartSchema")
+const Cart = require("../../model/cartSchema");
+const { session } = require("passport");
 
 let getWallet= async(req,res)=>{
     try {
@@ -40,7 +41,21 @@ try {
     let wallet= await Wallet.findById(walletId)
     let total=wallet.balance+amount;
    
-   wallet = await Wallet.findByIdAndUpdate(walletId, { $set: { balance: total }},{ new:true } );
+    wallet = await Wallet.findByIdAndUpdate(
+        walletId,
+        {
+            $inc: { balance: total }, // Increment balance by the total amount
+            $push: {
+                transactions: {
+                    amount: total,
+                    type: "credit",
+                    description: `An amount of ${total} has been successfully credited by the account holder.`,
+                    date: new Date()
+                }
+            }
+        },
+        { new: true }
+    );
    if(wallet){
     return res.json({
         success: true,
@@ -54,7 +69,51 @@ try {
     
 }
 }
+
+
+
+
+const getHistory = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        let cart = []; // Initialize cart as empty array
+
+        // Get user's cart if it exists
+        const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
+        
+        // Add await here - this was missing
+        const wallet = await Wallet.findOne({ userId: userId });
+        
+        const isLoggedIn = req.session.isLoggedIn || false;
+
+        // Only process cart if userCart exists
+        if (userCart && userCart.item) {
+            cart = userCart.item.map(item => ({
+                productId: item.productId._id,
+                name: item.productId.productName,
+                price: item.price,
+                quantity: item.quantity,
+                totalPrice: item.totalPrice,
+                image: item.productId.productImages[0]
+            }));
+        }
+
+        res.render("walletHistory", {
+            wallet,
+            isLoggedIn,
+            cart
+        });
+
+    } catch (error) {
+        console.error('Error in getHistory:', error);
+        res.status(500).render('error', { 
+            message: 'Error fetching wallet history',
+            isLoggedIn: req.session.isLoggedIn || false 
+        });
+    }
+};
 module.exports={
     getWallet,
-    addmoney
+    addmoney,
+    getHistory
 }

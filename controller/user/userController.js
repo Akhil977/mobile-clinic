@@ -4,6 +4,7 @@ const nodemailer =require('nodemailer')
 const User = require("../../model/userSchema")
 const Product= require('../../model/productShema')
 const Cart = require("../../model/cartSchema")
+const { applyBestOffer }=require("../../helpers/offerHelper");
 const pageNotFound = async (req,res) => {
     try {
         res.render("page-404")
@@ -66,6 +67,7 @@ const loadHomepage = async (req, res) => {
             .limit(limit);
 
         // Fetch the user's cart (only if logged in)
+        await applyBestOffer(); 
         let cart = [];
         if (req.session.isLoggedIn) {
             const userId = req.session.user;

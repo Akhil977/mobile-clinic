@@ -7,6 +7,7 @@ const sharp = require('sharp')
 const { addCategory } = require('./categoryController')
 const Product = require('../../model/productShema')
 const BRAND = require("../../model/brandschema")
+const mongoose = require('mongoose');
 
 const getProductAddPage = async (req, res) => {
     try {
@@ -205,7 +206,94 @@ const getProductAddPage = async (req, res) => {
        });
     }
  };
- 
+ const addProductOffers = async (req, res) => {
+  try {
+    const { productId, discountPercentage, expiryDate } = req.body;
+    
+    // Validate input
+    if (!productId || !discountPercentage || !expiryDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required fields" 
+      });
+    }
+
+    // Validate discount percentage
+    const discount = parseFloat(discountPercentage);
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid discount percentage" 
+      });
+    }
+
+    // Check if category exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Category not found" 
+      });
+    }
+    console.log(discount)
+
+    // Update category with offer
+    const offerproduct = await Product.updateOne(
+      { _id: productId },
+      { 
+        $set: { 
+          productOffers:discount, 
+          expireOn: new Date(expiryDate) 
+        } 
+      }
+    );
+
+    if (offerproduct.modifiedCount > 0) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "Offer added to product successfully" 
+      });
+    } else {
+      return res.status(200).json({ 
+        success: false, 
+        message: "No changes made to product" 
+      });
+    }
+  } catch (error) {
+    console.error('Error adding product offer:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
+const deleteOffers=async(req,res)=>{
+  const {productId}=req.body;
+
+  const deleteProduct = await Product.updateOne(
+    {  _id: new mongoose.Types.ObjectId(productId)},
+    { 
+      $unset: { 
+        productOffers: 1, 
+        expireOn: 1
+      }
+    }
+);
+if (deleteProduct.modifiedCount > 0) {
+  return res.status(200).json({ 
+    success: true, 
+    message: "Offer deleted from product successfully" 
+  });
+} else {
+  return res.status(200).json({ 
+    success: false, 
+    message: "No changes made to product" 
+  });
+}
+  
+}
  const getEditProduct= async(req,res)=>{
     try {
         const id  =req.query.id;
@@ -366,7 +454,8 @@ const getProductAddPage = async (req, res) => {
     getAllProducts,
     toggleProductList,
     getEditProduct,
-    editProduct,deleteSingleImage
+    editProduct,deleteSingleImage,addProductOffers,
+    deleteOffers,
    
     
  }                                             

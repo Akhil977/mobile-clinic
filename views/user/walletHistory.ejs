@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <%- include ('component/head.ejs') %>
+<body>
+    <%- include ('component/header.ejs') %>
+    <div class="page-container">
+        <!-- Sidebar -->
+        <div class="user-aside">
+            <%- include ('component/useraside.ejs') %>
+        </div>
+
+        <!-- Main Content -->
+        <section class="main-content">
+            <div class="container mt-4">
+                <h5 class="section-title">My Wallet</h5>
+                <div class="address-divider"></div>
+
+                <!-- Wallet Balance Card -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Current Balance</h6>
+                                <h3 class="mb-0">₹<%= wallet.balance %></h3>
+                            </div>
+                            <i class="fas fa-wallet fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions List -->
+                <h6 class="section-subtitle mb-3">Transaction History</h6>
+                <% if (wallet && wallet.transactions && wallet.transactions.length > 0) { %>
+                    <div class="transactions-list">
+                        <% wallet.transactions.sort((a, b) => b.date - a.date).forEach(function(transaction) { %>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="transaction-details">
+                                            <h6 class="mb-1"><%= transaction.description %></h6>
+                                            <small class="text-muted">
+                                                <%= new Date(transaction.date).toLocaleDateString('en-IN', { 
+                                                    day: 'numeric', 
+                                                    month: 'short', 
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }) %>
+                                            </small>
+                                        </div>
+                                        <div class="amount-details text-end">
+                                            <h6 class="mb-1 <%= transaction.type === 'credit' ? 'text-success' : 'text-danger' %>">
+                                                <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= Math.abs(transaction.amount) %>
+                                            </h6>
+                                            <span class="badge <%= transaction.type === 'credit' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' %>">
+                                                <%= transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1) %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="no-address text-center">
+                        <i class="fas fa-receipt fa-2x mb-2"></i>
+                        <p>No transactions yet.</p>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+    </div>
+
+    <!-- Styles -->
+    <style>
+    .page-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .user-aside {
+        width: 220px;
+        background-color: #ffffff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    .main-content {
+        flex: 1; 
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .address-divider {
+        height: 1px;
+        background-color: #dee2e6;
+        margin: 15px 0;
+    }
+    .section-title {
+        color: #495057;
+        font-weight: 500;
+        margin-left: 15px;
+    }
+    .section-subtitle {
+        color: #6c757d;
+        font-weight: 500;
+        margin-left: 15px;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: none;
+        border-radius: 8px;
+    }
+    .transaction-details {
+        flex: 1;
+    }
+    .amount-details {
+        min-width: 120px;
+    }
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.8em;
+    }
+    .no-address {
+        color: #6c757d;
+        padding: 30px;
+        background-color: white;
+        border-radius: 8px;
+        margin: 0 15px;
+    }
+    .bg-success-subtle {
+        background-color: #d1e7dd;
+    }
+    .bg-danger-subtle {
+        background-color: #f8d7da;
+    }
+    </style>
+</body>
+</html>

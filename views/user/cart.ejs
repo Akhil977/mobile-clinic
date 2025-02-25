@@ -336,13 +336,13 @@
 						// Update quantity input
 						const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
 						if (input) {
-							input.value = data.quantity;
+							input.value = data.newQuantity;
 						}
 						
 						// Update total price for this item
 						const totalPriceElement = document.querySelector(`#cart-item-${productId} .product-total`);
 						if (totalPriceElement) {
-							totalPriceElement.textContent = '₹' + data.totalPrice;
+							totalPriceElement.textContent = '₹' + data.newTotalPrice;
 						}
 						
 						// Update cart total

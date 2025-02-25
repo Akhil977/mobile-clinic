@@ -44,6 +44,22 @@ const productSchema = new Schema({
        type: Boolean,
        default: false,
     },
+    productOffers:{
+      type:Number,
+      default:null,
+    },
+    expireOn:{
+      type:Date,
+      required:false,
+    },
+    savedAmount:{
+      type:Number,
+      default:0,
+    },
+    finalOffer: {
+      type: Number,
+      default: 0, 
+    },
     status: {
        type: String,
        enum: ["available", "out of stock", "Discontinued"],

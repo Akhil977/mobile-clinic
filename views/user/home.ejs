@@ -129,7 +129,12 @@
 										<div class="col-sm-6 col-md-4 col-lg-3 p-b-35">
 											<!-- Block2 -->
 											<div class="block2">
-												<div class="block2-pic hov-img0">
+												<div class="block2-pic hov-img0 position-relative ">
+													<% if (products[i].finalOffer) { %>
+														<div class="offer-ribbon">
+															<%= products[i].finalOffer %>% OFF
+														</div>
+													<% } %>
 													<a href="/productdetail?id=<%= products[i]._id %>">
 														<img src="/uploads/product-images/<%= products[i].productImages[0] %>" alt="IMG-PRODUCT" class="img-fluid" />
 													</a>
@@ -200,6 +205,21 @@
 					</div>
 				</section>
 				<style>
+
+.offer-ribbon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: #e60023; /* Bright red for visibility */
+    color: white;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 3px;
+    z-index: 10;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
 				.wrap-search {
     display: flex;
     align-items: center;

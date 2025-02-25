@@ -169,6 +169,33 @@
               margin-left: 20px;
               margin-right: 25px;
           }
+          
+          .btn-danger {
+              background-color: #dc3545;
+              color: #fff;
+              border-radius: 5px;
+              padding: 8px 12px;
+          }
+          
+          .btn-danger:hover {
+              background-color: #c82333;
+          }
+          
+          .btn-primary {
+              background-color: #007bff;
+              color: #fff;
+              border-radius: 5px;
+              padding: 8px 12px;
+          }
+          
+          .btn-primary:hover {
+              background-color: #0069d9;
+          }
+          
+          .text-white {
+              color: #fff !important;
+              text-decoration: none;
+          }
   
       </style>
   </head>
@@ -191,7 +218,8 @@
                       <th>Product Name</th>
                       <th>Category</th>
                       <th>Sale Price</th>
-                      <th>Regular Price</th>
+                      <th>Offers</th>
+                      <th>OffersADD/OfferRemove</th>
                       <th>Quantity</th>
                       <th>Edit</th>
                       <th>List / Unlist</th>
@@ -203,7 +231,25 @@
                       <td><%= product.productName %></td>
                       <td><%= product.category.name %></td>
                       <td>₹<%= product.salePrice %></td>
-                      <td>₹<%= product.regularPrice %></td>
+                      <% if (product.productOffers != null && product.productOffers > 0) { %>
+                      <td class="text-start"><%= product.productOffers %>%</td>
+                      <% } else { %>
+                        <td class="text-start">NO Offers</td>
+                      <% } %>
+                      <td class="text-start">
+                        <% if (product.productOffers != null && product.productOffers > 0) { %>
+                          <button class="btn btn-danger" style="width: 120px" 
+                                  onclick="handleOfferAction('<%= product._id %>', false)">
+                            Remove Offer
+                          </button>
+                        <% } else { %>
+                          <button class="btn btn-primary" style="width: 120px" 
+                                  data-toggle="modal" data-target="#offerModal" 
+                                  onclick="openOfferModal('<%= product._id %>', false)">
+                            Add Offer
+                          </button>
+                        <% } %>
+                      </td>
                       <td><%= product.quantity %></td>
                       <td>
                           <a href="/admin/editProduct?id=<%= product._id %>" class="btn btn-info">Edit</a>
@@ -242,94 +288,327 @@
           <% } %>
       </div>
   </div>
-  
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.toggle-status').forEach(toggle => {
-          toggle.addEventListener('change', function() {
-              const productId = this.getAttribute('data-id');
-              const statusLabel = this.nextElementSibling;
-              const isListed = this.checked;
-  
-              // Show confirmation dialog
-              Swal.fire({
-                  title: 'Confirm Status Change',
-                  text: `Are you sure you want to ${isListed ? 'list' : 'unlist'} this product?`,
-                  icon: 'warning',
-                  showCancelButton: true,
-                  confirmButtonColor: '#3085d6',
-                  cancelButtonColor: '#d33',
-                  confirmButtonText: 'Yes, change it!'
-              }).then((result) => {
-                  if (result.isConfirmed) {
-                      // Proceed with status change
-                      fetch(`/admin/toggle-list/${productId}`, {
-                          method: 'PATCH',
-                          headers: {
-                              'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({ isListed })
-                      })
-                      .then(response => response.json())
-                      .then(data => {
-                          if (data.success) {
-                              // Update status label and styling
-                              if (data.isListed) {
-                                  statusLabel.textContent = 'Listed';
-                                  statusLabel.classList.remove('text-danger');
-                                  statusLabel.classList.add('text-success');
-                              } else {
-                                  statusLabel.textContent = 'Unlisted';
-                                  statusLabel.classList.remove('text-success');
-                                  statusLabel.classList.add('text-danger');
-                              }
-  
-                              // Show success toast
-                              Swal.fire({
-                                  icon: 'success',
-                                  title: 'Product Status Updated',
-                                  text: data.message,
-                                  toast: true,
-                                  position: 'top-end',
-                                  showConfirmButton: false,
-                                  timer: 2000
-                              });
-                          } else {
-                              // Revert toggle if API call fails
-                              this.checked = !isListed;
-                              
-                              // Show error message
-                              Swal.fire({
-                                  icon: 'error',
-                                  title: 'Error',
-                                  text: data.message || 'Failed to update product status'
-                              });
-                          }
-                      })
-                      .catch(error => {
-                          console.error('Error:', error);
-                          
-                          // Revert toggle
-                          this.checked = !isListed;
-                          
-                          // Show network error
-                          Swal.fire({
-                              icon: 'error',
-                              title: 'Network Error',
-                              text: 'Unable to update product status'
-                          });
-                      });
-                  } else {
-                      // Revert toggle if user cancels
-                      this.checked = !isListed;
-                  }
-              });
-          });
+
+<!-- Product Offer Modal -->
+<div class="modal fade" id="offerModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="modalTitle">Product Offer</h4>
+      </div>
+      <div class="modal-body">
+        <form id="offerForm" method="post" action="/admin/addProductOffer" onsubmit="return addProductOffer(event)">
+          <input type="hidden" id="productId" name="productId">
+          <div class="form-group">
+            <label for="discountPercentage">Discount (%)*</label>
+            <input type="number" class="form-control" id="discountPercentage" name="discountPercentage" 
+                   required min="1" max="99" placeholder="Enter discount percentage">
+            <small class="text-muted">Enter discount percentage (1-99)</small>
+            <div id="discount-error" class="text-danger"></div>
+          </div>
+          <div class="form-group">
+            <label for="expiryDate">Expiry Date*</label>
+            <input type="date" class="form-control" id="expiryDate" name="expiryDate" required>
+            <small class="text-muted">Select the offer expiry date</small>
+            <div id="expiry-error" class="text-danger"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="submit" form="offerForm" class="btn btn-primary">Save Offer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toggle product listing status script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.toggle-status').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const productId = this.getAttribute('data-id');
+            const statusLabel = this.nextElementSibling;
+            const isListed = this.checked;
+
+            // Show confirmation dialog
+            Swal.fire({
+                title: 'Confirm Status Change',
+                text: `Are you sure you want to ${isListed ? 'list' : 'unlist'} this product?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, change it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Proceed with status change
+                    fetch(`/admin/toggle-list/${productId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ isListed })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update status label and styling
+                            if (data.isListed) {
+                                statusLabel.textContent = 'Listed';
+                                statusLabel.classList.remove('text-danger');
+                                statusLabel.classList.add('text-success');
+                            } else {
+                                statusLabel.textContent = 'Unlisted';
+                                statusLabel.classList.remove('text-success');
+                                statusLabel.classList.add('text-danger');
+                            }
+
+                            // Show success toast
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Product Status Updated',
+                                text: data.message,
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+                        } else {
+                            // Revert toggle if API call fails
+                            this.checked = !isListed;
+                            
+                            // Show error message
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Failed to update product status'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        
+                        // Revert toggle
+                        this.checked = !isListed;
+                        
+                        // Show network error
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Network Error',
+                            text: 'Unable to update product status'
+                        });
+                    });
+                } else {
+                    // Revert toggle if user cancels
+                    this.checked = !isListed;
+                }
+            });
+        });
+    });
+    
+    // Set minimum date to today for expiry date
+    var today = new Date().toISOString().split('T')[0];
+    $('#expiryDate').attr('min', today);
+});
+</script>
+
+<!-- Product offer functionality scripts -->
+<script>
+function openOfferModal(productId, isUpdate) {
+  try {
+    console.log('Opening modal for product:', productId);
+    console.log('Is Update:', isUpdate);
+
+    // If it's an update (remove offer), directly call remove function
+    if (isUpdate) {
+      // Directly remove offer without modal or alert
+      fetch('/admin/removeProductOffer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productId: productId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Silently reload the page
+        location.reload();
+      })
+      .catch(error => {
+        console.error('Error removing offer:', error);
       });
-  });
-  </script>
+      return;
+    }
+
+    // Set the product ID in the hidden input
+    document.getElementById('productId').value = productId;
+
+    // Update modal title and button text for adding offer
+    const modalTitle = document.getElementById('modalTitle');
+    const saveButton = document.querySelector('#offerForm + .modal-footer button[type="submit"]');
+    
+    modalTitle.textContent = 'Add Product Offer';
+    saveButton.textContent = 'Add Offer';
+
+    // Open the modal
+    $('#offerModal').modal('show');
+  } catch (error) {
+    console.error('Error opening offer modal:', error);
+  }
+}
+
+function validateOfferForm() {
+  const discountPercentage = document.getElementById('discountPercentage').value;
+  const expiryDate = document.getElementById('expiryDate').value;
+  let isValid = true;
+
+  // Clear previous errors
+  document.getElementById('discount-error').textContent = '';
+  document.getElementById('expiry-error').textContent = '';
+
+  if (!discountPercentage || discountPercentage < 1 || discountPercentage > 99) {
+    document.getElementById('discount-error').textContent = 
+      'Please enter a valid discount percentage between 1 and 99';
+    isValid = false;
+  }
+
+  if (!expiryDate) {
+    document.getElementById('expiry-error').textContent = 
+      'Please select an expiry date';
+    isValid = false;
+  } else {
+    const selectedDate = new Date(expiryDate);
+    const today = new Date();
+    if (selectedDate < today) {
+      document.getElementById('expiry-error').textContent = 
+        'Expiry date cannot be in the past';
+      isValid = false;
+    }
+  }
+
+  return isValid;
+}
+
+function addProductOffer(event) {
+  // If no event passed, prevent default form submission
+  if (event) {
+    event.preventDefault();
+  }
   
-  <!-- Ensure SweetAlert2 is included -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  const productId = document.getElementById('productId').value;
+  const discountPercentage = document.getElementById('discountPercentage').value;
+  const expiryDate = document.getElementById('expiryDate').value;
+
+  console.log('Adding Product Offer:', { productId, discountPercentage, expiryDate });
+
+  // Basic client-side validation
+  if (!productId || !discountPercentage || !expiryDate) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Validation Error',
+      text: 'Please fill all required fields',
+      showConfirmButton: true
+    });
+    return false;
+  }
+
+  const discount = parseFloat(discountPercentage);
+  if (isNaN(discount) || discount < 0 || discount > 100) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Invalid Discount',
+      text: 'Discount must be a number between 0 and 100',
+      showConfirmButton: true
+    });
+    return false;
+  }
+
+  fetch('/admin/addProductOffer', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      productId,
+      discountPercentage,
+      expiryDate
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Server Response:', data);
+    
+    if (data.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: data.message,
+        showConfirmButton: false,
+        timer: 1500
+      }).then(() => {
+        // Close modal and reload or update page
+        $('#offerModal').modal('hide');
+        location.reload();
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: data.message,
+        showConfirmButton: true
+      });
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Network Error',
+      text: 'Could not add product offer. Please try again.',
+      showConfirmButton: true
+    });
+  });
+
+  return false;
+}
+
+function handleOfferAction(productId, isAddOffer) {
+  // If it's a remove offer action
+  if (!isAddOffer) {
+    // Directly remove offer without modal
+    fetch('/admin/removeProductOffer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        productId: productId
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Silently reload the page
+      location.reload();
+    })
+    .catch(error => {
+      console.error('Error removing offer:', error);
+    });
+  } else {
+    // If it's an add offer action, open the modal
+    openOfferModal(productId, false);
+  }
+}
+</script>
+
+<!-- Ensure SweetAlert2 is included -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"></script>
 </body>
 </html>

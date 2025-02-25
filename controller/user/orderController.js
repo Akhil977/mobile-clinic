@@ -12,6 +12,7 @@ const getcheckout = async (req, res) => {
       const userId = req.session.user;
       const addressDoc = await Address.findOne({userId:userId})
       const isLoggedIn = req.session.isLoggedIn || false;
+      let wallet = await Wallet.findOne({userId:userId})
       
       const user = await User.findById(userId);
       const cart = await Cart.findOne({ userId: userId }).populate('item.productId');
@@ -20,11 +21,28 @@ const getcheckout = async (req, res) => {
          return res.redirect('/cart');
       }
 
+      const total = cart.item.reduce((acc, curr) => {
+        return acc + (curr.productId.salePrice * curr.quantity);
+    }, 0)
+      console.log(total)
+
+
+      const currentDate = new Date();
+        const availableCoupons = await Coupon.find({
+            islist: true,
+            expireOn: { $gt: currentDate },
+            minimumPrice: { $lte: total },
+            $or: [
+                { UserId: { $exists: false } },
+                { UserId: { $nin: [userId] } }
+            ]
+        }).sort({ createdOn: -1 });
       res.render("checkout", {
-         user,
+         user,wallet,coupon:availableCoupons,
          cart: cart.item,
          isLoggedIn,
-         address: addressDoc ? addressDoc.address : []
+         address: addressDoc ? addressDoc.address : [],
+         total
       });
    } catch (error) {
       console.error("Error in checkout:", error);
@@ -34,6 +52,7 @@ const getcheckout = async (req, res) => {
 
 const placeOrder = async (req, res) => {
     try {
+        console.log("just cheaking wheather its working or not")
         // Get productId and quantity from either query params or body
         const productId = req.query.productId || req.body.productId;
         const quantity = req.query.quantity || req.body.quantity;
@@ -507,13 +526,14 @@ const cancelOrder = async (req, res) => {
         order.cancelReason = reason;
         order.cancelledAt = new Date();
 
-        if(order.paymentMethod=='UPI'){
+        if(order.paymentMethod=='UPI'|| order.paymentMethod === 'wallet'){
          let returnamount=order.finalAmount;
          let ordername =order.orderId
          
         let transaction={
+            amount:returnamount,
             type:"credit", 
-            description: `return fund from order ${ordername }`,
+            description: `cancel fund from order ${ordername }`,
             date:new Date()}
 
             let walletUpdate=await Wallet.findOneAndUpdate({userId:userId},{ $inc: { balance:returnamount},

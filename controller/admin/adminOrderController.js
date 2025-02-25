@@ -1,9 +1,11 @@
+const mongoose = require('mongoose')
 const User = require("../../model/userSchema")
 const Product = require('../../model/productShema')
 const Cart = require("../../model/cartSchema")
 const Order = require("../../model/orderSchema")
 const Address = require('../../model/addressSchema')
-const mongoose = require('mongoose')
+const Wallet= require("../../model/walletSchema");
+
 
 const viewOrders = async (req, res) => {
     try {
@@ -93,6 +95,25 @@ const updateStatus = async (req, res) => {
                 success: false,
                 message: "Invalid status type"
             });
+        }
+        if(value=="Return Completed"){
+            let returnamount=order.finalAmount;
+         let ordername =order.orderId
+         const userId =  order.userId;
+         
+        let transaction={
+            amount:returnamount,
+            type:"credit", 
+            description: `return fund from order ${ordername }`,
+            date:new Date()}
+
+            let walletUpdate=await Wallet.findOneAndUpdate({userId:userId},{ $inc: { balance:returnamount},
+                $push: { transactions: transaction }})
+            if(!walletUpdate){
+            return res.status(404).json({
+               success: false, 
+               message: 'wallet not found' 
+           });}
         }
 
         await order.save();
