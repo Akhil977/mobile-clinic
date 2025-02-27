@@ -4,9 +4,7 @@ const Product =require("../model/productShema");
 
 const applyBestOffer = async () => {
     try {
-  
-        const categories = await Category.find({}, "_id categoryOffer expiredOn");
-
+        const categories = await Category.find({}, "_id CategoryOffer expireOn");
 
         const categoryOfferMap = categories.reduce((map, category) => {
             const isExpired = category.expireOn && category.expireOn < Date.now();
@@ -14,16 +12,16 @@ const applyBestOffer = async () => {
             return map;
         }, {});
 
+        const products = await Product.find({}, "_id category regularPrice productOffers expireOn salePrice finalOffer");
 
-        const products = await Product.find({}, "_id  category regularPrice  productOffers expireOn");
-
-  
         const bulkUpdates = products.map(product => {
             const categoryOffer = categoryOfferMap[product.category.toString()] || 0;
             const productOffer = product.productOffers || 0;
-            const offerExpiry = product.expireOn && product.expireOn < Date.now() ? 0 : productOffer;
+            const isProductOfferExpired = product.expireOn && product.expireOn < Date.now();
+            const effectiveProductOffer = isProductOfferExpired ? 0 : productOffer;
 
-            const bestOffer = Math.max(categoryOffer, offerExpiry);
+            // Give priority to category offer if it's greater or equal
+            const bestOffer = categoryOffer >= effectiveProductOffer ? categoryOffer : effectiveProductOffer;
             const discountAmount = (product.regularPrice * bestOffer) / 100;
             const discountedPrice = Math.round(product.regularPrice - discountAmount);
             const discountDifference = product.regularPrice - discountedPrice;
@@ -34,13 +32,12 @@ const applyBestOffer = async () => {
                     update: { 
                         finalOffer: bestOffer,
                         salePrice: discountedPrice,
-                        savedAmount:discountDifference, 
+                        savedAmount: discountDifference, 
                     }
                 }
             };
         });
 
-        
         if (bulkUpdates.length > 0) {
             await Product.bulkWrite(bulkUpdates);
         }

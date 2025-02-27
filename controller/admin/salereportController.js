@@ -138,7 +138,7 @@ const getSalesReportPDF = async (req, res) => {
 
     const orders = await Order.find(filter)
       .populate("userId", "name email phone")
-      .populate("orderedItems.productId", "productName salePrice")
+      .populate("orderedItems.product", "productName salePrice")
       .sort({ createdAt: -1 });
 
     const totals = await Order.aggregate([
@@ -169,7 +169,7 @@ const getSalesReportPDF = async (req, res) => {
     doc.pipe(stream);
 
     // Header
-    doc.fontSize(24).font("Helvetica-Bold").text("Headshield", { align: "center" }).moveDown(0.5);
+    doc.fontSize(24).font("Helvetica-Bold").text("Mobile clinic", { align: "center" }).moveDown(0.5);
     doc.fontSize(16).font("Helvetica").text("Sales Report", { align: "center" }).moveDown(0.5);
     doc.fontSize(10).text(`Generated on: ${new Date().toLocaleDateString("en-US")}`, { align: "center" }).moveDown(1);
 

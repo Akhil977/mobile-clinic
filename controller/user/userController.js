@@ -110,25 +110,25 @@ const loadHomepage = async (req, res) => {
 
 const loadLogin = (req, res) => {
     try {
-        // Simulate session data (you can adjust this based on actual session management)
+        
         req.session.sessionId = req.session.sessionId || "dummy-session-id";
-        req.session.isLoggedIn = req.session.isLoggedIn || false;  // Default to false (logged out)
+        req.session.isLoggedIn = req.session.isLoggedIn || false;  
 
-        // Get the success message from session
+        
         const successMessage = req.session.successMessage;
-        const errorMessage = req.session.errorMessage;  // You may also handle error messages
+        const errorMessage = req.session.errorMessage;  
 
-        // Clear the success and error messages after rendering
+        
         req.session.successMessage = undefined;
         
 
-        // Pass session data, isLoggedIn, and messages to the login page
+        
         res.render('login', {
-            isLoggedIn: req.session.isLoggedIn,  // Pass the session login status to the template
-            cart: [],  // Temporary empty cart for now
-            successMessage: successMessage || '', // If success message exists, show it
-            errorMessage: errorMessage || '', // If error message exists, show it
-            message: successMessage ||  '' // General message (either success or error)
+            isLoggedIn: req.session.isLoggedIn,  
+            cart: [],  
+            successMessage: successMessage || '', 
+            errorMessage: errorMessage || '', 
+            message: successMessage ||  '' ,
         });
     } catch (error) {
         console.log("Error loading login page:", error.message);
@@ -136,24 +136,24 @@ const loadLogin = (req, res) => {
     }
 };
 function generateOtp() {
-    return Math.floor(100000 + Math.random() * 900000).toString();  // Corrected OTP generation
+    return Math.floor(100000 + Math.random() * 900000).toString(); 
 }
 
 async function sendVerificationEmail(email, otp) {
     try {
         const transport = nodemailer.createTransport({
-            service: 'gmail',  // Corrected "gamil" to "gmail"
+            service: 'gmail', 
             port: 587,
             requireTLS: true,
             auth: {
-                user: process.env.NODEMAILER_EMAIL,  // Use environment variables for email & password
+                user: process.env.NODEMAILER_EMAIL,  
                 pass: process.env.NODEMAILER_PASSWORD,
             },
         });
 
-        // Send the email using the transport object
+        
         const info = await transport.sendMail({
-            from: process.env.NODEMAILER_EMAIL,  // Correctly use the transport object to send the mail
+            from: process.env.NODEMAILER_EMAIL,  
             to: email,
             subject: "Verify your account",
             text: `Your OTP is: ${otp}`,

@@ -49,14 +49,14 @@ const loadDashboard= async (req, res) => {
     // Dummy data
     const order = 100;  // Simulated order count
     const product = 50;  // Simulated product count
-    const user = 200;    // Simulated user count
+    const userCount = await User.countDocuments({});   // Simulated user count
     const contact = 30;  // Simulated contact count
 
     // Render the 'admin/index' view with dummy data
     res.render("index", {
         orders: order,
         product: product,
-        user: user,
+        user: userCount,
         contact: contact,
     });
 }
