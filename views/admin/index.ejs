@@ -4,61 +4,392 @@
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
   <%- include ('component/header.ejs') %> 
-  
-  <!-- Left side column. contains the logo and sidebar -->
   <%- include ('component/aside.ejs') %> 
 
   <!-- Content Wrapper. Contains page content -->
-  <%- include ('component/maincontent.ejs') %> 
-  <!-- /.content-wrapper -->
-  <%- include ('component/footer.ejs') %> 
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <h1>
+        Dashboard
+        <small>Control panel</small>
+      </h1>
+      <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Dashboard</li>
+      </ol>
+    </section>
 
-  <!-- Control Sidebar -->
-  <%- include ('component/ctrlsidebar.ejs') %> 
+    <!-- Main content -->
+    <section class="content">
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="box box-default">
+            <div class="box-body clearfix">
+              <h5 class="pull-left" style="margin: 0;">Dashboard Overview</h5>
+              <div class="form-group pull-right" style="margin: 0;">
+                <select id="globalFilter" class="form-control input-sm">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly" selected>Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-aqua">
+            <div class="inner">
+              <h3 id="revenueValue">Loading...</h3>
+              <p>Revenue</p>
+              <span class="text-sm">Shipping fees not included</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-inr"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-green">
+            <div class="inner">
+              <h3 id="ordersValue">Loading...</h3>
+              <p>Orders</p>
+              <span class="text-sm">Excluding orders in transit</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-truck"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-yellow">
+            <div class="inner">
+              <h3 id="productsValue">Loading...</h3>
+              <p>Products</p>
+              <span class="text-sm">In all categories</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-barcode"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-blue">
+            <div class="inner">
+              <h3 id="usersValue">Loading...</h3>
+              <p>Users</p>
+              <span class="text-sm">Active accounts</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-users"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h3 class="box-title">Sales Revenue</h3>
+            </div>
+            <div class="box-body">
+              <div style="height: 300px">
+                <canvas id="salesChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="box box-info">
+            <div class="box-header with-border">
+              <h3 class="box-title">Category Performance</h3>
+            </div>
+            <div class="box-body">
+              <div style="height: 260px">
+                <canvas id="categoryChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="box box-success">
+            <div class="box-header with-border">
+              <h3 class="box-title">Orders Overview</h3>
+            </div>
+            <div class="box-body">
+              <div style="height: 260px">
+                <canvas id="ordersChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h3 class="box-title">Best Selling Products</h3>
+            </div>
+            <div class="box-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Sold</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bestSellingTable">
+                    <tr><td colspan="3">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="box box-success">
+            <div class="box-header with-border">
+              <h3 class="box-title">Top Performers</h3>
+            </div>
+            <div class="box-body">
+              <div class="mb-4">
+                <p class="mb-1">Best Selling Brand</p>
+                <h4 id="bestBrand">Loading...</h4>
+                <small id="bestBrandSales" class="text-muted">Loading...</small>
+              </div>
+              <div>
+                <p class="mb-1">Best Selling Category</p>
+                <h4 id="bestCategory">Loading...</h4>
+                <small id="bestCategorySales" class="text-muted">Loading...</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h3 class="box-title">Recent Orders</h3>
+              <div class="box-tools pull-right">
+                <a href="/admin/orders" class="btn btn-primary btn-sm">View All</a>
+              </div>
+            </div>
+            <div class="box-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentOrdersTable">
+                    <tr><td colspan="6">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
   
-  <!-- /.control-sidebar -->
-  <!-- Add the sidebar's background. This div must be placed
-       immediately after the control sidebar -->
-  <div class="control-sidebar-bg"></div>
+  <%- include ('component/footer.ejs') %>
 </div>
-<!-- ./wrapper -->
 
-<!-- jQuery 3 -->
-<script src="bower_components/jquery/dist/jquery.min.js"></script>
-<!-- jQuery UI 1.11.4 -->
-<script src="bower_components/jquery-ui/jquery-ui.min.js"></script>
-<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+<!-- Essential Scripts -->
+<script src="/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-  $.widget.bridge('uibutton', $.ui.button);
+    let salesChart, categoryChart, ordersChart;
+    const chartColors = {
+        primary: "#3c8dbc",
+        success: "#00a65a",
+        warning: "#f39c12",
+        info: "#00c0ef",
+    };
+
+    // Fetch data from API
+    async function fetchDashboardData(period) {
+        try {
+            const response = await fetch(`/admin/api/dashboard?period=${period}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            console.log("Fetched Data:", data); // Debugging
+            return data;
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            alert("Error loading dashboard data");
+            return null;
+        }
+    }
+
+    // Initialize sales chart
+    function initSalesChart(data) {
+        const salesCtx = document.getElementById("salesChart").getContext("2d");
+        if (salesChart) salesChart.destroy();
+        salesChart = new Chart(salesCtx, {
+            type: "line",
+            data: {
+                labels: data.sales.labels,
+                datasets: [{
+                    label: "Revenue",
+                    data: data.sales.revenue,
+                    borderColor: chartColors.primary,
+                    backgroundColor: `${chartColors.primary}20`,
+                    tension: 0.3,
+                    fill: true,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => "₹" + value.toLocaleString(),
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    // Category Performance Pie Chart
+    function initCategoryChart(data) {
+        const categoryCtx = document.getElementById("categoryChart").getContext("2d");
+        if (categoryChart) categoryChart.destroy();
+        categoryChart = new Chart(categoryCtx, {
+            type: "pie",
+            data: {
+                labels: data.categories.labels,
+                datasets: [{
+                    data: data.categories.data,
+                    backgroundColor: [chartColors.primary, chartColors.success, chartColors.warning, chartColors.info],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "right", labels: { padding: 20 } },
+                },
+            },
+        });
+    }
+
+    // Orders Overview Bar Chart
+    function initOrdersChart(data) {
+        const ordersCtx = document.getElementById("ordersChart").getContext("2d");
+        if (ordersChart) ordersChart.destroy();
+        ordersChart = new Chart(ordersCtx, {
+            type: "bar",
+            data: {
+                labels: data.sales.labels,
+                datasets: [{
+                    label: "Orders",
+                    data: data.sales.orders,
+                    backgroundColor: chartColors.primary,
+                    borderRadius: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } },
+            },
+        });
+    }
+
+    // Update summary values
+    function updateSummaryValues(data) {
+        document.getElementById("revenueValue").textContent = data.summary.revenue;
+        document.getElementById("ordersValue").textContent = data.summary.orders;
+        document.getElementById("productsValue").textContent = data.stats.products;
+        document.getElementById("usersValue").textContent = data.stats.users;
+    }
+
+    // Update best selling products table
+    function updateBestSellingTable(data) {
+        const tableBody = document.getElementById("bestSellingTable");
+        tableBody.innerHTML = data.bestSelling.map(item => `
+            <tr>
+                <td>${item.product}</td>
+                <td>${item.price}</td>
+                <td>${item.sold}</td>
+            </tr>
+        `).join("") || "<tr><td colspan='3'>No data available</td></tr>";
+    }
+
+    // Update top performers
+    function updateTopPerformers(data) {
+        document.getElementById("bestBrand").textContent = data.topPerformers.brand.name;
+        document.getElementById("bestBrandSales").textContent = `${data.topPerformers.brand.sales} sales`;
+        document.getElementById("bestCategory").textContent = data.topPerformers.category.name;
+        document.getElementById("bestCategorySales").textContent = `${data.topPerformers.category.sales} sales`;
+    }
+
+    // Update recent orders
+    function updateRecentOrders(data) {
+        const tableBody = document.getElementById("recentOrdersTable");
+        tableBody.innerHTML = data.recentOrders.map(order => `
+            <tr>
+                <td>${order.orderId}</td>
+                <td>${order.customer}</td>
+                <td>${order.date}</td>
+                <td>${order.amount}</td>
+                <td><span class="label label-${order.status === "Delivered" ? "success" : order.status === "Placed" ? "info" : "warning"}">${order.status}</span></td>
+                <td><a href="/admin/orders/${order.orderId}" class="btn btn-default btn-xs">Details</a></td>
+            </tr>
+        `).join("") || "<tr><td colspan='6'>No data available</td></tr>";
+    }
+
+    // Update all charts and data
+    async function updateAllCharts() {
+        const period = document.getElementById("globalFilter").value;
+        const data = await fetchDashboardData(period);
+        if (data) {
+            initSalesChart(data);
+            initCategoryChart(data);
+            initOrdersChart(data);
+            updateSummaryValues(data);
+            updateBestSellingTable(data);
+            updateTopPerformers(data);
+            updateRecentOrders(data);
+        }
+    }
+
+    // Initialize on page load and filter change
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("globalFilter").addEventListener("change", updateAllCharts);
+        updateAllCharts();
+    });
 </script>
-<!-- Bootstrap 3.3.7 -->
-<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-<!-- Morris.js charts -->
-<script src="bower_components/raphael/raphael.min.js"></script>
-<script src="bower_components/morris.js/morris.min.js"></script>
-<!-- Sparkline -->
-<script src="bower_components/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
-<!-- jvectormap -->
-<script src="plugins/jvectormap/jquery-jvectormap-1.2.2.min.js"></script>
-<script src="plugins/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
-<!-- jQuery Knob Chart -->
-<script src="bower_components/jquery-knob/dist/jquery.knob.min.js"></script>
-<!-- daterangepicker -->
-<script src="bower_components/moment/min/moment.min.js"></script>
-<script src="bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
-<!-- datepicker -->
-<script src="bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
-<!-- Bootstrap WYSIHTML5 -->
-<script src="plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.all.min.js"></script>
-<!-- Slimscroll -->
-<script src="bower_components/jquery-slimscroll/jquery.slimscroll.min.js"></script>
-<!-- FastClick -->
-<script src="bower_components/fastclick/lib/fastclick.js"></script>
-<!-- AdminLTE App -->
-<script src="dist/js/adminlte.min.js"></script>
-<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<script src="dist/js/pages/dashboard.js"></script>
-<!-- AdminLTE for demo purposes -->
-<script src="dist/js/demo.js"></script>
 </body>
 </html>

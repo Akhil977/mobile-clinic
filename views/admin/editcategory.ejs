@@ -11,47 +11,201 @@
     <!-- Content Header (Page header) -->
     <section class="content-header">
       <h1>
-        Edit Category
-        <small>Management</small>
+        Dashboard
+        <small>Control panel</small>
       </h1>
       <ol class="breadcrumb">
-        <li><a href="/admin/dashboard"><i class="fa fa-dashboard"></i> Home</a></li>
-        <li><a href="/admin/categories">Categories</a></li>
-        <li class="active">Edit Category</li>
+        <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li class="active">Dashboard</li>
       </ol>
     </section>
 
     <!-- Main content -->
     <section class="content">
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-xs-12">
+          <div class="box box-default">
+            <div class="box-body clearfix">
+              <h5 class="pull-left" style="margin: 0;">Dashboard Overview</h5>
+              <div class="form-group pull-right" style="margin: 0;">
+                <select id="globalFilter" class="form-control input-sm">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly" selected>Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-aqua">
+            <div class="inner">
+              <h3 id="revenueValue">Loading...</h3>
+              <p>Revenue</p>
+              <span class="text-sm">Shipping fees not included</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-inr"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-green">
+            <div class="inner">
+              <h3 id="ordersValue">Loading...</h3>
+              <p>Orders</p>
+              <span class="text-sm">Excluding orders in transit</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-truck"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-yellow">
+            <div class="inner">
+              <h3 id="productsValue">Loading...</h3>
+              <p>Products</p>
+              <span class="text-sm">In all categories</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-barcode"></i>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+          <div class="small-box bg-blue">
+            <div class="inner">
+              <h3 id="usersValue">Loading...</h3>
+              <p>Users</p>
+              <span class="text-sm">Active accounts</span>
+            </div>
+            <div class="icon">
+              <i class="fa fa-users"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12">
           <div class="box box-primary">
             <div class="box-header with-border">
-              <h3 class="box-title">Edit Category Details</h3>
+              <h3 class="box-title">Sales Revenue</h3>
             </div>
-            <!-- form start -->
-            <form id="editCategoryForm" class="form-horizontal">
-              <div class="box-body">
-                <div class="form-group">
-                  <label for="name" class="col-sm-2 control-label">Name</label>
-                  <div class="col-sm-10">
-                    <input type="text" class="form-control" id="name" name="name" 
-                           value="<%= category.name %>" required>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="description" class="col-sm-2 control-label">Description</label>
-                  <div class="col-sm-10">
-                    <textarea class="form-control" id="description" name="description" 
-                              rows="3" required><%= category.description %></textarea>
-                  </div>
-                </div>
+            <div class="box-body">
+              <div style="height: 300px">
+                <canvas id="salesChart"></canvas>
               </div>
-              <div class="box-footer">
-                <a href="/admin/categories" class="btn btn-default">Cancel</a>
-                <button type="submit" class="btn btn-primary pull-right">Update Category</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="box box-info">
+            <div class="box-header with-border">
+              <h3 class="box-title">Category Performance</h3>
+            </div>
+            <div class="box-body">
+              <div style="height: 260px">
+                <canvas id="categoryChart"></canvas>
               </div>
-            </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="box box-success">
+            <div class="box-header with-border">
+              <h3 class="box-title">Orders Overview</h3>
+            </div>
+            <div class="box-body">
+              <div style="height: 260px">
+                <canvas id="ordersChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h3 class="box-title">Best Selling Products</h3>
+            </div>
+            <div class="box-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Sold</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bestSellingTable">
+                    <tr><td colspan="3">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="box box-success">
+            <div class="box-header with-border">
+              <h3 class="box-title">Top Performers</h3>
+            </div>
+            <div class="box-body">
+              <div class="mb-4">
+                <p class="mb-1">Best Selling Brand</p>
+                <h4 id="bestBrand">Loading...</h4>
+                <small id="bestBrandSales" class="text-muted">Loading...</small>
+              </div>
+              <div style="margin-top: 20px;">
+                <p class="mb-1">Best Selling Category</p>
+                <h4 id="bestCategory">Loading...</h4>
+                <small id="bestCategorySales" class="text-muted">Loading...</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="box box-primary">
+            <div class="box-header with-border">
+              <h3 class="box-title">Recent Orders</h3>
+              <div class="box-tools pull-right">
+                <a href="/admin/orders" class="btn btn-primary btn-sm">View All</a>
+              </div>
+            </div>
+            <div class="box-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentOrdersTable">
+                    <tr><td colspan="6">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -65,53 +219,184 @@
 <script src="/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="/dist/js/adminlte.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = {
-        name: document.getElementById('name').value,
-        description: document.getElementById('description').value
+    let salesChart, categoryChart, ordersChart;
+    const chartColors = {
+        primary: "#3c8dbc",
+        success: "#00a65a",
+        warning: "#f39c12",
+        info: "#00c0ef",
     };
 
-    try {
-        const response = await fetch(`/admin/categories/update/<%= category._id %>`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: result.message,
-                confirmButtonText: 'OK'
-            }).then(() => {
-                window.location.href = '/admin/category';
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: result.error
-            });
+    // Fetch data from API
+    async function fetchDashboardData(period) {
+        try {
+            // Make sure the URL matches your actual API endpoint
+            const response = await fetch(`/api/dashboard?period=${period}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            console.log("Fetched Data:", data); // Debugging
+            return data;
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            // Instead of alert, display error in the UI
+            document.getElementById("revenueValue").textContent = "Error";
+            document.getElementById("ordersValue").textContent = "Error";
+            document.getElementById("productsValue").textContent = "Error";
+            document.getElementById("usersValue").textContent = "Error";
+            return null;
         }
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: 'An unexpected error occurred'
+    }
+
+    // Initialize sales chart
+    function initSalesChart(data) {
+        const salesCtx = document.getElementById("salesChart").getContext("2d");
+        if (salesChart) salesChart.destroy();
+        salesChart = new Chart(salesCtx, {
+            type: "line",
+            data: {
+                labels: data.sales.labels,
+                datasets: [{
+                    label: "Revenue",
+                    data: data.sales.revenue,
+                    borderColor: chartColors.primary,
+                    backgroundColor: `${chartColors.primary}20`,
+                    tension: 0.3,
+                    fill: true,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return "₹" + value.toLocaleString();
+                            }
+                        },
+                    },
+                },
+            },
         });
     }
-});
-</script>
 
+    // Category Performance Pie Chart
+    function initCategoryChart(data) {
+        const categoryCtx = document.getElementById("categoryChart").getContext("2d");
+        if (categoryChart) categoryChart.destroy();
+        categoryChart = new Chart(categoryCtx, {
+            type: "pie",
+            data: {
+                labels: data.categories.labels,
+                datasets: [{
+                    data: data.categories.data,
+                    backgroundColor: [chartColors.primary, chartColors.success, chartColors.warning, chartColors.info],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "right", labels: { padding: 20 } },
+                },
+            },
+        });
+    }
+
+    // Orders Overview Bar Chart
+    function initOrdersChart(data) {
+        const ordersCtx = document.getElementById("ordersChart").getContext("2d");
+        if (ordersChart) ordersChart.destroy();
+        ordersChart = new Chart(ordersCtx, {
+            type: "bar",
+            data: {
+                labels: data.sales.labels,
+                datasets: [{
+                    label: "Orders",
+                    data: data.sales.orders,
+                    backgroundColor: chartColors.primary,
+                    borderRadius: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } },
+            },
+        });
+    }
+
+    // Update summary values
+    function updateSummaryValues(data) {
+        document.getElementById("revenueValue").textContent = data.summary.revenue;
+        document.getElementById("ordersValue").textContent = data.summary.orders;
+        document.getElementById("productsValue").textContent = data.stats.products;
+        document.getElementById("usersValue").textContent = data.stats.users;
+    }
+
+    // Update best selling products table
+    function updateBestSellingTable(data) {
+        const tableBody = document.getElementById("bestSellingTable");
+        tableBody.innerHTML = data.bestSelling.map(item => `
+            <tr>
+                <td>${item.product}</td>
+                <td>${item.price}</td>
+                <td>${item.sold}</td>
+            </tr>
+        `).join("") || "<tr><td colspan='3'>No data available</td></tr>";
+    }
+
+    // Update top performers
+    function updateTopPerformers(data) {
+        document.getElementById("bestBrand").textContent = data.topPerformers.brand.name;
+        document.getElementById("bestBrandSales").textContent = `${data.topPerformers.brand.sales} sales`;
+        document.getElementById("bestCategory").textContent = data.topPerformers.category.name;
+        document.getElementById("bestCategorySales").textContent = `₹${data.topPerformers.category.sales.toLocaleString()} sales`;
+    }
+
+    // Update recent orders
+    function updateRecentOrders(data) {
+        const tableBody = document.getElementById("recentOrdersTable");
+        tableBody.innerHTML = data.recentOrders.map(order => `
+            <tr>
+                <td>${order.orderId}</td>
+                <td>${order.customer}</td>
+                <td>${order.date}</td>
+                <td>${order.amount}</td>
+                <td><span class="label label-${order.status === "Delivered" ? "success" : order.status === "Placed" ? "info" : "warning"}">${order.status}</span></td>
+                <td><a href="/admin/orders/view/${order.orderId}" class="btn btn-default btn-xs">Details</a></td>
+            </tr>
+        `).join("") || "<tr><td colspan='6'>No data available</td></tr>";
+    }
+
+    // Update all charts and data
+    async function updateAllCharts() {
+        const period = document.getElementById("globalFilter").value;
+        const data = await fetchDashboardData(period);
+        if (data) {
+            updateSummaryValues(data);
+            initSalesChart(data);
+            initCategoryChart(data);
+            initOrdersChart(data);
+            updateBestSellingTable(data);
+            updateTopPerformers(data);
+            updateRecentOrders(data);
+        }
+    }
+
+    // Initialize on page load and filter change
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("globalFilter").addEventListener("change", updateAllCharts);
+        updateAllCharts();
+    });
+</script>
 </body>
 </html>

@@ -17,7 +17,9 @@ const imageDir = path.join(__dirname,"../public/uploads");
 
 router.get('/login', adminAuth.adminAuth, adminController.loadlogin);
 router.post("/login", adminController.login);
-router.get("/", adminAuth.adminCheck, adminController.loadDashboard);
+router.get("/", adminAuth.adminCheck, adminController.renderDashboardPage);
+router.get("/api/dashboard", adminAuth.adminCheck, adminController.loadDashboardData)
+
 router.get("/logout-admin", adminAuth.adminCheck, adminController.adminLogout);
 
 router.get("/userManagement", adminAuth.adminCheck, customerController.customerInfo);

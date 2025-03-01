@@ -37,18 +37,7 @@ const userSchema = new Schema({
         type: Boolean,
         default: false
     },
-    // cart: [{
-    //     type: Schema.Types.ObjectId,
-    //     ref: "Cart"
-    // }],
-    // wallet: [{
-    //     type: Schema.Types.ObjectId,
-    //     ref: "Wishlist" // Corrected to "Wishlist" for consistency
-    // }],
-    // orderHistory: [{
-    //     type: Schema.Types.ObjectId,
-    //     ref: "Order"
-    // }],
+    
     createdOn: {
         type: Date,
         default: Date.now
@@ -60,19 +49,7 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User"
     }],
-    // searchHistory: [{
-    //     category: {
-    //         type: Schema.Types.ObjectId,
-    //         ref: "Category"
-    //     },
-    //     brand: {
-    //         type: String
-    //     },
-        // searchOn: {
-        //     type: Date,
-        //     default: Date.now
-        // }
-    // }]
+   
 }, {
     collection: 'users'
 });
