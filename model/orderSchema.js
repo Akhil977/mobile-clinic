@@ -99,7 +99,7 @@ const orderSchema = new Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['Pending', 'Paid', 'Failed'],
+        enum: ["Pending" , 'Paid', 'Failed'],
         default: 'Pending'
     }
 }, { 

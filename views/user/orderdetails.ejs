@@ -48,7 +48,15 @@
                                     month: 'long', 
                                     day: 'numeric' 
                                 }) %></p>
-                                <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+                                <p><strong>Payment Method:</strong> <%= order.paymentMethod %> </p>
+                                <% if(order.paymentStatus === 'Pending') { %>
+                                    <button class="btn btn-sm btn-primary ms-2" onclick="handlePayNow('<%= order._id %>', <%= order.finalAmount %>)">
+                                        <i class="fas fa-credit-card me-1"></i> Pay Now
+                                    </button>
+                                <% }else { %>
+                                    <p><strong>Payment Status:</strong> <%= order.paymentStatus %> </p>
+<% } %>
+                               
                                 <p><strong>Coupon Applied:</strong> <%= order.couponApplied ? 'Yes' : 'No' %></p>
                                 
                                 <!-- Delivery Address -->
@@ -74,19 +82,19 @@
                                     <% products.forEach(function(item) { %>
                                         <div class="col-md-6 mb-3">
                                             <div class="product-card p-3 border rounded">
-    <div class="d-flex">
-        <img class="product-image me-3" 
-             src="<%= item.productImage %>" 
-             alt="<%= item.productName %>" 
-             style="width: 80px; height: 80px; object-fit: cover;">
-        <div class="product-info">
-            <h6 class="mb-1"><%= item.productName %></h6>
-            <p class="mb-1">Quantity: <%= item.quantity %></p>
-            <p class="mb-1">Price: ₹<%= item.price %></p>
-            <p class="mb-0"><strong>Total: ₹<%= item.total %></strong></p>
-        </div>
-    </div>
-</div>
+                                                <div class="d-flex">
+                                                    <img class="product-image me-3" 
+                                                        src="<%= item.productImage %>" 
+                                                        alt="<%= item.productName %>" 
+                                                        style="width: 80px; height: 80px; object-fit: cover;">
+                                                    <div class="product-info">
+                                                        <h6 class="mb-1"><%= item.productName %></h6>
+                                                        <p class="mb-1">Quantity: <%= item.quantity %></p>
+                                                        <p class="mb-1">Price: ₹<%= item.price %></p>
+                                                        <p class="mb-0"><strong>Total: ₹<%= item.total %></strong></p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     <% }) %>
                                 </div>
@@ -115,300 +123,429 @@
                             </div>
                         </div>
                         <div class="order-actions mt-4 text-end">
-    <% if (order.status !== 'Cancelled') { %>
-        <% if (order.status === 'Delivered') { %>
-            <!-- If order is Delivered, show the Return Order button -->
-            <button class="btn btn-warning" onclick="handleReturn('<%= order._id %>')">
-                <i class="fas fa-undo-alt me-2"></i> Return Order
-            </button>
-        <% } else if (order.status === 'Request Return') { %>
-         
-            <span class="badge bg-info">Return Requested</span>
-        <% } else if (['Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
-            
-            <span class="badge bg-secondary"><%= order.status %></span>
-        <% } else { %>
-           
-            <button class="btn btn-danger" onclick="handleCancel('<%= order._id %>')">
-                <i class="fas fa-times-circle me-2"></i> Cancel Order
-            </button>
-        <% } %>
-    <% } %>
-</div>
+                            <% if (order.status !== 'Cancelled') { %>
+                                <% if (order.status === 'Delivered') { %>
+                                    <button class="btn btn-warning" onclick="handleReturn('<%= order._id %>')">
+                                        <i class="fas fa-undo-alt me-2"></i> Return Order
+                                    </button>
+                                <% } else if (order.status === 'Request Return') { %>
+                                    <span class="badge bg-info">Return Requested</span>
+                                <% } else if (['Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
+                                    <span class="badge bg-secondary"><%= order.status %></span>
+                                <% } else { %>
+                                    <button class="btn btn-danger" onclick="handleCancel('<%= order._id %>')">
+                                        <i class="fas fa-times-circle me-2"></i> Cancel Order
+                                    </button>
+                                <% } %>
+                            <% } %>
+                        </div>
                     </div>
-                    
                 </div>
-      
             </div>
+
+            <!-- Cancel Modal -->
             <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cancelModalLabel">Cancel Order</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="cancelForm">
-                    <div class="mb-3">
-                        <label for="cancelReason" class="form-label">Please select reason for cancellation:</label>
-                        <select class="form-select" id="cancelReason" required>
-                            <option value="">Choose a reason</option>
-                            <option value="Changed my mind">Changed my mind</option>
-                            <option value="Found better price elsewhere">Found better price elsewhere</option>
-                            <option value="Ordered by mistake">Ordered by mistake</option>
-                            <option value="Shipping time too long">Shipping time too long</option>
-                            <option value="Other">Other</option>
-                        </select>
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="cancelModalLabel">Cancel Order</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="cancelForm">
+                                <div class="mb-3">
+                                    <label for="cancelReason" class="form-label">Please select reason for cancellation:</label>
+                                    <select class="form-select" id="cancelReason" required>
+                                        <option value="">Choose a reason</option>
+                                        <option value="Changed my mind">Changed my mind</option>
+                                        <option value="Found better price elsewhere">Found better price elsewhere</option>
+                                        <option value="Ordered by mistake">Ordered by mistake</option>
+                                        <option value="Shipping time too long">Shipping time too long</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="cancelOtherReasonDiv" style="display: none;">
+                                    <label for="cancelOtherReason" class="form-label">Please specify other reason:</label>
+                                    <textarea class="form-control" id="cancelOtherReason" rows="3"></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-danger" id="confirmCancel">Confirm Cancellation</button>
+                        </div>
                     </div>
-                    <div class="mb-3" id="cancelOtherReasonDiv" style="display: none;">
-                        <label for="cancelOtherReason" class="form-label">Please specify other reason:</label>
-                        <textarea class="form-control" id="cancelOtherReason" rows="3"></textarea>
-                    </div>
-                </form>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-danger" id="confirmCancel">Confirm Cancellation</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="returnModalLabel">Return Order</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="returnForm">
-                    <div class="mb-3">
-                        <label for="returnReason" class="form-label">Please select reason for return:</label>
-                        <select class="form-select" id="returnReason" required>
-                            <option value="">Choose a reason</option>
-                            <option value="Product damaged">Product damaged</option>
-                            <option value="Wrong item received">Wrong item received</option>
-                            <option value="Product not as described">Product not as described</option>
-                            <option value="Size/fit issue">Size/fit issue</option>
-                            <option value="Quality issue">Quality issue</option>
-                            <option value="Other">Other</option>
-                        </select>
+            <!-- Return Modal -->
+            <div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="returnModalLabel">Return Order</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="returnForm">
+                                <div class="mb-3">
+                                    <label for="returnReason" class="form-label">Please select reason for return:</label>
+                                    <select class="form-select" id="returnReason" required>
+                                        <option value="">Choose a reason</option>
+                                        <option value="Product damaged">Product damaged</option>
+                                        <option value="Wrong item received">Wrong item received</option>
+                                        <option value="Product not as described">Product not as described</option>
+                                        <option value="Size/fit issue">Size/fit issue</option>
+                                        <option value="Quality issue">Quality issue</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="returnOtherReasonDiv" style="display: none;">
+                                    <label for="returnOtherReason" class="form-label">Please specify other reason:</label>
+                                    <textarea class="form-control" id="returnOtherReason" rows="3"></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-warning" id="confirmReturn">Confirm Return</button>
+                        </div>
                     </div>
-                    <div class="mb-3" id="returnOtherReasonDiv" style="display: none;">
-                        <label for="returnOtherReason" class="form-label">Please specify other reason:</label>
-                        <textarea class="form-control" id="returnOtherReason" rows="3"></textarea>
-                    </div>
-                </form>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-warning" id="confirmReturn">Confirm Return</button>
-            </div>
-        </div>
-    </div>
-</div>
-
         </section>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let currentOrderId = '';
+        function handlePayNow(orderId, amount) {
+    if (typeof Razorpay === 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Payment Error',
+            text: 'Payment gateway failed to load. Please refresh the page and try again.',
+        });
+        return;
+    }
 
-        // Cancel Order Modal Trigger
-        function handleCancel(_id) {
-            currentOrderId = _id;
-            const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
-            cancelModal.show();
-        }
-
-        // Return Order Modal Trigger
-        function handleReturn(_id) {
-            currentOrderId = _id;
-            const returnModal = new bootstrap.Modal(document.getElementById('returnModal'));
-            returnModal.show();
-        }
-
-        // Attach global window functions
-        window.handleCancel = handleCancel;
-        window.handleReturn = handleReturn;
-
-        // Handle "Other" reason selection for cancel
-        const cancelReasonSelect = document.getElementById('cancelReason');
-        if (cancelReasonSelect) {
-            cancelReasonSelect.addEventListener('change', function() {
-                const otherReasonDiv = document.getElementById('cancelOtherReasonDiv');
-                otherReasonDiv.style.display = this.value === 'Other' ? 'block' : 'none';
-            });
-        }
-
-        // Handle "Other" reason selection for return
-        const returnReasonSelect = document.getElementById('returnReason');
-        if (returnReasonSelect) {
-            returnReasonSelect.addEventListener('change', function() {
-                const otherReasonDiv = document.getElementById('returnOtherReasonDiv');
-                otherReasonDiv.style.display = this.value === 'Other' ? 'block' : 'none';
-            });
-        }
-
-        // Confirm Cancel
-        const confirmCancelBtn = document.getElementById('confirmCancel');
-        if (confirmCancelBtn) {
-            confirmCancelBtn.addEventListener('click', async function() {
-                const reasonSelect = document.getElementById('cancelReason');
-                const otherReasonText = document.getElementById('cancelOtherReason');
-                
-                if (!reasonSelect.value) {
-                    alert('Please select a reason for cancellation');
-                    return;
-                }
-
-                const reason = reasonSelect.value === 'Other' ? otherReasonText.value : reasonSelect.value;
-                
-                if (reasonSelect.value === 'Other' && !otherReasonText.value.trim()) {
-                    alert('Please specify the other reason');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/orders/cancel?_id=${currentOrderId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ reason })
-                    });
-
-                    if (response.ok) {
-                        window.location.reload();
-                    } else {
-                        const data = await response.json();
-                        alert(data.message || 'Failed to cancel order');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('An error occurred while cancelling the order');
-                }
-            });
-        }
-
-        // Confirm Return
-        const confirmReturnBtn = document.getElementById('confirmReturn');
-        if (confirmReturnBtn) {
-            confirmReturnBtn.addEventListener('click', async function() {
-                const reasonSelect = document.getElementById('returnReason');
-                const otherReasonText = document.getElementById('returnOtherReason');
-                
-                if (!reasonSelect.value) {
-                    alert('Please select a reason for return');
-                    return;
-                }
-
-                const reason = reasonSelect.value === 'Other' ? otherReasonText.value : reasonSelect.value;
-                
-                if (reasonSelect.value === 'Other' && !otherReasonText.value.trim()) {
-                    alert('Please specify the other reason');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/orders/return?_id=${currentOrderId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ reason })
-                    });
-
-                    if (response.ok) {
-                        window.location.reload();
-                    } else {
-                        const data = await response.json();
-                        alert(data.message || 'Failed to initiate return');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('An error occurred while processing return request');
-                }
-            });
+    Swal.fire({
+        title: 'Processing',
+        text: 'Preparing payment gateway...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
         }
     });
+
+    const backendUrl = 'http://localhost:3000'; // Replace with your backend URL/port
+    const endpoint = `${backendUrl}/razorpay/initiate-pending-payment`;
+
+    console.log('Initiating payment (in rupees):', { orderId, amount }); // Debug log
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ orderId, amount }) // Send amount in rupees
+    })
+    .then(response => {
+        console.log('Response Status:', response.status);
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`Server responded with status: ${response.status} - ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Server Response:', data);
+        Swal.close();
+
+        if (!data.success || !data.order || !data.key) {
+            throw new Error(data.error || 'Invalid payment initiation response');
+        }
+
+        const options = {
+            key: data.key,
+            amount: data.order.amount, // Use amount from Razorpay response (in paise)
+            currency: "INR",
+            name: "Mobile Clinic",
+            description: "Payment for your order #" + orderId,
+            order_id: data.order.id,
+            handler: function(response) {
+                verifyPendingPayment(response, orderId);
+            },
+            prefill: {
+                name: "",
+                email: "",
+                contact: ""
+            },
+            theme: {
+                color: "#3399cc"
+            },
+            modal: {
+                ondismiss: function() {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Payment Cancelled',
+                        text: 'You closed the payment window',
+                    });
+                }
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+        rzp.on('payment.failed', function(response) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: response.error.description || 'Payment failed. Please try again.',
+            });
+        });
+    })
+    .catch(error => {
+        console.error('Payment Error:', error);
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Payment Error',
+            text: error.message || 'Failed to initiate payment. Please try again.',
+        });
+    });
+}
+        function verifyPendingPayment(response, orderId) {
+            Swal.fire({
+                title: 'Verifying Payment',
+                text: 'Please wait while we verify your payment...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('/razorpay/verify-pending-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                    orderId: orderId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Payment Successful!',
+                        text: 'Your payment has been processed successfully.',
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Payment Verification Failed',
+                        text: data.error || 'We could not verify your payment. Please contact support.',
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while verifying payment. Please contact support.',
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentOrderId = '';
+
+            window.handleCancel = function(_id) {
+                currentOrderId = _id;
+                const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+                cancelModal.show();
+            };
+
+            window.handleReturn = function(_id) {
+                currentOrderId = _id;
+                const returnModal = new bootstrap.Modal(document.getElementById('returnModal'));
+                returnModal.show();
+            };
+
+            const cancelReasonSelect = document.getElementById('cancelReason');
+            if (cancelReasonSelect) {
+                cancelReasonSelect.addEventListener('change', function() {
+                    document.getElementById('cancelOtherReasonDiv').style.display = 
+                        this.value === 'Other' ? 'block' : 'none';
+                });
+            }
+
+            const returnReasonSelect = document.getElementById('returnReason');
+            if (returnReasonSelect) {
+                returnReasonSelect.addEventListener('change', function() {
+                    document.getElementById('returnOtherReasonDiv').style.display = 
+                        this.value === 'Other' ? 'block' : 'none';
+                });
+            }
+
+            const confirmCancelBtn = document.getElementById('confirmCancel');
+            if (confirmCancelBtn) {
+                confirmCancelBtn.addEventListener('click', async function() {
+                    const reasonSelect = document.getElementById('cancelReason');
+                    const otherReasonText = document.getElementById('cancelOtherReason');
+                    
+                    if (!reasonSelect.value) {
+                        alert('Please select a reason for cancellation');
+                        return;
+                    }
+
+                    const reason = reasonSelect.value === 'Other' ? otherReasonText.value : reasonSelect.value;
+                    
+                    if (reasonSelect.value === 'Other' && !otherReasonText.value.trim()) {
+                        alert('Please specify the other reason');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/orders/cancel?_id=${currentOrderId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason })
+                        });
+
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            const data = await response.json();
+                            alert(data.message || 'Failed to cancel order');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while cancelling the order');
+                    }
+                });
+            }
+
+            const confirmReturnBtn = document.getElementById('confirmReturn');
+            if (confirmReturnBtn) {
+                confirmReturnBtn.addEventListener('click', async function() {
+                    const reasonSelect = document.getElementById('returnReason');
+                    const otherReasonText = document.getElementById('returnOtherReason');
+                    
+                    if (!reasonSelect.value) {
+                        alert('Please select a reason for return');
+                        return;
+                    }
+
+                    const reason = reasonSelect.value === 'Other' ? otherReasonText.value : reasonSelect.value;
+                    
+                    if (reasonSelect.value === 'Other' && !otherReasonText.value.trim()) {
+                        alert('Please specify the other reason');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/orders/return?_id=${currentOrderId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason })
+                        });
+
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            const data = await response.json();
+                            alert(data.message || 'Failed to initiate return');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while processing return request');
+                    }
+                });
+            }
+        });
     </script>
 
-    <!-- Styles -->
     <style>
         .order-actions {
-    border-top: 1px solid #dee2e6;
-    padding-top: 20px;
-}
-
-.order-actions .btn {
-    padding: 8px 20px;
-    font-size: 0.9rem;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: white;
-}
-
-.btn-warning {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #000;
-}
-    .page-container {
-        display: flex;
-        min-height: 100vh;
-    }
-    .user-aside {
-        width: 220px;
-        background-color: #ffffff;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-    }
-    .main-content {
-        flex: 1;
-        padding: 20px;
-        background-color: #f8f9fa;
-    }
-    .address-divider {
-        height: 1px;
-        background-color: #dee2e6;
-        margin: 15px 0;
-    }
-    .section-title {
-        color: #495057;
-        font-weight: 500;
-        margin-left: 15px;
-    }
-    .card {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .product-card {
-        background-color: #fff;
-        transition: transform 0.2s;
-    }
-    .product-card:hover {
-        transform: translateY(-2px);
-    }
-    .product-image {
-        border-radius: 8px;
-    }
-    .delivery-address {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-    }
-    .order-totals {
-        font-size: 0.95rem;
-    }
-    .order-info p {
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+        .order-actions .btn {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+        .page-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .user-aside {
+            width: 220px;
+            background-color: #ffffff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .address-divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 15px 0;
+        }
+        .section-title {
+            color: #495057;
+            font-weight: 500;
+            margin-left: 15px;
+        }
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .product-card {
+            background-color: #fff;
+            transition: transform 0.2s;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+        }
+        .product-image {
+            border-radius: 8px;
+        }
+        .delivery-address {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .order-totals {
+            font-size: 0.95rem;
+        }
+        .order-info p {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
     </style>
 </body>
 </html>

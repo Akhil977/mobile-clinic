@@ -363,13 +363,27 @@
                     </div>
 
                     <!-- Add COD Payment Option -->
-                    <div class="payment-methods mb-3">
-                        <input type="radio" name="paymentMethod" value="COD" id="codPayment">
-                        <label for="codPayment">
-                            <i class="fas fa-money-bill"></i>
-                            Cash on Delivery
-                        </label>
-                    </div>
+                    <% if( total>15000)  { %>
+                        <div class="payment-methods mb-3">
+                            <input type="text" name="paymentMethod" value="Cash On delevery" id="walletPayment">
+                            <label for="disablecod">
+                                <i class="fas fa-wallet"></i>
+                                cash on delevery is not available<br>
+                               
+                            </label>
+                        </div>
+
+                 
+                    <% } else { %>
+                        <div class="payment-methods mb-3">
+                            <input type="radio" name="paymentMethod" value="COD" id="codPayment">
+                            <label for="codPayment">
+                                <i class="fas fa-money-bill"></i>
+                                Cash on Delivery
+                            </label>
+                        </div>
+
+                        <% } %>
 
                     <!-- Add Wallet Payment Option -->
                     <% if(wallet.length==0)  { %>
@@ -484,78 +498,103 @@
                     console.log('Razorpay order created:', data);
 
                     const options = {
-                        key: data.key,
-                        amount: data.order.amount,
-                        currency: "INR",
-                        name: "Mobile Clinic",
-                        description: "Payment for your order",
-                        order_id: data.order.id,
-                        handler: async function (response) {
-                            console.log('Payment successful:', response);
-                            
-                            try {
-                                // Verify the payment and create order
-                                const verifyResponse = await fetch('/razorpay/verify-payment', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        razorpay_payment_id: response.razorpay_payment_id,
-                                        razorpay_order_id: response.razorpay_order_id,
-                                        razorpay_signature: response.razorpay_signature,
-                                        addressId,
-                                        totalPrice,
-                                        productId,
-                                        quantity,
-                                        appliedCouponId,
-                                        discountAmount,
-                                        finalAmount
-                                    })
-                                });
+    key: data.key,
+    amount: data.order.amount,
+    currency: "INR",
+    name: "Mobile Clinic",
+    description: "Payment for your order",
+    order_id: data.order.id,
+    handler: async function (response) {
+        console.log('Payment successful:', response);
 
-                                if (!verifyResponse.ok) {
-                                    const errorData = await verifyResponse.json();
-                                    throw new Error(errorData.error || 'Payment verification failed');
-                                }
+        try {
+            // Verify payment and place order
+            const verifyResponse = await fetch('/razorpay/verify-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    razorpay_payment_id: response.razorpay_payment_id || null,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature || null,
+                    addressId,
+                    totalPrice,
+                    productId,
+                    quantity,
+                    appliedCouponId,
+                    discountAmount,
+                    finalAmount
+                })
+            });
 
-                                const verifyData = await verifyResponse.json();
-                                if (verifyData.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Payment Successful!',
-                                        text: 'Your order has been placed.',
-                                        showConfirmButton: true
-                                    }).then(() => {
-                                        window.location.href = '/';
-                                    });
-                                } else {
-                                    throw new Error(verifyData.error || 'Payment verification failed');
-                                }
-                            } catch (error) {
-                                console.error('Payment verification error:', error);
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Payment Verification Failed',
-                                    text: error.message || 'Failed to verify payment. Please contact support.',
-                                    showConfirmButton: true
-                                });
-                            }
-                        },
-                        prefill: {
-                            name: "Customer Name",
-                            contact: "",
-                            email: ""
-                        },
-                        theme: {
-                            color: "#3399cc"
-                        }
-                    };
+            const verifyData = await verifyResponse.json();
 
-                    const rzp = new Razorpay(options);
-                    rzp.open();
+            if (verifyData.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Payment Successful!',
+                    text: 'Your order has been placed.',
+                    showConfirmButton: true
+                }).then(() => {
+                    window.location.href = '/';
+                });
+            } else {
+                throw new Error(verifyData.error || 'Payment verification failed');
+            }
+        } catch (error) {
+            console.error('Payment verification error:', error);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Payment Pending',
+                text: 'Your order has been placed, but payment is pending. Please complete the payment later.',
+                showConfirmButton: true
+            }).then(() => {
+                window.location.href = '/orders'; // Redirect user to their orders page
+            });
+        }
+    },
+    theme: { color: "#3399cc" }
+};
 
-                } 
+const rzp = new Razorpay(options);
+rzp.open();
+
+// Handle payment failure
+rzp.on('payment.failed', function (response) {
+    console.log('Payment failed:', response);
+    
+    fetch('/razorpay/verify-payment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            razorpay_payment_id: null, // No payment ID since failure
+            razorpay_order_id: data.order.id,
+            razorpay_signature: null,
+            addressId,
+            totalPrice,
+            productId,
+            quantity,
+            appliedCouponId,
+            discountAmount,
+            finalAmount
+        })
+    }).then(res => res.json())
+      .then(verifyData => {
+          Swal.fire({
+              icon: 'warning',
+              title: 'Payment Failed',
+              text: 'Your order has been placed, but payment is pending. Please complete the payment later.',
+              showConfirmButton: true
+          }).then(() => {
+              window.location.href = '/orders'; // Redirect user to orders page
+          });
+      }).catch(error => {
+          console.error('Order placement failed:', error);
+      });
+});}
                 // Handle COD and Wallet payments through orderController
                 else if (paymentMethod === 'wallet' || paymentMethod === 'COD') {
                     console.log('Submitting form for ' + paymentMethod + ' payment');

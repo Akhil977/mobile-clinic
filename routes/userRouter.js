@@ -112,6 +112,8 @@ router.get("/user-orders", protectRoutes, checkout.loadUserOrders);
 router.get("/order-details", protectRoutes, checkout.loadOrderDetails);
 router.post("/orders/cancel", protectRoutes, checkout.cancelOrder);
 router.post("/orders/return", protectRoutes, checkout.returnOrder);
+router.post('/razorpay/initiate-pending-payment', razorpayController.initiatePendingPayment);
+router.post('/razorpay/verify-pending-payment', razorpayController.verifyPendingPayment);
 
 // Wishlist routes
 router.get("/checkWishlist", whishlist.checkWishlist);
