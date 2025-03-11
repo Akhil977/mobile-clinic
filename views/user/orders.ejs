@@ -79,7 +79,8 @@
                     <!-- Pagination Controls -->
                     <nav aria-label="Order pagination" class="mt-4">
                         <ul class="pagination justify-content-center">
-                            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                            <li class="page-item <%= (typeof currentPage !== 'undefined' && currentPage === 1) ? 'disabled' : '' %>">
+
                                 <a class="page-link" href="?page=<%= currentPage - 1 %>" aria-label="Previous">
                                     <span aria-hidden="true">&laquo;</span>
                                 </a>
