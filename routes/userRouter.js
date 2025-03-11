@@ -10,6 +10,7 @@ const checkout = require("../controller/user/orderController")
 const whishlist = require("../controller/user/wishlistController")
 const wallet = require("../controller/user/walletController")
 const razorpayController = require("../controller/user/razorpayController")
+const cartCheakoutController = require("../controller/user/cartOrderController")
 
 
 // Razorpay routes
@@ -17,6 +18,9 @@ router.post('/razorpay/create-order',razorpayController.createOrder);
 router.post('/razorpay/verify-payment',razorpayController.verifyPayment);
 
 router.use(preventBackAfterLogout);
+
+//about us page
+router.get('/about',userController.loadaboutpage);
 
 
 router.get("/pageNotFound",checkBlockedUser,userController.pageNotFound);
@@ -98,7 +102,7 @@ router.get("/cart",cartController.getCart)
 
 ///////////checkout
 
-router.get("/checkout", protectUserProfile, checkout.getcheckout)
+//router.get("/checkout", protectUserProfile, checkout.getcheckout)
 router.get("/order/buy-now", protectUserProfile, checkout.getdirectcheackout)
 //router.post("/placeOrder", protectUserProfile, checkout.placeOrder);
  router.post("/placeBuyNowOrder", protectUserProfile, checkout.placeOrder)
@@ -106,10 +110,25 @@ router.patch('/apply-coupon', protectUserProfile, checkout.applyCoupon);
 router.post("/add-checkout-address", protectUserProfile, checkout.addAddress)
 router.post("/edit-checkout-address", protectUserProfile, checkout.editAddress)
 
+
+
+
+//////cartCheakout
+
+router.get("/checkout",cartCheakoutController.getCartCheckout)
+router.post('/placeCartOrder', cartCheakoutController.placeCartOrder);
+router.post('/add-checkout-address', cartCheakoutController.addAddress);
+router.post('/edit-checkout-address', cartCheakoutController.editAddress);
+router.patch('/apply-coupon', cartCheakoutController.applyCoupon);
+
+router.post('/razorpay/create-cart-order',razorpayController.createCartOrder);
+router.post('/razorpay/verify-cart-payment',razorpayController.verifyCartPayment);
+
 /////////////ORDERS
 
 router.get("/user-orders", protectRoutes, checkout.loadUserOrders);
 router.get("/order-details", protectRoutes, checkout.loadOrderDetails);
+router.get("/orders/invoice", protectRoutes, checkout.generateInvoice)
 router.post("/orders/cancel", protectRoutes, checkout.cancelOrder);
 router.post("/orders/return", protectRoutes, checkout.returnOrder);
 router.post('/razorpay/initiate-pending-payment', razorpayController.initiatePendingPayment);

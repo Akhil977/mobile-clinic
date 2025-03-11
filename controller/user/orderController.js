@@ -5,6 +5,7 @@ const Order = require("../../model/orderSchema")
 const Address = require('../../model/addressSchema')
 const Coupon = require('../../model/couponSchema')
 const Wallet = require('../../model/walletSchema')
+const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose')
 
 const getcheckout = async (req, res) => {
@@ -286,20 +287,6 @@ const loadUserOrders = async (req, res) => {
     try {
         const userId = req.session.user;
         console.log("Fetching orders for user ID:", userId);
-          const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
-            
-            // If the cart exists, map cart items and include product details
-            if (userCart) {
-                cart = userCart.item.map(item => ({
-                    productId: item.productId._id,  // Product ID
-                    name: item.productId.productName,  // Product Name
-                    price: item.price,  // Price of the item in the cart
-                    quantity: item.quantity,  // Quantity of the item
-                    totalPrice: item.totalPrice,  // Calculated total price of the item
-                    image: item.productId.productImages[0]  // Image of the product
-                }));
-            }
-        
 
         if (!userId) {
             console.error("No user ID in session");
@@ -308,7 +295,7 @@ const loadUserOrders = async (req, res) => {
                 error: 'No user ID found in session' 
             });
         }
-        
+
         // Validate user exists
         const user = await User.findById(userId);
         if (!user) {
@@ -318,42 +305,70 @@ const loadUserOrders = async (req, res) => {
                 error: 'No user found with the given ID' 
             });
         }
-        
-        // Fetch orders with detailed population
-        const orders = await Order.find({ userId: userId })
+
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1; // Default to page 1
+        const limit = 10; // Limit to 10 orders per page
+        const skip = (page - 1) * limit;
+
+        // Fetch cart
+        const userCart = await Cart.findOne({ userId }).populate('item.productId');
+        let cart = [];
+        if (userCart) {
+            cart = userCart.item.map(item => ({
+                productId: item.productId._id,
+                name: item.productId.productName,
+                price: item.price,
+                quantity: item.quantity,
+                totalPrice: item.totalPrice,
+                image: item.productId.productImages[0]
+            }));
+        }
+
+        // Fetch total number of orders for pagination
+        const totalOrders = await Order.countDocuments({ userId });
+
+        // Fetch orders with pagination, sorted by date descending (newest first)
+        const orders = await Order.find({ userId })
             .populate({
                 path: 'orderedItems.product',
-                model: 'Product', // Use the correct model name
-                select: 'productName productImages' // Select only necessary fields
+                model: 'Product',
+                select: 'productName productImages'
             })
-            .sort({ invoiceDate: -1 }) // Sort by invoice date
-            .lean(); // Convert to plain JavaScript object for easier manipulation
-        
-        console.log("Found orders:", orders.length);
-        
-        // Transform orders to ensure all required fields are present
+            .sort({ date: -1 }) // Sort by date field, newest first
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        console.log("Found orders:", orders.length, "Page:", page);
+
+        // Transform orders
         const processedOrders = orders.map(order => ({
             ...order,
-            orderId: order.orderId || order._id.toString(), // Use orderId or fallback to _id
+            orderId: order.orderId || order._id.toString(),
+            orderDate: new Date(order.date).toLocaleString(), // Use date field for display
             orderedItems: order.orderedItems.map(item => ({
                 ...item,
                 productImage: item.product && item.product.productImages && item.product.productImages.length > 0
-                    ? `/uploads/product-images/${item.product.productImages[0]}` 
+                    ? `/uploads/product-images/${item.product.productImages[0]}`
                     : '/default-product-image.png',
                 productName: item.productName || (item.product ? item.product.productName : 'Unknown Product')
             }))
         }));
-        
+
         const isLoggedIn = req.session.isLoggedIn || false;
-        
+        const totalPages = Math.ceil(totalOrders / limit);
+
         res.render('orders', {
             orders: processedOrders,
-            isLoggedIn,cart
+            isLoggedIn,
+            cart,
+            currentPage: page,
+            totalPages,
+            totalOrders
         });
     } catch (error) {
         console.error("Critical error in loadUserOrders:", error);
-        
-        // Create a simple error view if the default error view is missing
         const errorHtml = `
             <!DOCTYPE html>
             <html>
@@ -364,17 +379,13 @@ const loadUserOrders = async (req, res) => {
             </body>
             </html>
         `;
-        
         res.status(500).send(errorHtml);
     }
 };
 const loadOrderDetails = async (req, res) => {
     try {
         const userId = req.session.user;
-        const orderId = req.query.orderId||req.query.id;  
-        console.log("its ;inside the order details")
-        console.log( userId)
-        console.log( orderId)
+        const orderId = req.query.orderId || req.query.id;  
         console.log('Debug: Fetching order details', { userId, orderId });
 
         if (!userId) {
@@ -388,12 +399,12 @@ const loadOrderDetails = async (req, res) => {
         }
 
         const order = await Order.findById(orderId)  
-        .populate({
-            path: 'orderedItems.product',
-            model: 'Product',
-            select: 'productName productImages regularPrice salePrice'
-        })
-        .lean();
+            .populate({
+                path: 'orderedItems.product',
+                model: 'Product',
+                select: 'productName productImages regularPrice salePrice'
+            })
+            .lean();
 
         if (!order) {
             console.error('Order not found', { orderId, userId });
@@ -447,7 +458,7 @@ const loadOrderDetails = async (req, res) => {
             order: {
                 _id: order._id,
                 orderId: order.orderId,
-                paymentStatus:order.paymentStatus,
+                paymentStatus: order.paymentStatus,
                 status: order.status,
                 totalPrice: order.totalPrice,
                 discount: order.discount || 0,
@@ -475,6 +486,110 @@ const loadOrderDetails = async (req, res) => {
     } catch (error) {
         console.error("Error in loadOrderDetails:", error);
         return res.redirect('/');  
+    }
+};
+
+const generateInvoice = async (req, res) => {
+    try {
+        const orderId = req.query._id;
+        const userId = req.session.user;
+
+        if (!userId) {
+            return res.status(401).send('Unauthorized');
+        }
+
+        const order = await Order.findById(orderId)
+            .populate('orderedItems.product');
+
+        if (!order || order.status !== 'Delivered') {
+            return res.status(404).send('Order not found or not delivered');
+        }
+
+        if (order.userId.toString() !== userId.toString()) {
+            return res.status(403).send('Forbidden: Order does not belong to user');
+        }
+
+        const userAddresses = await Address.findOne({ userId: userId });
+        let address = null;
+        if (userAddresses && userAddresses.address) {
+            address = userAddresses.address.find(addr => 
+                addr._id.toString() === order.address.toString()
+            );
+        }
+
+        if (!address) {
+            address = {
+                name: 'Address Not Found',
+                landmark: 'N/A',
+                city: 'N/A',
+                state: 'N/A',
+                country: 'N/A',
+                pincode: 'N/A',
+                phone: 'N/A'
+            };
+        }
+
+        const products = order.orderedItems.map(item => ({
+            productName: item.product.productName,
+            productImage: item.product.productImages?.[0] || 'default-product-image.png',
+            quantity: item.quantity,
+            price: item.price,
+            total: item.quantity * item.price
+        }));
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=invoice_${order.orderId}.pdf`);
+        doc.pipe(res);
+
+        doc.fontSize(20).text('Invoice', { align: 'center' });
+        doc.moveDown();
+
+        doc.fontSize(12).text(`Order #${order.orderId}`, { align: 'left' });
+        doc.text(`Invoice Date: ${new Date(order.invoiceDate).toLocaleString('en-IN', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        })}`);
+        doc.text(`Payment Method: ${order.paymentMethod}`);
+        doc.text(`Payment Status: ${order.paymentStatus}`);
+        doc.moveDown();
+
+        doc.fontSize(14).text('Delivery Address:', { underline: true });
+        doc.fontSize(12).text(`${address.name}`);
+        doc.text(`${address.landmark}, ${address.city}, ${address.state}`);
+        doc.text(`${address.country} ${address.pincode}`);
+        doc.text(`Phone: ${address.phone}`);
+        doc.moveDown();
+
+        doc.fontSize(14).text('Ordered Items:', { underline: true });
+        doc.moveDown(0.5);
+
+        products.forEach((item, index) => {
+            doc.fontSize(12).text(`${index + 1}. ${item.productName}`);
+            doc.text(`   Quantity: ${item.quantity}`);
+            doc.text(`   Price: ₹${item.price}`);
+            doc.text(`   Total: ₹${item.total}`);
+            doc.moveDown(0.5);
+        });
+
+        doc.moveDown();
+        doc.fontSize(14).text('Order Summary:', { underline: true });
+        doc.fontSize(12).text(`Total Price: ₹${order.totalPrice}`);
+        doc.text(`Discount: ₹${order.discount}`);
+        doc.fontSize(14).text(`Final Amount: ₹${order.finalAmount}`, { bold: true });
+
+        // Updated Footer with Company Details
+        doc.moveDown(2);
+        doc.fontSize(10).text('Thank you for your purchase!', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.text('Mobile Clinic', { align: 'center' });
+        doc.text('Email: support@mobileclinic.com', { align: 'center' });
+        doc.text('Phone: +91 12345 67890', { align: 'center' });
+
+        doc.end();
+
+    } catch (error) {
+        console.error('Error generating invoice:', error);
+        res.status(500).send('Error generating invoice');
     }
 };
 const cancelOrder = async (req, res) => {
@@ -790,5 +905,6 @@ module.exports = {
     cancelOrder,
     returnOrder,
     getdirectcheackout,
-    applyCoupon
+    applyCoupon,
+    generateInvoice
 };

@@ -5,16 +5,27 @@ const Cart = require("../../model/cartSchema")
 
 const productDetails = async (req, res) => {
     try {
-        console.log("Fetching product details...");
-
-        // Dummy cart data for testing
-        const cart = [
-            { name: "Product 1", price: 100, quantity: 2 },
-            { name: "Product 2", price: 150, quantity: 1 },
-        ];
+        const userId = req.session.user;
+        if (req.session.isLoggedIn) {
+            const userId = req.session.user;
+            const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
+            
+            if (userCart) {
+                cart = userCart.item.map(item => ({
+                    productId: item.productId._id,
+                    name: item.productId.productName,
+                    price: item.price,
+                    quantity: item.quantity,
+                    totalPrice: item.totalPrice,
+                    image: item.productId.productImages[0]
+                }));
+            }
+        }else{
+            cart=[];
+        }
 
         // Get the user details from session
-        const userId = req.session.user;
+      
         const userData = await User.findById(userId);
 
         // Get the product details using the ID from query parameters

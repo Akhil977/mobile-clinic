@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+	<%- include ('component/head.ejs') %>
+	<link rel="stylesheet" href="css/jquery-ui.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+	<script
+		src="https://code.jquery.com/jquery-3.6.0.min.js"
+		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+		crossorigin="anonymous"
+	></script>
+	<script src="js/jquery-ui.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<script>
+		$(document).ready(function () {
+			toastr.options = {
+				"positionClass": "toast-top-right",
+				"closeButton": true,
+				"progressBar": true,
+				"timeOut": "3000"
+			};
+		});
+	</script>
+	<body class="animsition">
+		<!-- Header -->
+		<%- include ('component/header.ejs') %>
+
+		<!-- Cart -->
+		
+
+		<!-- About Section -->
+		<section class="bg0 p-t-23 p-b-140">
+			<div class="container">
+				<div class="p-b-10">
+					<h3 class="ltext-103 cl5">About Us</h3>
+				</div>
+
+				<div class="row">
+					<div class="col-md-6 p-b-30">
+						<div class="about-content">
+							<h4 class="mtext-105 cl2 p-b-20">Our Story</h4>
+							<p class="stext-102 cl6">
+								Welcome to [Your Store Name], where passion meets quality. Founded in [Year], we started with a simple mission: to bring exceptional products to customers who value craftsmanship and innovation. What began as a small venture has grown into a trusted destination for [product category/industry], driven by our commitment to excellence and customer satisfaction.
+							</p>
+							<p class="stext-102 cl6">
+								Every item in our collection is carefully curated to reflect our core values of sustainability, authenticity, and style. We work with dedicated artisans and suppliers to ensure that each product tells a story of dedication and care.
+							</p>
+						</div>
+					</div>
+					<div class="col-md-6 p-b-30">
+						<div class="about-image">
+							<img src="https://via.placeholder.com/500x400?text=About+Us" alt="About Us Placeholder" class="img-fluid bor10" />
+						</div>
+					</div>
+				</div>
+
+				<div class="row p-t-50">
+					<div class="col-12">
+						<h4 class="mtext-105 cl2 p-b-20 text-center">Our Mission</h4>
+						<p class="stext-102 cl6 text-center">
+							At [Your Store Name], our mission is to [insert mission statement, e.g., "empower our customers with high-quality products that enhance their lives while promoting sustainable practices"]. We strive to create a shopping experience that’s seamless, enjoyable, and meaningful, all while giving back to the community and the planet.
+						</p>
+					</div>
+				</div>
+
+				<div class="row p-t-50">
+					<div class="col-md-4 p-b-30">
+						<div class="about-feature text-center">
+							<i class="fa fa-leaf cl2 fs-30 p-b-15"></i>
+							<h5 class="stext-106 cl6">Sustainability</h5>
+							<p class="stext-102 cl6">Committed to eco-friendly practices and materials.</p>
+						</div>
+					</div>
+					<div class="col-md-4 p-b-30">
+						<div class="about-feature text-center">
+							<i class="fa fa-star cl2 fs-30 p-b-15"></i>
+							<h5 class="stext-106 cl6">Quality</h5>
+							<p class="stext-102 cl6">Uncompromising standards in every product we offer.</p>
+						</div>
+					</div>
+					<div class="col-md-4 p-b-30">
+						<div class="about-feature text-center">
+							<i class="fa fa-heart cl2 fs-30 p-b-15"></i>
+							<h5 class="stext-106 cl6">Passion</h5>
+							<p class="stext-102 cl6">Driven by a love for what we do and who we serve.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<style>
+			.about-content {
+				padding: 20px;
+			}
+
+			.about-image img {
+				width: 100%;
+				max-height: 400px;
+				object-fit: cover;
+				box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+			}
+
+			.about-feature {
+				padding: 20px;
+				background: #fff;
+				border-radius: 8px;
+				box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+				transition: all 0.3s ease;
+			}
+
+			.about-feature:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+			}
+
+			.about-feature i {
+				color: #717fe0;
+			}
+
+			@media (max-width: 768px) {
+				.about-image {
+					margin-top: 20px;
+				}
+			}
+		</style>
+
+		<!-- Footer -->
+		<%- include ('component/footer.ejs') %>
+
+		<!-- Script -->
+		<%- include ('component/script.ejs') %>
+	</body>
+</html>

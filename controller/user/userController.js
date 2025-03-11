@@ -108,6 +108,34 @@ const loadHomepage = async (req, res) => {
     }
 };
 
+
+
+//about us page
+
+const loadaboutpage=async (req,res)=>{
+    try {
+        if (req.session.isLoggedIn) {
+            const userId = req.session.user;
+            const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
+            
+            if (userCart) {
+                cart = userCart.item.map(item => ({
+                    productId: item.productId._id,
+                    name: item.productId.productName,
+                    price: item.price,
+                    quantity: item.quantity,
+                    totalPrice: item.totalPrice,
+                    image: item.productId.productImages[0]
+                }));
+            }
+        }
+
+        const isLoggedIn = req.session.isLoggedIn || false;
+        res.render("aboutus",{ isLoggedIn})
+    } catch (error) {
+        
+    }
+}
 const loadLogin = (req, res) => {
     try {
         
@@ -445,6 +473,7 @@ module.exports={
     verifyOtp,
     resendOtp,log
     ,logout,
-    adminBlocked
+    adminBlocked,
+    loadaboutpage
    
 }

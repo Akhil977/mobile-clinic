@@ -550,7 +550,7 @@
                 text: 'Your order has been placed, but payment is pending. Please complete the payment later.',
                 showConfirmButton: true
             }).then(() => {
-                window.location.href = '/orders'; // Redirect user to their orders page
+                window.location.href = '/user-orders'; // Redirect user to their orders page
             });
         }
     },
@@ -589,7 +589,7 @@ rzp.on('payment.failed', function (response) {
               text: 'Your order has been placed, but payment is pending. Please complete the payment later.',
               showConfirmButton: true
           }).then(() => {
-              window.location.href = '/orders'; // Redirect user to orders page
+              window.location.href = '/user-orders'; // Redirect user to orders page
           });
       }).catch(error => {
           console.error('Order placement failed:', error);

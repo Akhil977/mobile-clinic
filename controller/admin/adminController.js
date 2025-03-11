@@ -68,39 +68,31 @@ const loadDashboardData = async (req, res) => {
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
         
-        // Set up time filter and labels based on period
+        // Set up time filter and labels based on period (unchanged from your original code)
         if (period === "daily") {
-            // For daily data, show last 7 days
             const last7Days = new Date();
-            last7Days.setDate(last7Days.getDate() - 6); // 7 days ago
-            
+            last7Days.setDate(last7Days.getDate() - 6);
             periodFilter = { 
                 createdAt: { 
                     $gte: new Date(last7Days.setHours(0, 0, 0, 0)),
                     $lte: new Date(now.setHours(23, 59, 59, 999))
                 } 
             };
-            
-            // Create labels for the last 7 days
             labels = [];
             for (let i = 6; i >= 0; i--) {
                 const day = new Date();
                 day.setDate(day.getDate() - i);
-                labels.push(day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })); // e.g. "Mon 1"
+                labels.push(day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }));
             }
         } else if (period === "weekly") {
-            // For weekly data, show last 12 weeks
             const last12Weeks = new Date();
-            last12Weeks.setDate(last12Weeks.getDate() - 84); // 12 weeks ago
-            
+            last12Weeks.setDate(last12Weeks.getDate() - 84);
             periodFilter = { 
                 createdAt: { 
                     $gte: new Date(last12Weeks.setHours(0, 0, 0, 0)),
                     $lte: new Date(now.setHours(23, 59, 59, 999)) 
                 } 
             };
-            
-            // Create labels for the last 12 weeks
             labels = [];
             for (let i = 11; i >= 0; i--) {
                 const weekStart = new Date();
@@ -108,11 +100,9 @@ const loadDashboardData = async (req, res) => {
                 labels.push(`Week ${Math.ceil((weekStart.getDate() + weekStart.getDay()) / 7)}`);
             }
         } else if (period === "yearly") {
-            // For yearly data, show last 5 years
             periodFilter = {};
             labels = [currentYear-4, currentYear-3, currentYear-2, currentYear-1, currentYear].map(String);
         } else {
-            // Default: monthly (show all months of current year)
             periodFilter = {
                 createdAt: {
                     $gte: new Date(currentYear, 0, 1),
@@ -122,19 +112,17 @@ const loadDashboardData = async (req, res) => {
             labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         }
 
-        // Count totals (these remain the same regardless of period)
+        // Count totals (unchanged)
         const totalUsers = await User.countDocuments({ isAdmin: false });
         const totalProducts = await Product.countDocuments();
         
         // Apply period filter to orders
         const orderFilter = { ...periodFilter };
         if (period === "daily" || period === "weekly") {
-            // For daily/weekly views, we include all orders for the summary metrics
             const orders = await Order.find({ status: "Delivered", ...orderFilter });
             const totalRevenue = orders.reduce((acc, order) => acc + (order.finalAmount || 0), 0);
             const totalOrders = orders.length;
             
-            // For daily view - aggregate by day
             let timeData;
             if (period === "daily") {
                 timeData = await Order.aggregate([
@@ -153,7 +141,6 @@ const loadDashboardData = async (req, res) => {
                     { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
                 ]);
             } else {
-                // For weekly view - aggregate by week
                 timeData = await Order.aggregate([
                     { $match: { status: "Delivered", ...orderFilter } },
                     {
@@ -170,32 +157,27 @@ const loadDashboardData = async (req, res) => {
                 ]);
             }
             
-            // Initialize arrays based on the period
             const dataPoints = labels.length;
             const salesData = Array(dataPoints).fill(0);
             const orderCounts = Array(dataPoints).fill(0);
             
             if (period === "daily") {
-                // Map daily data to the last 7 days
                 timeData.forEach(item => {
                     const date = new Date(item._id.year, item._id.month - 1, item._id.day);
                     const daysAgo = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-                    
                     if (daysAgo >= 0 && daysAgo < 7) {
-                        const index = 6 - daysAgo; // Reverse index (today is at the end)
+                        const index = 6 - daysAgo;
                         salesData[index] = item.total;
                         orderCounts[index] = item.count;
                     }
                 });
             } else {
-                // Map weekly data to the last 12 weeks
                 timeData.forEach(item => {
                     const yearWeek = `${item._id.year}-${item._id.week}`;
                     const currentWeek = `${now.getFullYear()}-${Math.ceil((now.getDate() + now.getDay()) / 7)}`;
                     const weeksAgo = getWeeksDifference(yearWeek, currentWeek);
-                    
                     if (weeksAgo >= 0 && weeksAgo < 12) {
-                        const index = 11 - weeksAgo; // Reverse index (current week at the end)
+                        const index = 11 - weeksAgo;
                         salesData[index] = item.total;
                         orderCounts[index] = item.count;
                     }
@@ -205,7 +187,6 @@ const loadDashboardData = async (req, res) => {
             return generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
                           labels, salesData, orderCounts, period);
         } else if (period === "yearly") {
-            // For yearly view - aggregate by year
             const yearlyData = await Order.aggregate([
                 { $match: { status: "Delivered" } },
                 {
@@ -216,7 +197,7 @@ const loadDashboardData = async (req, res) => {
                     }
                 },
                 { $sort: { "_id.year": 1 } }
-            ]);
+                ]);
             
             const salesData = Array(5).fill(0);
             const orderCounts = Array(5).fill(0);
@@ -236,7 +217,6 @@ const loadDashboardData = async (req, res) => {
             return generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
                           labels, salesData, orderCounts, period);
         } else {
-            // Default monthly view (current year by month)
             const monthlyData = await Order.aggregate([
                 { 
                     $match: { 
@@ -278,10 +258,9 @@ const loadDashboardData = async (req, res) => {
     }
 };
 
-// Helper function to generate the dashboard response
+// Updated helper function to generate the dashboard response with best brand logic
 function generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
                                  labels, salesData, orderCounts, period) {
-    // Fetch additional data needed for all periods
     return Promise.all([
         // Category performance
         Order.aggregate([
@@ -308,8 +287,27 @@ function generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts
             .sort({ createdAt: -1 })
             .limit(5)
             .populate("userId", "name")
-            .select("orderId totalPrice status createdAt")
-    ]).then(([categoryPerformance, bestSelling, recentOrders]) => {
+            .select("orderId totalPrice status createdAt"),
+        
+        // Brand performance (new aggregation for best brand)
+        Order.aggregate([
+            { $match: { status: "Delivered" } }, // Only delivered orders
+            { $unwind: "$orderedItems" },
+            { $lookup: { from: "products", localField: "orderedItems.product", foreignField: "_id", as: "product" } },
+            { $unwind: "$product" },
+            { $group: { 
+                _id: "$product.brand", 
+                totalSales: { $sum: "$orderedItems.price" } 
+            } },
+            { $sort: { totalSales: -1 } }, // Sort by total sales descending
+            { $limit: 1 } // Get the top brand
+        ])
+    ]).then(([categoryPerformance, bestSelling, recentOrders, brandPerformance]) => {
+        // Determine the best brand (if no data, default to "Unknown")
+        const bestBrand = brandPerformance.length > 0 
+            ? { name: brandPerformance[0]._id || "Unknown", sales: brandPerformance[0].totalSales }
+            : { name: "Unknown", sales: 0 };
+
         res.json({
             summary: { revenue: `₹${totalRevenue.toLocaleString()}`, orders: totalOrders },
             stats: { products: totalProducts, users: totalUsers },
@@ -324,7 +322,10 @@ function generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts
                 sold: bs.totalQuantity,
             })),
             topPerformers: {
-                brand: { name: "TBD", sales: 0 },
+                brand: { 
+                    name: bestBrand.name, 
+                    sales: bestBrand.sales 
+                },
                 category: { 
                     name: categoryPerformance[0]?._id || "N/A", 
                     sales: categoryPerformance[0]?.total || 0 
@@ -338,21 +339,18 @@ function generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts
                 amount: `₹${order.totalPrice.toLocaleString()}`,
                 status: order.status,
             })),
-            period  // Return the period to the frontend for reference
+            period
         });
     });
 }
 
-// Helper function to calculate weeks difference
+// Helper function to calculate weeks difference (unchanged)
 function getWeeksDifference(week1, week2) {
     const [year1, weekNum1] = week1.split('-').map(Number);
     const [year2, weekNum2] = week2.split('-').map(Number);
-    
     const yearDiff = (year2 - year1) * 52;
     return yearDiff + (weekNum2 - weekNum1);
 }
-
-// Export both controller functions
 
 const loadCategory =async (req, res) => {
 	res.render("category");

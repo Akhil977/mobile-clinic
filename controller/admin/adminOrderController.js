@@ -9,11 +9,28 @@ const Wallet= require("../../model/walletSchema");
 
 const viewOrders = async (req, res) => {
     try {
-        // Find all orders with optional user lookup
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || '';
+        const skip = (page - 1) * limit;
+
+        // Build the search query
+        const searchQuery = search ? {
+            $or: [
+                { orderId: { $regex: search, $options: 'i' } },
+                { 'userDetails.name': { $regex: search, $options: 'i' } },
+                { 'userDetails.email': { $regex: search, $options: 'i' } }
+            ]
+        } : {};
+
+        // Count total orders for pagination
+        const totalOrders = await Order.countDocuments();
+
+        // Find orders with pagination, sorting, and search
         const orders = await Order.aggregate([
             {
                 $lookup: {
-                    from: 'users', // Ensure this matches your users collection name
+                    from: 'users',
                     localField: 'userId',
                     foreignField: '_id',
                     as: 'userDetails'
@@ -22,8 +39,11 @@ const viewOrders = async (req, res) => {
             {
                 $unwind: {
                     path: '$userDetails',
-                    preserveNullAndEmptyArrays: true // This allows orders without users to be included
+                    preserveNullAndEmptyArrays: true
                 }
+            },
+            {
+                $match: searchQuery
             },
             {
                 $project: {
@@ -36,28 +56,32 @@ const viewOrders = async (req, res) => {
                     userName: { $ifNull: ['$userDetails.name', 'Unknown User'] },
                     userEmail: { $ifNull: ['$userDetails.email', ''] }
                 }
+            },
+            {
+                $sort: { date: -1 } // Sort by date descending (newest first)
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
             }
         ]);
 
-        // Log orders to see what's actually being retrieved
-        console.log('Processed Orders:', JSON.stringify(orders, null, 2));
+        const totalPages = Math.ceil(totalOrders / limit);
 
-        // Render the view with processed orders
-        res.render("orderlisting", { orders });
+        res.render("orderlisting", { 
+            orders,
+            currentPage: page,
+            totalPages,
+            limit,
+            search
+        });
     } catch (error) {
         console.error('Error fetching orders:', error);
         res.status(500).send('Error fetching orders');
     }
-}
-
-// Mapping for return status to order status
-const RETURN_STATUS_MAP = {
-    'Request Return': 'Request Return',
-    'Return Approved': 'Return Approved',
-    'Return Rejected': 'Return Rejected',
-    'Return Completed': 'Return Completed'
 };
-
 const updateStatus = async (req, res) => {
     try {
         console.log("Processing status update");

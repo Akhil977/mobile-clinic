@@ -1,28 +1,36 @@
 <!DOCTYPE html>
 <html>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <%- include ('component/head.ejs') %> 
 <body class="hold-transition skin-blue sidebar-mini">
 <div class="wrapper">
   <%- include ('component/header.ejs') %> 
   <%- include ('component/aside.ejs') %> 
 
-  <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
-      <h1>
-        Order Management
-        <small>Admin Control Panel</small>
-      </h1>
+      <h1>Order Management <small>Admin Control Panel</small></h1>
       <ol class="breadcrumb">
         <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
         <li class="active">Order Management</li>
       </ol>
     </section>
 
-    <!-- Main content -->
     <section class="content">
+      <!-- Search Bar -->
+      <div class="box box-primary">
+        <div class="box-body">
+          <form method="GET" action='/admin/view-order'>
+            <div class="input-group">
+              <input type="text" name="search" class="form-control" placeholder="Search by Order ID, Name, or Email" value="<%= search %>">
+              <span class="input-group-btn">
+                <button type="submit" class="btn btn-primary">Search</button>
+              </span>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- Orders Table -->
       <div class="box">
         <div class="box-header">
@@ -58,111 +66,115 @@
                 <td><%= order.date ? new Date(order.date).toLocaleDateString() : 'N/A' %></td>
                 <td>$<%= order.finalAmount %></td>
                 <td>
-                    <% if (['Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
-                      <strong>Delivered</strong>
-                    <% } else { %>
-                      <select class="form-control status-dropdown" data-id="<%= order._id %>" data-type="status">
-                        <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                        <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
-                        <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                        <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                        <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                      </select>
-                    <% } %>
-                  </td>
-                  
-                  <td>
-                    <% if (['Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
-                      <select class="form-control status-dropdown" data-id="<%= order._id %>" data-type="status">
-                        <option value="Request Return" <%= order.status === 'Request Return' ? 'selected' : '' %>>Request Return</option>
-                        <option value="Return Approved" <%= order.status === 'Return Approved' ? 'selected' : '' %>>Return Approved</option>
-                        <option value="Return Rejected" <%= order.status === 'Return Rejected' ? 'selected' : '' %>>Return Rejected</option>
-                        <option value="Return Completed" <%= order.status === 'Return Completed' ? 'selected' : '' %>>Return Completed</option>
-                      </select>
-                    <% } else { %>
-                      <%= order.returnStatus || 'N/A' %>
-                    <% } %>
-                  </td>
+                  <% if (['Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
+                    <strong>Delivered</strong>
+                  <% } else { %>
+                    <select class="form-control status-dropdown" data-id="<%= order._id %>" data-type="status">
+                      <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                      <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                      <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                      <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                      <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                    </select>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (['Request Return', 'Return Approved', 'Return Rejected', 'Return Completed'].includes(order.status)) { %>
+                    <select class="form-control status-dropdown" data-id="<%= order._id %>" data-type="status">
+                      <option value="Request Return" <%= order.status === 'Request Return' ? 'selected' : '' %>>Request Return</option>
+                      <option value="Return Approved" <%= order.status === 'Return Approved' ? 'selected' : '' %>>Return Approved</option>
+                      <option value="Return Rejected" <%= order.status === 'Return Rejected' ? 'selected' : '' %>>Return Rejected</option>
+                      <option value="Return Completed" <%= order.status === 'Return Completed' ? 'selected' : '' %>>Return Completed</option>
+                    </select>
+                  <% } else { %>
+                    <%= order.returnStatus || 'N/A' %>
+                  <% } %>
+                </td>
                 <td><a href="/admin/orderDetails?_id=<%= order._id %>&user_id=<%= order.userId %>" class="btn btn-primary btn-sm">View</a></td>
               </tr>
               <% }); %>
             </tbody>
           </table>
         </div>
-      </div>
 
+        <!-- Pagination -->
+        <div class="box-footer">
+          <ul class="pagination pagination-sm no-margin pull-right">
+            <% if (currentPage > 1) { %>
+              <li><a href="?page=<%= currentPage - 1 %>&limit=<%= limit %>&search=<%= search %>">&laquo;</a></li>
+            <% } %>
+            <% for(let i = 1; i <= totalPages; i++) { %>
+              <li class="<%= i === currentPage ? 'active' : '' %>">
+                <a href="?page=<%= i %>&limit=<%= limit %>&search=<%= search %>"><%= i %></a>
+              </li>
+            <% } %>
+            <% if (currentPage < totalPages) { %>
+              <li><a href="?page=<%= currentPage + 1 %>&limit=<%= limit %>&search=<%= search %>">&raquo;</a></li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
     </section>
   </div>
   
   <%- include ('component/footer.ejs') %>
 </div>
 
-  <!-- Toastr JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-  <script>
-    $(document).ready(function() {
-      // Configure Toastr defaults
-      toastr.options = {
-        "closeButton": true,
-        "debug": false,
-        "newestOnTop": false,
-        "progressBar": true,
-        "positionClass": "toast-top-right",
-        "preventDuplicates": true,
-        "onclick": null,
-        "showDuration": "300",
-        "hideDuration": "1000",
-        "timeOut": "5000",
-        "extendedTimeOut": "1000",
-        "showEasing": "swing",
-        "hideEasing": "linear",
-        "showMethod": "fadeIn",
-        "hideMethod": "fadeOut"
-      };
+<script>
+  $(document).ready(function() {
+    toastr.options = {
+      "closeButton": true,
+      "debug": false,
+      "newestOnTop": false,
+      "progressBar": true,
+      "positionClass": "toast-top-right",
+      "preventDuplicates": true,
+      "onclick": null,
+      "showDuration": "300",
+      "hideDuration": "1000",
+      "timeOut": "5000",
+      "extendedTimeOut": "1000",
+      "showEasing": "swing",
+      "hideEasing": "linear",
+      "showMethod": "fadeIn",
+      "hideMethod": "fadeOut"
+    };
 
-      // Single event handler for both status and return status
-      $(".status-dropdown").on("change", function() {
-        const orderId = $(this).data("id");
-        const statusType = $(this).data("type");
-        const newValue = $(this).val();
-        
-        // Create the query parameters
-        const params = new URLSearchParams({
-          orderId: orderId,
-          statusType: statusType,
-          value: newValue
-        });
+    $(".status-dropdown").on("change", function() {
+      const orderId = $(this).data("id");
+      const statusType = $(this).data("type");
+      const newValue = $(this).val();
+      
+      const params = new URLSearchParams({
+        orderId: orderId,
+        statusType: statusType,
+        value: newValue
+      });
 
-        // Send request to unified update endpoint
-        fetch(`/admin/update-order-status?${params}`, {
-          method: "PATCH",
-          headers: { 
-            "Content-Type": "application/json" 
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            const statusLabel = statusType === 'returnStatus' ? 'Return status' : 'Order status';
-            toastr.success(`${statusLabel} updated to ${newValue}`, "Status Updated");
-            
-            // Delay reload to ensure toastr is visible
-            setTimeout(() => {
-              location.reload();
-            }, 1000);
-          } else {
-            toastr.error(data.message || "Failed to update status", "Update Failed");
-          }
-        })
-        .catch(error => {
-          console.error("Error updating status:", error);
-          toastr.error("Something went wrong. Please try again.", "Error");
-        });
+      fetch(`/admin/update-order-status?${params}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const statusLabel = statusType === 'returnStatus' ? 'Return status' : 'Order status';
+          toastr.success(`${statusLabel} updated to ${newValue}`, "Status Updated");
+          setTimeout(() => { location.reload(); }, 1000);
+        } else {
+          toastr.error(data.message || "Failed to update status", "Update Failed");
+        }
+      })
+      .catch(error => {
+        console.error("Error updating status:", error);
+        toastr.error("Something went wrong. Please try again.", "Error");
       });
     });
-  </script>
+  });
+</script>
 
 </body>
 </html>

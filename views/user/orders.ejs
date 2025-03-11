@@ -30,7 +30,7 @@
                                         </div>
                                     </div>
                                     <div class="order-details">
-                                        <p class="type-label">Status: 
+                                        <p class="type-label">Order Status: 
                                             <span class="badge 
                                                 <% switch(order.status) {
                                                     case 'Pending': %> bg-warning <%
@@ -43,9 +43,24 @@
                                                         break;
                                                     case 'Cancelled': %> bg-danger <%
                                                         break;
+                                                    case 'Request Return': %> bg-warning <%
+                                                        break;
                                                     default: %> bg-secondary <%
                                                 } %>
                                             "><%= order.status %></span>
+                                        </p>
+                                        <p class="type-label">Payment Status: 
+                                            <span class="badge 
+                                                <% switch(order.paymentStatus) {
+                                                    case 'Pending': %> bg-warning <%
+                                                        break;
+                                                    case 'Paid': %> bg-success <%
+                                                        break;
+                                                    case 'Failed': %> bg-danger <%
+                                                        break;
+                                                    default: %> bg-secondary <%
+                                                } %>
+                                            "><%= order.paymentStatus %></span>
                                         </p>
                                         <p>Total Amount: ₹<%= order.finalAmount || order.totalPrice %></p>
                                         <p>Items:</p>
@@ -58,8 +73,30 @@
                                     </div>
                                 </div>
                             </div>
-                        <% }); %>
+                        <% }) %>
                     </div>
+
+                    <!-- Pagination Controls -->
+                    <nav aria-label="Order pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                                <a class="page-link" href="?page=<%= currentPage - 1 %>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <% for(let i = 1; i <= totalPages; i++) { %>
+                                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                    <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                                </li>
+                            <% } %>
+                            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                                <a class="page-link" href="?page=<%= currentPage + 1 %>" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <p class="text-center">Showing <%= orders.length %> of <%= totalOrders %> orders</p>
                 <% } else { %>
                     <div class="no-address text-center">
                         <i class="fas fa-shopping-bag fa-2x mb-2"></i>
@@ -83,7 +120,7 @@
         padding: 20px;
     }
     .main-content {
-        flex: 1; 
+        flex: 1;
         padding: 20px;
         background-color: #f8f9fa;
     }
@@ -123,6 +160,16 @@
     .order-actions button:hover {
         background-color: #f8f9fa;
         border-radius: 4px;
+    }
+    .pagination .page-link {
+        color: #495057;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    .pagination .page-item.disabled .page-link {
+        color: #6c757d;
     }
     </style>
 </body>
