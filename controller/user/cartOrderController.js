@@ -205,6 +205,7 @@ const addAddress = async (req, res) => {
  
        // Find or create address document for the user
        let addressDoc = await Address.findOne({ userId });
+       console.log(`its inside the address of creating ${req.body}`)
        
        if (!addressDoc) {
           addressDoc = new Address({ 

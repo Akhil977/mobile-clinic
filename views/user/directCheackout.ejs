@@ -1,25 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-	<%- include ('../partials/user/head.ejs') %> 
+<%- include ('../partials/user/head.ejs') %>
 <body class="animsition">
-	
-	<!-- Header -->
-	<%- include ('../partials/user/header.ejs') %> 
+    <!-- Header -->
+    <%- include ('../partials/user/header.ejs') %>
 
-	<!-- Cart -->
-	<%- include ('component/cart.ejs') %> 
+    <!-- Cart -->
+    <%- include ('component/cart.ejs') %>
 
-	<!-- breadcrumb -->
-	<div class="container">
-		<div class="bread-crumb flex-w p-l-25 p-r-15 p-t-30 p-lr-0-lg">
-			<a href="/" class="stext-109 cl8 hov-cl1 trans-04">
-				Home
-				<i class="fa fa-angle-right m-l-9 m-r-10" aria-hidden="true"></i>
-			</a>
-			<span class="stext-109 cl4">Shopping Cart</span>
-		</div>
-	</div>
+    <!-- Breadcrumb -->
+    <div class="container">
+        <div class="bread-crumb flex-w p-l-25 p-r-15 p-t-30 p-lr-0-lg">
+            <a href="/" class="stext-109 cl8 hov-cl1 trans-04">
+                Home
+                <i class="fa fa-angle-right m-l-9 m-r-10" aria-hidden="true"></i>
+            </a>
+            <span class="stext-109 cl4">Shopping Cart</span>
+        </div>
+    </div>
+
+    <!-- External Styles and Scripts -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Custom Styles (unchanged, included for completeness) -->
     <style>
         .checkout-container {
             max-width: 1200px;
@@ -219,24 +225,25 @@
             color: #64748b;
         }
     </style>    
-  <form id="orderForm">
+ <!-- Checkout Form -->
+ <form id="orderForm" action="/placeBuyNowOrder" method="POST">
     <input type="hidden" name="appliedCouponId" id="appliedCouponId" value="">
     <input type="hidden" name="discountAmount" id="hidden-discount-amount" value="0">
     <input type="hidden" name="finalAmount" id="hidden-final-amount" value="<%=product.salePrice*quantity%>">
     <input type="hidden" name="productId" value="<%=product._id%>">
     <input type="hidden" name="quantity" value="<%=quantity%>">
+    
     <div class="checkout-container">
         <h1 class="section-title text-center mb-5">Quick Checkout</h1>
-
         <div class="row g-4">
             <!-- Left Column (Addresses) -->
             <div class="col-lg-7">
                 <div class="address-box">
                     <h2 class="section-title">Delivery Address</h2>
                     <% address.forEach(addr => { %>
-                        <div class="address-card">
+                        <div class="address-card" data-address-id="<%= addr._id %>">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="address" value="<%= addr._id %>">
+                                <input class="form-check-input" type="radio" name="address" value="<%= addr._id %>" aria-label="Select <%= addr.addressType %> address">
                                 <label class="form-check-label">
                                     <strong><%= addr.addressType %></strong><br>
                                     <%= addr.name %><br>
@@ -246,7 +253,7 @@
                                 </label>
                             </div>
                             <div class="address-actions mt-2">
-                                <button class="btn btn-sm btn-outline-primary edit-address" 
+                                <button class="btn btn-sm btn-outline-primary edit-address"
                                     data-address-id="<%= addr._id %>"
                                     data-address-type="<%= addr.addressType %>"
                                     data-name="<%= addr.name %>"
@@ -256,19 +263,21 @@
                                     data-city="<%= addr.city %>"
                                     data-state="<%= addr.state %>"
                                     data-pincode="<%= addr.pincode %>"
-                                    data-bs-toggle="modal" data-bs-target="#editAddressModal">
+                                    data-bs-toggle="modal" data-bs-target="#addressModal">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
                             </div>
                         </div>
                     <% }) %>
-
-                    <button class="add-address-btn mt-3" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                    <button class="add-address-btn mt-3" type="button" data-bs-toggle="modal" data-bs-target="#addressModal">
                         <i class="fas fa-plus me-2"></i> Add New Address
                     </button>
                 </div>
             </div>
 
+
+            <!-- Add Address Modal -->
+            
             <!-- Right Column (Order Summary, Coupon, Payment) -->
             <div class="col-lg-5">
                 <div class="order-summary mb-4">
@@ -418,11 +427,233 @@
         </div>
     </div>
 </form>
+<!-- Single Address Modal (for both Add and Edit) -->
+<div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addressModalLabel">Add/Edit Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addressForm" novalidate>
+                    <input type="hidden" id="addressId" name="addressId">
+                    <div class="mb-3">
+                        <label for="addressType" class="form-label">Address Type</label>
+                        <select class="form-control" id="addressType" name="addressType" required>
+                            <option value="" disabled>Select Address Type</option>
+                            <option value="Home">Home</option>
+                            <option value="Work">Work</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="altPhone" class="form-label">Alternate Phone (Optional)</label>
+                        <input type="tel" class="form-control" id="altPhone" name="altPhone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="landMark" class="form-label">Landmark</label>
+                        <input type="text" class="form-control" id="landMark" name="landMark" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="city" name="city" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="state" class="form-label">State</label>
+                        <input type="text" class="form-control" id="state" name="state" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pincode" class="form-label">Pincode</label>
+                        <input type="text" class="form-control" id="pincode" name="pincode" required>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="saveAddressBtn">Save Address</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Add Razorpay Script -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
+
 <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addressForm = document.getElementById('addressForm');
+            const addressModal = document.getElementById('addressModal');
+            const modalTitle = document.getElementById('addressModalLabel');
+            const saveAddressBtn = document.getElementById('saveAddressBtn');
+
+            // Validation function
+            function validateFormData(formData) {
+                const errors = [];
+                if (!formData.addressType) errors.push("Address Type is required");
+                if (!formData.name) errors.push("Name is required");
+                if (!formData.phone || !/^\d{10}$/.test(formData.phone)) errors.push("Valid 10-digit Phone number is required");
+                if (formData.altPhone && !/^\d{10}$/.test(formData.altPhone)) errors.push("Valid 10-digit Alternate Phone number is required");
+                if (!formData.landMark) errors.push("Landmark is required");
+                if (!formData.city) errors.push("City is required");
+                if (!formData.state) errors.push("State is required");
+                if (!formData.pincode || !/^\d{6}$/.test(formData.pincode)) errors.push("Valid 6-digit Pincode is required");
+                return errors;
+            }
+
+            // Handle address card selection
+            document.querySelectorAll('.address-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (e.target.closest('.edit-address')) return; // Skip if clicking edit button
+                    document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const radio = this.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                });
+            });
+
+            // Handle edit button clicks
+            document.querySelector('.address-box').addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-address');
+                if (!editBtn) return;
+
+                e.preventDefault();
+                modalTitle.textContent = 'Edit Address';
+                saveAddressBtn.textContent = 'Update Address';
+                saveAddressBtn.className = 'btn btn-primary';
+
+                // Populate form with existing data
+                addressForm.querySelector('#addressId').value = editBtn.dataset.addressId || '';
+                addressForm.querySelector('#addressType').value = editBtn.dataset.addressType || '';
+                addressForm.querySelector('#name').value = editBtn.dataset.name || '';
+                addressForm.querySelector('#phone').value = editBtn.dataset.phone || '';
+                addressForm.querySelector('#altPhone').value = editBtn.dataset.altphone || '';
+                addressForm.querySelector('#landMark').value = editBtn.dataset.landmark || '';
+                addressForm.querySelector('#city').value = editBtn.dataset.city || '';
+                addressForm.querySelector('#state').value = editBtn.dataset.state || '';
+                addressForm.querySelector('#pincode').value = editBtn.dataset.pincode || '';
+            });
+
+            // Handle add address button click
+            document.querySelector('.add-address-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                modalTitle.textContent = 'Add New Address';
+                saveAddressBtn.textContent = 'Save Address';
+                saveAddressBtn.className = 'btn btn-success';
+                addressForm.reset();
+                addressForm.querySelector('#addressId').value = '';
+            });
+
+            // Handle form submission
+            addressForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent bubbling to parent form
+
+                const formData = Object.fromEntries(new FormData(this));
+                const errors = validateFormData(formData);
+
+                if (errors.length > 0) {
+                    Swal.fire('Validation Error', errors.join('<br>'), 'error');
+                    return;
+                }
+
+                const isEdit = formData.addressId;
+                const url = isEdit ? '/edit-checkout-address' : '/add-checkout-address';
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        if (isEdit) {
+                            // Update existing address card
+                            const addressCard = document.querySelector(`.address-card[data-address-id="${data.address._id}"]`);
+                            const label = addressCard.querySelector('.form-check-label');
+                            label.innerHTML = `
+                                <strong>${data.address.addressType}</strong><br>
+                                ${data.address.name}<br>
+                                ${data.address.landMark}, ${data.address.city}, ${data.address.state},<br>
+                                ${data.address.pincode},<br>
+                                ${data.address.phone}
+                            `;
+                            const editBtn = addressCard.querySelector('.edit-address');
+                            Object.entries(data.address).forEach(([key, value]) => {
+                                editBtn.dataset[key === 'landMark' ? 'landmark' : key] = value || '';
+                            });
+                            Swal.fire('Success', 'Address updated successfully', 'success');
+                        } else {
+                            // Add new address card
+                            const addressBox = document.querySelector('.address-box');
+                            const newAddressCard = document.createElement('div');
+                            newAddressCard.className = 'address-card';
+                            newAddressCard.dataset.addressId = data.address._id;
+                            newAddressCard.innerHTML = `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="address" value="${data.address._id}" aria-label="Select ${data.address.addressType} address">
+                                    <label class="form-check-label">
+                                        <strong>${data.address.addressType}</strong><br>
+                                        ${data.address.name}<br>
+                                        ${data.address.landMark}, ${data.address.city}, ${data.address.state},<br>
+                                        ${data.address.pincode},<br>
+                                        ${data.address.phone}
+                                    </label>
+                                </div>
+                                <div class="address-actions mt-2">
+                                    <button class="btn btn-sm btn-outline-primary edit-address"
+                                        data-address-id="${data.address._id}"
+                                        data-address-type="${data.address.addressType}"
+                                        data-name="${data.address.name}"
+                                        data-phone="${data.address.phone}"
+                                        data-altphone="${data.address.altPhone || ''}"
+                                        data-landmark="${data.address.landMark}"
+                                        data-city="${data.address.city}"
+                                        data-state="${data.address.state}"
+                                        data-pincode="${data.address.pincode}"
+                                        data-bs-toggle="modal" data-bs-target="#addressModal">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                </div>
+                            `;
+                            addressBox.insertBefore(newAddressCard, document.querySelector('.add-address-btn'));
+                            newAddressCard.addEventListener('click', function(e) {
+                                if (e.target.closest('.edit-address')) return;
+                                document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
+                                this.classList.add('selected');
+                                const radio = this.querySelector('input[type="radio"]');
+                                radio.checked = true;
+                                radio.dispatchEvent(new Event('change'));
+                            });
+                            Swal.fire('Success', 'Address added successfully', 'success');
+                        }
+
+                        // Close modal
+                        bootstrap.Modal.getInstance(addressModal).hide();
+                        addressForm.reset();
+                    } else {
+                        Swal.fire('Error', data.error || 'Failed to process address', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'An error occurred while processing the address', 'error');
+                }
+            });
+        });
+  
+
+
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('orderForm');
         const placeOrderBtn = document.getElementById('placeOrderBtn');
@@ -652,412 +883,10 @@ rzp.on('payment.failed', function (response) {
     });
 </script>
 
-<div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addAddressModalLabel">Add New Address</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Add Address Form -->
-                <form id="addAddressForm" action="/add-checkout-address" method="POST" novalidate>
-                    <!-- Address Type with Toggle -->
-                    <div class="mb-3">
-                        <label for="addressType" class="mb-2" style="font-weight: 500;">Address Type</label>
-                        <select class="form-control p-3" id="addressType" name="addressType" required>
-                            <option value="">Select Address Type</option>
-                            <option value="Home">Home</option>
-                            <option value="Work">Work</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <!-- Full Name -->
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-
-                    <!-- City -->
-                    <div class="mb-3">
-                        <label for="city" class="form-label">City</label>
-                        <input type="text" class="form-control" id="city" name="city" required>
-                    </div>
-
-                    <!-- Landmark -->
-                    <div class="mb-3">
-                        <label for="landMark" class="form-label">Landmark</label>
-                        <input type="text" class="form-control" id="landMark" name="landMark" required>
-                    </div>
-
-                    <!-- State -->
-                    <div class="mb-3">
-                        <label for="state" class="form-label">State</label>
-                        <input type="text" class="form-control" id="state" name="state" required>
-                    </div>
-
-                    <!-- Pincode -->
-                    <div class="mb-3">
-                        <label for="pincode" class="form-label">Pincode</label>
-                        <input type="number" class="form-control" id="pincode" name="pincode" required>
-                    </div>
-
-                    <!-- Phone Number -->
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Phone Number</label>
-                        <input type="text" class="form-control" id="phone" name="phone" required>
-                    </div>
-
-                    <!-- Alternate Phone Number -->
-                    <div class="mb-3">
-                        <label for="altPhone" class="form-label">Alternate Phone Number</label>
-                        <input type="text" class="form-control" id="altPhone" name="altPhone" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-success">Save Address</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="modal fade" id="editAddressModal" tabindex="-1" aria-labelledby="editAddressModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editAddressModalLabel">Edit Address</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editAddressForm" action="/edit-checkout-address" method="POST" novalidate>
-                    <input type="hidden" id="editAddressId" name="addressId">
-                    <!-- Same fields as your add address form -->
-                    <div class="mb-3">
-                        <label for="editAddressType" class="mb-2">Address Type</label>
-                        <select class="form-control p-3" id="editAddressType" name="addressType" required>
-                            <option value="Home">Home</option>
-                            <option value="Work">Work</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="editName" name="name" >
-                    </div>
-                    <div class="mb-3">
-                        <label for="editLandmark" class="form-label">Landmark</label>
-                        <input type="text" class="form-control" id="editLandmark" name="landMark" >
-                    </div>
-                    <div class="mb-3">
-                        <label for="editCity" class="form-label">City</label>
-                        <input type="text" class="form-control" id="editCity" name="city">
-                    </div>
-                    <div class="mb-3">
-                        <label for="editState" class="form-label">State</label>
-                        <input type="text" class="form-control" id="editState" name="state">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editPincode" class="form-label">Pincode</label>
-                        <input type="number" class="form-control" id="editPincode" name="pincode" >
-                    </div>
-                    <div class="mb-3">
-                        <label for="editPhone" class="form-label">Phone Number</label>
-                        <input type="number" class="form-control" id="editPhone" name="phone">
-                    </div>
-                    <div class="mb-3">
-                        <label for="editAltPhone" class="form-label">Alternate Phone Number</label>
-                        <input type="number" class="form-control" id="editAltPhone" name="altPhone">
-                    </div>
-                   
-                    <button type="submit" class="btn" style="background-color: #45a049;color:#fff;">Update Address</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-
-    document.addEventListener("DOMContentLoaded", function () {
-        // Function to show edit address modal
-        function showEditAddressModal(button) {
-            const modal_element = document.getElementById("editAddressModal");
-            
-            // Populate modal fields with existing address data
-            modal_element.querySelector("#editAddressId").value = button.getAttribute('data-address-id');
-            modal_element.querySelector("#editAddressType").value = button.getAttribute('data-address-type');
-            modal_element.querySelector("#editName").value = button.getAttribute('data-name');
-            modal_element.querySelector("#editPhone").value = button.getAttribute('data-phone');
-            modal_element.querySelector("#editAltPhone").value = button.getAttribute('data-altphone') || "";
-            modal_element.querySelector("#editLandmark").value = button.getAttribute('data-landmark');
-            modal_element.querySelector("#editCity").value = button.getAttribute('data-city');
-            modal_element.querySelector("#editState").value = button.getAttribute('data-state');
-           
-            modal_element.querySelector("#editPincode").value = button.getAttribute('data-pincode');
-            
-            // Use jQuery or Bootstrap's modal method
-            if (window.bootstrap) {
-                const modal = new bootstrap.Modal(modal_element);
-                modal.show();
-            } else {
-                $(modal_element).modal('show');
-            }
-        }
-
-        // Delegated event listener for edit buttons
-        document.body.addEventListener('click', function(e) {
-            const editButton = e.target.closest('.edit-address');
-            if (editButton) {
-                e.preventDefault();
-                showEditAddressModal(editButton);
-            }
-        });
-
-        // Delegated event listener for add address button
-        document.body.addEventListener('click', function(e) {
-            const addButton = e.target.closest('.add-address-btn');
-            if (addButton) {
-                e.preventDefault();
-                if (window.bootstrap) {
-                    const modal = new bootstrap.Modal(document.getElementById('addAddressModal'));
-                    modal.show();
-                } else {
-                    $('#addAddressModal').modal('show');
-                }
-            }
-        });
-
-        // Update the add address form submission
-        const formA = document.getElementById("addAddressForm");
-        formA.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            // Collect form data
-            const formData = {
-                addressType: document.getElementById("addressType").value.trim(),
-                name: document.getElementById("name").value.trim(),
-                city: document.getElementById("city").value.trim(),
-                landMark: document.getElementById("landMark").value.trim(),
-                state: document.getElementById("state").value.trim(),
-                pincode: document.getElementById("pincode").value.trim(),
-                phone: document.getElementById("phone").value.trim(),
-                altPhone: document.getElementById("altPhone").value.trim()
-            };
-
-            // Validate form data
-            const errors = [];
-            if (!formData.addressType) errors.push("Address Type is required");
-            if (!formData.name) errors.push("Name is required");
-            if (!formData.city) errors.push("City is required");
-            if (!formData.landMark) errors.push("Landmark is required");
-            if (!formData.state) errors.push("State is required");
-            if (!formData.pincode || !/^\d{6}$/.test(formData.pincode)) errors.push("Valid Pincode is required");
-            if (!formData.phone || !/^\d{10}$/.test(formData.phone)) errors.push("Valid Phone number is required");
-            if (!formData.altPhone || !/^\d{10}$/.test(formData.altPhone)) errors.push("Valid Alternate Phone number is required");
-
-            if (errors.length > 0) {
-                alert(errors.join("\n"));
-                return;
-            }
-
-            // Send data to server
-            fetch("/add-checkout-address", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.address) {
-                    // Dynamically add new address to the list
-                    const addressList = document.querySelector(".address-box");
-                    const newAddressCard = document.createElement("div");
-                    newAddressCard.classList.add("address-card");
-                    newAddressCard.innerHTML = `
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="address" value="${data.address._id}">
-                            <label class="form-check-label">
-                                <strong>${data.address.addressType}</strong><br>
-                                ${data.address.name}<br>
-                                ${data.address.landMark}, ${data.address.city}, ${data.address.state},<br>
-                               ${data.address.pincode},<br>
-                                ${data.address.phone}
-                            </label>
-                        </div>
-                        <div class="address-actions mt-2">
-                            <button class="btn btn-sm btn-outline-primary edit-address" 
-                                data-address-id="${data.address._id}"
-                                data-address-type="${data.address.addressType}"
-                                data-name="${data.address.name}"
-                                data-phone="${data.address.phone}"
-                                data-altphone="${data.address.altPhone}"
-                                data-landmark="${data.address.landMark}"
-                                data-city="${data.address.city}"
-                                data-state="${data.address.state}"
-                                
-                                data-pincode="${data.address.pincode}">
-                                Edit
-                            </button>
-                        </div>
-                    `;
-                    addressList.appendChild(newAddressCard);
-
-                    // Close the modal
-                    if (window.bootstrap) {
-                        const addAddressModal = bootstrap.Modal.getInstance(document.getElementById('addAddressModal'));
-                        addAddressModal.hide();
-                    } else {
-                        $('#addAddressModal').modal('hide');
-                    }
-
-                    // Reset the form
-                    formA.reset();
-                } else {
-                    alert("Failed to add address");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("An error occurred while adding the address");
-            });
-        });
-
-        // Update the edit address form submission
-        const form = document.getElementById("editAddressForm");
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            // Collect form data
-            const formData = {
-                addressId: document.getElementById("editAddressId").value.trim(),
-                addressType: document.getElementById("editAddressType").value.trim(),
-                name: document.getElementById("editName").value.trim(),
-                city: document.getElementById("editCity").value.trim(),
-                landMark: document.getElementById("editLandmark").value.trim(),
-                state: document.getElementById("editState").value.trim(),
-                pincode: document.getElementById("editPincode").value.trim(),
-                phone: document.getElementById("editPhone").value.trim(),
-                altPhone: document.getElementById("editAltPhone").value.trim()
-            };
-
-            // Validate form data
-            const errors = [];
-            if (!formData.addressType) errors.push("Address Type is required");
-            if (!formData.name) errors.push("Name is required");
-            if (!formData.city) errors.push("City is required");
-            if (!formData.landMark) errors.push("Landmark is required");
-            if (!formData.state) errors.push("State is required");
-            if (!formData.pincode || !/^\d{6}$/.test(formData.pincode)) errors.push("Valid Pincode is required");
-            if (!formData.phone || !/^\d{10}$/.test(formData.phone)) errors.push("Valid Phone number is required");
-            if (!formData.altPhone || !/^\d{10}$/.test(formData.altPhone)) errors.push("Valid Alternate Phone number is required");
-
-            if (errors.length > 0) {
-                alert(errors.join("\n"));
-                return;
-            }
-
-            // Send data to server
-            fetch("/edit-checkout-address", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.address) {
-                    // Find and update the existing address card
-                    const addressCard = document.querySelector(`.edit-address[data-address-id="${data.address._id}"]`).closest('.address-card');
-                    const label = addressCard.querySelector('.form-check-label');
-                    label.innerHTML = `
-                        <strong>${data.address.addressType}</strong><br>
-                        ${data.address.name}<br>
-                        ${data.address.landMark}, ${data.address.city}, ${data.address.state},<br>
-                        ${data.address.pincode},<br>
-                        ${data.address.phone}
-                    `;
-
-                    // Update data attributes for edit button
-                    const editButton = addressCard.querySelector('.edit-address');
-                    editButton.setAttribute('data-address-type', data.address.addressType);
-                    editButton.setAttribute('data-name', data.address.name);
-                    editButton.setAttribute('data-phone', data.address.phone);
-                    editButton.setAttribute('data-altphone', data.address.altPhone);
-                    editButton.setAttribute('data-landmark', data.address.landMark);
-                    editButton.setAttribute('data-city', data.address.city);
-                    editButton.setAttribute('data-state', data.address.state);
-                   
-                    editButton.setAttribute('data-pincode', data.address.pincode);
-
-                    // Close the modal
-                    if (window.bootstrap) {
-                        const editAddressModal = bootstrap.Modal.getInstance(document.getElementById('editAddressModal'));
-                        editAddressModal.hide();
-                    } else {
-                        $('#editAddressModal').modal('hide');
-                    }
-
-                    // Reset the form
-                    form.reset();
-                } else {
-                    alert("Failed to edit address");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("An error occurred while editing the address");
-            });
-        });
-
-        // Ensure edit and add address buttons work with dynamic content
-        document.querySelector(".address-box").addEventListener("click", function(e) {
-            const editButton = e.target.closest(".edit-address");
-            if (editButton) {
-                e.preventDefault(); // Prevent any default behavior
-                const modal = new bootstrap.Modal(document.getElementById("editAddressModal"));
-                
-                // Populate modal fields with existing address data
-                const modal_element = document.getElementById("editAddressModal");
-                modal_element.querySelector("#editAddressId").value = editButton.dataset.addressId;
-                modal_element.querySelector("#editAddressType").value = editButton.dataset.addressType;
-                modal_element.querySelector("#editName").value = editButton.dataset.name;
-                modal_element.querySelector("#editPhone").value = editButton.dataset.phone;
-                modal_element.querySelector("#editAltPhone").value = editButton.dataset.altphone || "";
-                modal_element.querySelector("#editLandmark").value = editButton.dataset.landmark;
-                modal_element.querySelector("#editCity").value = editButton.dataset.city;
-                modal_element.querySelector("#editState").value = editButton.dataset.state;
-             
-                modal_element.querySelector("#editPincode").value = editButton.dataset.pincode;
-                
-                modal.show();
-            }
-        });
-
-        // Ensure add address button works
-        document.querySelector(".add-address-btn").addEventListener("click", function (e) {
-            e.preventDefault(); // Prevent any default behavior
-            const modal = new bootstrap.Modal(document.getElementById("addAddressModal"));
-            modal.show();
-        });
-
-        document.querySelectorAll('.address-card').forEach(card => {
-            card.addEventListener('click', () => {
-                document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-
-                const radio = card.querySelector('input[type="radio"]');
-                radio.checked = true;
-                radio.dispatchEvent(new Event("change")); 
-            });
-        });
 
         document.querySelectorAll('.payment-methods').forEach(option => {
             option.addEventListener('click', () => {
@@ -1088,39 +917,6 @@ rzp.on('payment.failed', function (response) {
             const addressId = selectedAddress.value;
             const paymentMethod = selectedPayment.value;
 
-    //         try {
-    //             const response = await fetch('/placeOrder?productId=<%=product._id%>&quantity=<%=quantity%>', {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //                 body: JSON.stringify({
-    //                     address: addressId,
-    //                     paymentMethod: paymentMethod,
-    //                     appliedCoupon: appliedCouponName // Add applied coupon to the request
-    //                 })
-    //             });
-
-    //             const data = await response.json();
-
-    //             if (data.success) {
-    //                 Swal.fire({
-    //                     title: 'Order Placed!',
-    //                     text: 'Your order has been placed successfully.',
-    //                     icon: 'success',
-    //                     confirmButtonText: 'Continue Shopping'
-    //                 }).then(() => {
-    //                     window.location.href = data.orderId ? `/order-details?orderId=${data.orderId}` : '/';
-    //                 });
-    //             } else {
-    //                 Swal.fire("Error!", data.message || "Failed to place order.", "error");
-    //             }
-    //         } catch (error) {
-    //             console.error('Error:', error);
-    //             Swal.fire("Error!", "An unexpected error occurred.", "error");
-    //         }
-    //     });
-    // });
 
 
 </script>

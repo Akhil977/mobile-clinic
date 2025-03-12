@@ -4,48 +4,41 @@
             <a href="/" class="logo">
                 <img src="images/icons/logo-01.png" alt="IMG-LOGO">
             </a>
-            
+
             <!-- Mobile Menu Toggle -->
             <div class="menu-toggle">
                 <i class="zmdi zmdi-menu"></i>
             </div>
 
+            <!-- Combined Menu for Desktop and Mobile -->
             <div class="menu-desktop">
                 <ul class="main-menu">
                     <li><a href="/">Home</a></li>
-                    <li><a href="/blog">Blog</a></li>
                     <li><a href="/about">About</a></li>
+                    <% if (!isLoggedIn) { %>
+                        <li class="profile-item"><a href="/login">Login</a></li>
+                    <% } else { %>
+                        <li class="profile-item has-submenu">
+                            <a href="#">Profile <i class="zmdi zmdi-caret-down"></i></a>
+                            <ul class="sub-menu">
+                                <li><a href="/profile">My Profile</a></li>
+                                <li><a href="/user-orders">My Orders</a></li>
+                                <li><a href="/logout">Log Out</a></li>
+                            </ul>
+                        </li>
+                    <% } %>
                 </ul>
-            </div>
 
-            <style>
-                .js-show-wishlist:hover i {
-                    color: red !important;
-                }
-            </style>
-
-            <div class="wrap-icon-header flex-w flex-r-m">
-                <% if (typeof cart !== 'undefined') { %>
-                    <div class="icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11 icon-header-noti js-show-cart" data-notify="<%= cart ? cart.length : 0 %>">
-                        <i class="zmdi zmdi-shopping-cart"></i>
+                <!-- Icons Section -->
+                <div class="wrap-icon-header flex-w flex-r-m">
+                    <% if (typeof cart !== 'undefined') { %>
+                        <div class="icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11 icon-header-noti js-show-cart" data-notify="<%= cart ? cart.length : 0 %>">
+                            <i class="zmdi zmdi-shopping-cart"></i>
+                        </div>
+                    <% } %>
+                    <div class="icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11 icon-header-noti js-show-wishlist" onclick="window.location.href='/wishlist'">
+                        <i class="zmdi zmdi-favorite-outline"></i>
                     </div>
-                <% } %>
-                
-                <div class="icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11 icon-header-noti js-show-wishlist" onclick="window.location.href='/wishlist'">
-                    <i class="zmdi zmdi-favorite-outline"></i>
-                </div>
-                
-                <div class="profile-menu icon-header-item cl2 hov-cl1 trans-04 p-l-22 p-r-11">
-                    <i class="zmdi zmdi-face"></i>
-                    <ul class="sub-menu">
-                        <% if (!isLoggedIn) { %>
-                            <li><a href="/login">Login</a></li>
-                        <% } else { %>
-                            <li><a href="/profile">My Profile</a></li>
-                            <li><a href="/user-orders">My Orders</a></li>
-                            <li><a href="/logout">Log Out</a></li>
-                        <% } %>
-                    </ul>
                 </div>
             </div>
         </nav>
@@ -60,12 +53,12 @@
         min-height: 100vh;
         margin: 0;
     }
-    
+
     .content {
         flex-grow: 1;
         padding: 20px;
     }
-    
+
     .footer {
         width: 100%;
         background: #333;
@@ -76,7 +69,7 @@
         bottom: 0;
     }
 
-    /* Responsive Styles */
+    /* Header Styles */
     .limiter-menu-desktop {
         display: flex;
         align-items: center;
@@ -104,11 +97,18 @@
 
     .main-menu li {
         margin: 0 15px;
+        position: relative;
     }
 
     .main-menu a {
         text-decoration: none;
         color: #333;
+        font-size: 16px;
+        transition: color 0.3s ease;
+    }
+
+    .main-menu a:hover {
+        color: #007bff;
     }
 
     .wrap-icon-header {
@@ -116,6 +116,40 @@
         align-items: center;
     }
 
+    .icon-header-item {
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .icon-header-item:hover {
+        color: #007bff;
+    }
+
+    .sub-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        list-style: none;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        min-width: 150px;
+    }
+
+    .has-submenu:hover .sub-menu {
+        display: block;
+    }
+
+    .sub-menu li {
+        margin: 5px 0;
+    }
+
+    .sub-menu a {
+        font-size: 14px;
+    }
+
+    /* Responsive Styles */
     @media (max-width: 768px) {
         .menu-toggle {
             display: block;
@@ -146,15 +180,22 @@
             width: 100%;
         }
 
-        .wrap-icon-header {
-            margin-left: 15px;
+        .sub-menu {
+            position: static;
+            display: none;
+            width: 100%;
+            box-shadow: none;
+            padding: 10px 20px;
+            background: #f9f9f9;
         }
 
-        .sub-menu {
-            position: relative;
-            width: 100%;
-            padding: 10px;
-            background: #f9f9f9;
+        .has-submenu.active .sub-menu {
+            display: block;
+        }
+
+        .wrap-icon-header {
+            margin-top: 15px;
+            justify-content: flex-start;
         }
     }
 
@@ -178,9 +219,23 @@
 </style>
 
 <script>
-    // Simple JavaScript for mobile menu toggle
-    document.querySelector('.menu-toggle').addEventListener('click', function() {
-        document.querySelector('.menu-desktop').classList.toggle('active');
+    // Mobile menu toggle
+    const menuToggle = document.querySelector('.menu-toggle');
+    const menuDesktop = document.querySelector('.menu-desktop');
+    const profileItems = document.querySelectorAll('.has-submenu');
+
+    menuToggle.addEventListener('click', function () {
+        menuDesktop.classList.toggle('active');
+    });
+
+    // Submenu toggle for mobile
+    profileItems.forEach(item => {
+        item.addEventListener('click', function (e) {
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                item.classList.toggle('active');
+            }
+        });
     });
 </script>
 
