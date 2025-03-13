@@ -136,6 +136,31 @@ const loadaboutpage=async (req,res)=>{
         
     }
 }
+const loadpageUnderConstruction=async(req,res)=>{
+    try {
+        if (req.session.isLoggedIn) {
+            const userId = req.session.user;
+            const userCart = await Cart.findOne({ userId: userId }).populate('item.productId');
+            
+            if (userCart) {
+                cart = userCart.item.map(item => ({
+                    productId: item.productId._id,
+                    name: item.productId.productName,
+                    price: item.price,
+                    quantity: item.quantity,
+                    totalPrice: item.totalPrice,
+                    image: item.productId.productImages[0]
+                }));
+            }
+        }
+
+        const isLoggedIn = req.session.isLoggedIn || false;
+        res.render("pageUnderConstruction",{ isLoggedIn})
+    } catch (error) {
+        
+    }
+
+}
 const loadLogin = (req, res) => {
     try {
         
@@ -474,6 +499,7 @@ module.exports={
     resendOtp,log
     ,logout,
     adminBlocked,
-    loadaboutpage
+    loadaboutpage,
+    loadpageUnderConstruction
    
 }

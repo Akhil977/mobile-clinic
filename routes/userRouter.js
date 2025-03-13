@@ -23,6 +23,10 @@ router.use(preventBackAfterLogout);
 router.get('/about',userController.loadaboutpage);
 
 
+//pageUnderConstruction
+router.get("/pageUnderConstruction",userController.loadpageUnderConstruction)
+
+
 router.get("/pageNotFound",checkBlockedUser,userController.pageNotFound);
 router.get("/",checkBlockedUser,userController.loadHomepage);
 router.get('/login', preventBackToLogin, userController.loadLogin);

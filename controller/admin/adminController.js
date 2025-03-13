@@ -60,298 +60,298 @@ const renderDashboardPage = (req, res) => {
 const loadDashboardData = async (req, res) => {
     try {
         const period = req.query.period || "monthly";
+        const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
+        const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
         let periodFilter = {};
         let labels = [];
-        
+        let startReference;
+
+        console.log("Request Query:", { period, startDate, endDate });
+
         // Get current date info
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
-        
-        // Set up time filter and labels based on period (unchanged from your original code)
-        if (period === "daily") {
-            const last7Days = new Date();
-            last7Days.setDate(last7Days.getDate() - 6);
-            periodFilter = { 
-                createdAt: { 
-                    $gte: new Date(last7Days.setHours(0, 0, 0, 0)),
-                    $lte: new Date(now.setHours(23, 59, 59, 999))
-                } 
-            };
-            labels = [];
-            for (let i = 6; i >= 0; i--) {
-                const day = new Date();
-                day.setDate(day.getDate() - i);
-                labels.push(day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }));
+
+        // Define period filter and labels based on period
+        if (period === "custom" && startDate && endDate) {
+            if (isNaN(startDate) || isNaN(endDate) || startDate > endDate || endDate > now) {
+                return res.status(400).json({ error: "Invalid date range" });
             }
-        } else if (period === "weekly") {
-            const last12Weeks = new Date();
-            last12Weeks.setDate(last12Weeks.getDate() - 84);
-            periodFilter = { 
-                createdAt: { 
-                    $gte: new Date(last12Weeks.setHours(0, 0, 0, 0)),
-                    $lte: new Date(now.setHours(23, 59, 59, 999)) 
-                } 
-            };
-            labels = [];
-            for (let i = 11; i >= 0; i--) {
-                const weekStart = new Date();
-                weekStart.setDate(weekStart.getDate() - (7 * i));
-                labels.push(`Week ${Math.ceil((weekStart.getDate() + weekStart.getDay()) / 7)}`);
-            }
-        } else if (period === "yearly") {
-            periodFilter = {};
-            labels = [currentYear-4, currentYear-3, currentYear-2, currentYear-1, currentYear].map(String);
-        } else {
+
+            startReference = new Date(startDate);
             periodFilter = {
                 createdAt: {
-                    $gte: new Date(currentYear, 0, 1),
-                    $lte: new Date(currentYear, 11, 31, 23, 59, 59, 999)
-                }
+                    $gte: new Date(startDate.setHours(0, 0, 0, 0)),
+                    $lte: new Date(endDate.setHours(23, 59, 59, 999)),
+                },
             };
-            labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            const daysDiff = Math.ceil((endDate - startReference) / (1000 * 60 * 60 * 24));
+            labels = [];
+            for (let i = 0; i <= daysDiff; i++) {
+                const date = new Date(startReference);
+                date.setDate(startReference.getDate() + i);
+                labels.push(date.toLocaleDateString("en-US", { weekday: "short", day: "numeric" }));
+            }
+        } else if (period === "weekly") {
+            startReference = new Date(now);
+            startReference.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+            startReference.setHours(0, 0, 0, 0);
+
+            periodFilter = {
+                createdAt: {
+                    $gte: startReference,
+                    $lte: new Date(now.setHours(23, 59, 59, 999)),
+                },
+            };
+
+            labels = [];
+            const daysInWeek = now.getDay() === 0 ? 6 : now.getDay();
+            for (let i = 0; i <= daysInWeek; i++) {
+                const day = new Date(startReference);
+                day.setDate(startReference.getDate() + i);
+                labels.push(day.toLocaleDateString("en-US", { weekday: "short", day: "numeric" }));
+            }
+        } else if (period === "monthly") {
+            periodFilter = {
+                createdAt: {
+                    $gte: new Date(currentYear, currentMonth, 1),
+                    $lte: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999),
+                },
+            };
+
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            labels = [];
+            for (let i = 1; i <= daysInMonth; i++) {
+                labels.push(`${i}`);
+            }
+        } else if (period === "yearly") {
+            periodFilter = {
+                createdAt: {
+                    $gte: new Date(currentYear - 4, 0, 1),
+                    $lte: new Date(currentYear, 11, 31, 23, 59, 59, 999),
+                },
+            };
+            labels = [currentYear - 4, currentYear - 3, currentYear - 2, currentYear - 1, currentYear].map(String);
         }
 
-        // Count totals (unchanged)
+        // Count totals
         const totalUsers = await User.countDocuments({ isAdmin: false });
         const totalProducts = await Product.countDocuments();
-        
+
         // Apply period filter to orders
-        const orderFilter = { ...periodFilter };
-        if (period === "daily" || period === "weekly") {
-            const orders = await Order.find({ status: "Delivered", ...orderFilter });
-            const totalRevenue = orders.reduce((acc, order) => acc + (order.finalAmount || 0), 0);
-            const totalOrders = orders.length;
-            
-            let timeData;
-            if (period === "daily") {
-                timeData = await Order.aggregate([
-                    { $match: { status: "Delivered", ...orderFilter } },
-                    {
-                        $group: {
-                            _id: { 
-                                year: { $year: "$createdAt" },
-                                month: { $month: "$createdAt" },
-                                day: { $dayOfMonth: "$createdAt" }
-                            },
-                            total: { $sum: "$finalAmount" },
-                            count: { $sum: 1 }
-                        }
+        const orderFilter = { status: "Delivered", ...periodFilter };
+        const orders = await Order.find(orderFilter);
+        const totalRevenue = orders.reduce((acc, order) => acc + (order.finalAmount || 0), 0);
+        const totalOrders = orders.length;
+
+        // Sales and Orders Data
+        let salesData = [];
+        let orderCounts = [];
+
+        if (period === "custom" || period === "weekly") {
+            const timeData = await Order.aggregate([
+                { $match: orderFilter },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: "$createdAt" },
+                            month: { $month: "$createdAt" },
+                            day: { $dayOfMonth: "$createdAt" },
+                        },
+                        total: { $sum: "$finalAmount" },
+                        count: { $sum: 1 },
                     },
-                    { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
-                ]);
-            } else {
-                timeData = await Order.aggregate([
-                    { $match: { status: "Delivered", ...orderFilter } },
-                    {
-                        $group: {
-                            _id: { 
-                                year: { $year: "$createdAt" },
-                                week: { $week: "$createdAt" }
-                            },
-                            total: { $sum: "$finalAmount" },
-                            count: { $sum: 1 }
-                        }
-                    },
-                    { $sort: { "_id.year": 1, "_id.week": 1 } }
-                ]);
-            }
-            
+                },
+                { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+            ]);
+
             const dataPoints = labels.length;
-            const salesData = Array(dataPoints).fill(0);
-            const orderCounts = Array(dataPoints).fill(0);
-            
-            if (period === "daily") {
-                timeData.forEach(item => {
-                    const date = new Date(item._id.year, item._id.month - 1, item._id.day);
-                    const daysAgo = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-                    if (daysAgo >= 0 && daysAgo < 7) {
-                        const index = 6 - daysAgo;
-                        salesData[index] = item.total;
-                        orderCounts[index] = item.count;
-                    }
-                });
-            } else {
-                timeData.forEach(item => {
-                    const yearWeek = `${item._id.year}-${item._id.week}`;
-                    const currentWeek = `${now.getFullYear()}-${Math.ceil((now.getDate() + now.getDay()) / 7)}`;
-                    const weeksAgo = getWeeksDifference(yearWeek, currentWeek);
-                    if (weeksAgo >= 0 && weeksAgo < 12) {
-                        const index = 11 - weeksAgo;
-                        salesData[index] = item.total;
-                        orderCounts[index] = item.count;
-                    }
-                });
-            }
-            
-            return generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
-                          labels, salesData, orderCounts, period);
+            salesData = Array(dataPoints).fill(0);
+            orderCounts = Array(dataPoints).fill(0);
+
+            timeData.forEach((item) => {
+                const date = new Date(item._id.year, item._id.month - 1, item._id.day);
+                const daysFromStart = Math.floor((date - startReference) / (1000 * 60 * 60 * 24));
+                if (daysFromStart >= 0 && daysFromStart < dataPoints) {
+                    salesData[daysFromStart] = item.total;
+                    orderCounts[daysFromStart] = item.count;
+                }
+            });
+        } else if (period === "monthly") {
+            const monthlyData = await Order.aggregate([
+                { $match: orderFilter },
+                {
+                    $group: {
+                        _id: { day: { $dayOfMonth: "$createdAt" } },
+                        total: { $sum: "$finalAmount" },
+                        count: { $sum: 1 },
+                    },
+                },
+                { $sort: { "_id.day": 1 } },
+            ]);
+
+            const dataPoints = labels.length;
+            salesData = Array(dataPoints).fill(0);
+            orderCounts = Array(dataPoints).fill(0);
+
+            monthlyData.forEach((item) => {
+                const dayIndex = item._id.day - 1;
+                if (dayIndex >= 0 && dayIndex < dataPoints) {
+                    salesData[dayIndex] = item.total;
+                    orderCounts[dayIndex] = item.count;
+                }
+            });
         } else if (period === "yearly") {
             const yearlyData = await Order.aggregate([
-                { $match: { status: "Delivered" } },
+                { $match: orderFilter },
                 {
                     $group: {
                         _id: { year: { $year: "$createdAt" } },
                         total: { $sum: "$finalAmount" },
-                        count: { $sum: 1 }
-                    }
+                        count: { $sum: 1 },
+                    },
                 },
-                { $sort: { "_id.year": 1 } }
-                ]);
-            
-            const salesData = Array(5).fill(0);
-            const orderCounts = Array(5).fill(0);
-            
-            yearlyData.forEach(item => {
+                { $sort: { "_id.year": 1 } },
+            ]);
+
+            salesData = Array(5).fill(0);
+            orderCounts = Array(5).fill(0);
+
+            yearlyData.forEach((item) => {
                 const yearIndex = labels.indexOf(item._id.year.toString());
                 if (yearIndex !== -1) {
                     salesData[yearIndex] = item.total;
                     orderCounts[yearIndex] = item.count;
                 }
             });
-            
-            const orders = await Order.find({ status: "Delivered" });
-            const totalRevenue = orders.reduce((acc, order) => acc + (order.finalAmount || 0), 0);
-            const totalOrders = await Order.countDocuments();
-            
-            return generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
-                          labels, salesData, orderCounts, period);
-        } else {
-            const monthlyData = await Order.aggregate([
-                { 
-                    $match: { 
-                        status: "Delivered", 
-                        createdAt: { 
-                            $gte: new Date(currentYear, 0, 1),
-                            $lte: new Date(currentYear, 11, 31, 23, 59, 59, 999)
-                        }
-                    } 
-                },
-                {
-                    $group: {
-                        _id: { month: { $month: "$createdAt" } },
-                        total: { $sum: "$finalAmount" },
-                        count: { $sum: 1 }
-                    }
-                },
-                { $sort: { "_id.month": 1 } }
-            ]);
-            
-            const salesData = Array(12).fill(0);
-            const orderCounts = Array(12).fill(0);
-            
-            monthlyData.forEach(item => {
-                salesData[item._id.month - 1] = item.total;
-                orderCounts[item._id.month - 1] = item.count;
-            });
-            
-            const orders = await Order.find({ status: "Delivered" });
-            const totalRevenue = orders.reduce((acc, order) => acc + (order.finalAmount || 0), 0);
-            const totalOrders = await Order.countDocuments();
-            
-            return generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
-                          labels, salesData, orderCounts, period);
         }
+
+        // Generate dashboard response
+        return generateDashboardResponse(
+            res,
+            totalRevenue,
+            totalOrders,
+            totalProducts,
+            totalUsers,
+            labels,
+            salesData,
+            orderCounts,
+            period,
+            periodFilter
+        );
     } catch (error) {
         console.error("Dashboard Error:", error.message, error.stack);
         res.status(500).json({ error: "Error loading dashboard data" });
     }
 };
 
-// Updated helper function to generate the dashboard response with best brand logic
-function generateDashboardResponse(res, totalRevenue, totalOrders, totalProducts, totalUsers, 
-                                 labels, salesData, orderCounts, period) {
-    return Promise.all([
-        // Category performance
+const generateDashboardResponse = async (
+    res,
+    totalRevenue,
+    totalOrders,
+    totalProducts,
+    totalUsers,
+    labels,
+    salesData,
+    orderCounts,
+    period,
+    periodFilter
+) => {
+    const [categoryPerformance, bestSelling, recentOrders, brandPerformance] = await Promise.all([
+        // Category Performance
         Order.aggregate([
+            { $match: { status: "Delivered", ...periodFilter } },
             { $unwind: "$orderedItems" },
             { $lookup: { from: "products", localField: "orderedItems.product", foreignField: "_id", as: "product" } },
             { $unwind: "$product" },
             { $lookup: { from: "categories", localField: "product.category", foreignField: "_id", as: "category" } },
             { $unwind: "$category" },
-            { $group: { _id: "$category.name", total: { $sum: "$orderedItems.price" } } }
+            { $group: { _id: "$category.name", total: { $sum: "$orderedItems.price" } } },
+            { $sort: { total: -1 } },
         ]),
-        
-        // Best selling products
+        // Best Selling Products
         Order.aggregate([
+            { $match: { status: "Delivered", ...periodFilter } },
             { $unwind: "$orderedItems" },
-            { $group: { _id: "$orderedItems.product", totalQuantity: { $sum: "$orderedItems.quantity" }, totalRevenue: { $sum: "$orderedItems.price" } } },
+            {
+                $group: {
+                    _id: "$orderedItems.product",
+                    totalQuantity: { $sum: "$orderedItems.quantity" },
+                    totalRevenue: { $sum: "$orderedItems.price" },
+                },
+            },
             { $sort: { totalQuantity: -1 } },
             { $limit: 5 },
             { $lookup: { from: "products", localField: "_id", foreignField: "_id", as: "product" } },
-            { $unwind: "$product" }
+            { $unwind: "$product" },
         ]),
-        
-        // Recent orders
-        Order.find()
+        // Recent Orders
+        Order.find({ ...periodFilter })
             .sort({ createdAt: -1 })
             .limit(5)
             .populate("userId", "name")
-            .select("orderId totalPrice status createdAt"),
-        
-        // Brand performance (new aggregation for best brand)
+            .select("orderId finalAmount status createdAt"),
+        // Brand Performance
         Order.aggregate([
-            { $match: { status: "Delivered" } }, // Only delivered orders
+            { $match: { status: "Delivered", ...periodFilter } },
             { $unwind: "$orderedItems" },
             { $lookup: { from: "products", localField: "orderedItems.product", foreignField: "_id", as: "product" } },
             { $unwind: "$product" },
-            { $group: { 
-                _id: "$product.brand", 
-                totalSales: { $sum: "$orderedItems.price" } 
-            } },
-            { $sort: { totalSales: -1 } }, // Sort by total sales descending
-            { $limit: 1 } // Get the top brand
-        ])
-    ]).then(([categoryPerformance, bestSelling, recentOrders, brandPerformance]) => {
-        // Determine the best brand (if no data, default to "Unknown")
-        const bestBrand = brandPerformance.length > 0 
-            ? { name: brandPerformance[0]._id || "Unknown", sales: brandPerformance[0].totalSales }
-            : { name: "Unknown", sales: 0 };
+            {
+                $group: {
+                    _id: "$product.brand",
+                    totalSales: { $sum: "$orderedItems.price" },
+                },
+            },
+            { $sort: { totalSales: -1 } },
+            { $limit: 1 },
+        ]),
+    ]);
 
-        res.json({
-            summary: { revenue: `₹${totalRevenue.toLocaleString()}`, orders: totalOrders },
-            stats: { products: totalProducts, users: totalUsers },
-            sales: { labels, revenue: salesData, orders: orderCounts },
-            categories: { 
-                labels: categoryPerformance.map((cp) => cp._id), 
-                data: categoryPerformance.map((cp) => cp.total) 
-            },
-            bestSelling: bestSelling.map((bs) => ({
-                product: bs.product.productName,
-                price: `₹${bs.product.salePrice.toLocaleString()}`,
-                sold: bs.totalQuantity,
-            })),
-            topPerformers: {
-                brand: { 
-                    name: bestBrand.name, 
-                    sales: bestBrand.sales 
-                },
-                category: { 
-                    name: categoryPerformance[0]?._id || "N/A", 
-                    sales: categoryPerformance[0]?.total || 0 
-                },
-            },
-            recentOrders: recentOrders.map((order) => ({
-                orderId: order.orderId,
-                customer: order.userId?.name || "Unknown",
-                product: "Multiple",
-                date: order.createdAt.toLocaleDateString(),
-                amount: `₹${order.totalPrice.toLocaleString()}`,
-                status: order.status,
-            })),
-            period
-        });
+    const bestBrand = brandPerformance.length > 0
+        ? { name: brandPerformance[0]._id || "No Brand", sales: brandPerformance[0].totalSales }
+        : { name: "No Sales", sales: 0 };
+
+    const bestCategory = categoryPerformance.length > 0
+        ? { name: categoryPerformance[0]._id || "No Category", sales: categoryPerformance[0].total }
+        : { name: "No Sales", sales: 0 };
+
+    res.json({
+        summary: { revenue: `₹${totalRevenue.toLocaleString()}`, orders: totalOrders },
+        stats: { products: totalProducts, users: totalUsers },
+        sales: { labels, revenue: salesData, orders: orderCounts },
+        categories: {
+            labels: categoryPerformance.map((cp) => cp._id || "Unknown"),
+            data: categoryPerformance.map((cp) => cp.total),
+        },
+        bestSelling: bestSelling.map((bs) => ({
+            product: bs.product.productName || "Unknown",
+            price: `₹${(bs.product.salePrice || bs.totalRevenue).toLocaleString()}`,
+            sold: bs.totalQuantity,
+        })),
+        topPerformers: {
+            brand: bestBrand,
+            category: bestCategory,
+        },
+        recentOrders: recentOrders.map((order) => ({
+            orderId: order.orderId,
+            customer: order.userId?.name || "Unknown",
+            date: order.createdAt.toLocaleDateString(),
+            amount: `₹${order.finalAmount.toLocaleString()}`,
+            status: order.status,
+        })),
+        period,
     });
 }
 
-// Helper function to calculate weeks difference (unchanged)
 function getWeeksDifference(week1, week2) {
     const [year1, weekNum1] = week1.split('-').map(Number);
     const [year2, weekNum2] = week2.split('-').map(Number);
     const yearDiff = (year2 - year1) * 52;
     return yearDiff + (weekNum2 - weekNum1);
 }
-
 const loadCategory =async (req, res) => {
 	res.render("category");
 };

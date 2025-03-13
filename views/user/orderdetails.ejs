@@ -39,8 +39,8 @@
                         <div class="order-info mb-4">
                             <% if(order) { %>
                                 <p><strong>Invoice Date:</strong> <%= new Date(order.invoiceDate).toLocaleString('en-IN', { 
-                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-                                }) %></p>
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+}) %></p>
                                 <p><strong>Payment Method:</strong> <%= order.paymentMethod %> </p>
                                 <% if(order.paymentStatus === 'Pending') { %>
                                     <button class="btn btn-sm btn-primary ms-2" onclick="handlePayNow('<%= order._id %>', <%= order.finalAmount %>)">

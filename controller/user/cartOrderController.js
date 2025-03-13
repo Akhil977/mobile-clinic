@@ -12,6 +12,9 @@ const getCartCheckout = async (req, res) => {
     try {
         const userId = req.session.user;
         const isLoggedIn = req.session.isLoggedIn || false;
+        if(!isLoggedIn){
+            res.redirect("/login")
+        }
 
         // Fetch required data
         const user = await User.findById(userId);

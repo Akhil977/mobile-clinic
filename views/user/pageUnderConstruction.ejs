@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+	<%- include ('component/head.ejs') %>
+	<link rel="stylesheet" href="css/jquery-ui.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+	<script
+		src="https://code.jquery.com/jquery-3.6.0.min.js"
+		integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+		crossorigin="anonymous"
+	></script>
+	<script src="js/jquery-ui.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<script>
+		$(document).ready(function () {
+			toastr.options = {
+				"positionClass": "toast-top-right",
+				"closeButton": true,
+				"progressBar": true,
+				"timeOut": "3000"
+			};
+		});
+	</script>
+	<body class="animsition">
+		<!-- Header -->
+		<%- include ('component/header.ejs') %>
+
+		<!-- Under Development Section -->
+		<section class="bg0 p-t-23 p-b-140">
+			<div class="container">
+				<div class="p-b-10">
+					<h3 class="ltext-103 cl5">Page Under Development</h3>
+				</div>
+
+				<div class="row">
+					<div class="col-12 text-center">
+						<div class="development-content">
+							<i class="fa fa-tools cl2 fs-60 p-b-20"></i>
+							<h4 class="mtext-105 cl2 p-b-20">Work in Progress</h4>
+							<p class="stext-102 cl6 p-b-20">
+								This section of our website is currently under development. We're working hard to bring you new features and content!
+							</p>
+							<p class="stext-102 cl6">
+								Please check back later or explore other parts of our site. Thank you for your patience!
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<style>
+			.development-content {
+				padding: 50px 20px;
+				background: #fff;
+				border-radius: 8px;
+				box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+				margin: 30px 0;
+			}
+
+			.development-content i {
+				color: #717fe0;
+			}
+
+			@media (max-width: 768px) {
+				.development-content {
+					padding: 30px 15px;
+				}
+			}
+		</style>
+
+		<!-- Footer -->
+		<%- include ('component/footer.ejs') %>
+
+		<!-- Script -->
+		<%- include ('component/script.ejs') %>
+	</body>
+</html>

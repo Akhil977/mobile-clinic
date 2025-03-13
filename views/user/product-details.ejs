@@ -254,10 +254,13 @@
 									</div>
 									<div class="product-actions w-100">
 										<% if (product.quantity > 0) { %>
-											<button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail mb-2 w-100 add-to-cart-btn" 
-													onclick="location.href=`carthandler?id=<%= product._id %>&name=<%= product.name %>&price=<%= product.price %>&quantity=${document.getElementById('quantity').value}&image=<%= product.image %>`">
-												Add to cart
-											</button>
+											<button class="flex-c-m stext-101 cl0 size-101 bg1 bor1 hov-btn1 p-lr-15 trans-04 js-addcart-detail mb-2 w-100 add-to-cart-btn"
+        data-id="<%= product._id %>"
+        data-name="<%= product.name %>"
+        data-price="<%= product.price %>"
+        data-image="<%= product.image %>">
+    Add to cart
+</button>
 											<button class="flex-c-m stext-101 cl0 size-101 bg3 bor1 hov-btn2 p-lr-15 trans-04 w-100" 
 													style="background-color: #28a745;" 
 													onclick="location.href=`/order/buy-now?productId=<%= product._id %>&quantity=${document.getElementById('quantity').value}`">
@@ -574,8 +577,6 @@
 	<!-- Footer -->
 	<%- include ('component/footer.ejs') %>
 
-	<!-- Modal1 -->
-	<%- include ('component/footer.ejs') %>
 
 <!-- Script -->
 <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
@@ -583,83 +584,69 @@
 
 <script>
 	$(document).ready(function () {
+		// Configure toastr options
 		toastr.options = {
 			"positionClass": "toast-top-right",
 			"closeButton": true,
 			"progressBar": true,
-			"timeOut": "3000"
+			"timeOut": "3000",
+			"preventDuplicates": true
 		};
-
-		function showCartNotification(message, type = 'success') {
-			const modal = $('#cartNotificationModal');
-			const content = modal.find('.cart-notification-content');
-			const messageDiv = modal.find('.cart-notification-message');
-			
-			// Reset classes and set new ones
-			content.removeClass('success error').addClass(type);
-			messageDiv.text(message);
-			
-			// Show the modal
-			modal.css('display', 'block');
-			
-			// Hide after 3 seconds
-			setTimeout(() => {
-				modal.addClass('slide-out');
-				setTimeout(() => {
-					modal.removeClass('slide-out').css('display', 'none');
-				}, 300);
-			}, 3000);
-		}
-
+	
 		// Handle Add to Cart button click
 		$(document).on('click', '.js-addcart-detail', function(e) {
-			e.preventDefault();
+			e.preventDefault(); // Prevent any default behavior
 			
-			// Get the quantity
+			// Get product details from data attributes
+			const productId = $(this).data('id');
+			const productName = $(this).data('name');
+			const productPrice = $(this).data('price');
+			const productImage = $(this).data('image');
 			const quantity = $('#quantity').val() || 1;
-			
-			// Extract the base URL from the onclick attribute
-			const baseUrl = $(this).attr('onclick').match(/carthandler\?[^'"`]+/)[0];
-			
-			// Add quantity parameter to URL
-			const url = `${baseUrl}&quantity=${quantity}`;
-			
+	
+			// Construct the URL for the AJAX request
+			const url = `/carthandler?id=${productId}&name=${encodeURIComponent(productName)}&price=${productPrice}&quantity=${quantity}&image=${encodeURIComponent(productImage)}`;
+	
 			$.ajax({
 				url: url,
 				method: 'GET',
 				dataType: 'json',
 				success: function(response) {
-					showCartNotification(response.message || 'Product added to cart successfully!', 'success');
-					// Reload the page after a delay to update cart count
-					setTimeout(() => {
-						window.location.reload();
-					}, 2000);
+					if (response.success) {
+						toastr.success(response.message || 'Product added to cart successfully!');
+						// Reload the page after a delay to update cart count
+						setTimeout(() => {
+							window.location.reload();
+						}, 2000);
+					} else {
+						toastr.error(response.message || 'Failed to add product to cart');
+					}
 				},
 				error: function(xhr) {
 					const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to add product to cart';
-					showCartNotification(errorMsg, 'error');
+					toastr.error(errorMsg);
 				}
 			});
 		});
-
+	
 		// Handle quantity changes
 		$('.btn-num-product-down, .btn-num-product-up').on('click', function() {
-        setTimeout(() => {
-            const newQuantity = parseInt($('#quantity').val());
-            const maxQuantity = parseInt($('#quantity').attr('max'));
-
-            if (newQuantity > maxQuantity) {
-                $('#quantity').val(maxQuantity);
-                toastr.warning(`Only ${maxQuantity} items available in stock.`);
-            } else if (newQuantity < 1) {
-                $('#quantity').val(1);
-            }
-
-            console.log('Quantity updated:', $('#quantity').val());
-        }, 100);
-    });
+			setTimeout(() => {
+				const newQuantity = parseInt($('#quantity').val());
+				const maxQuantity = parseInt($('#quantity').attr('max'));
+	
+				if (newQuantity > maxQuantity) {
+					$('#quantity').val(maxQuantity);
+					toastr.warning(`Only ${maxQuantity} items available in stock.`);
+				} else if (newQuantity < 1) {
+					$('#quantity').val(1);
+				}
+	
+				console.log('Quantity updated:', $('#quantity').val());
+			}, 100);
+		});
 	});
-</script>
+	</script>
 
 </body>
 </html>

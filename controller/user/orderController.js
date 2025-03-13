@@ -463,7 +463,7 @@ const loadOrderDetails = async (req, res) => {
                 totalPrice: order.totalPrice,
                 discount: order.discount || 0,
                 finalAmount: order.finalAmount,
-                invoiceDate: order.invoiceDate,
+                invoiceDate: order.createdAt,
                 paymentMethod: order.paymentMethod,
                 couponApplied: order.couponApplied || false
             },
@@ -542,17 +542,22 @@ const generateInvoice = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=invoice_${order.orderId}.pdf`);
         doc.pipe(res);
 
+        // Header
         doc.fontSize(20).text('Invoice', { align: 'center' });
         doc.moveDown();
 
+        // Order Details
         doc.fontSize(12).text(`Order #${order.orderId}`, { align: 'left' });
-        doc.text(`Invoice Date: ${new Date(order.invoiceDate).toLocaleString('en-IN', { 
+        // Assuming invoiceDate is a timestamp in the schema
+        const invoiceDate = order.invoiceDate ? new Date(order.invoiceDate) : new Date();
+        doc.text(`Invoice Date: ${invoiceDate.toLocaleString('en-IN', { 
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
         })}`);
         doc.text(`Payment Method: ${order.paymentMethod}`);
         doc.text(`Payment Status: ${order.paymentStatus}`);
         doc.moveDown();
 
+        // Delivery Address
         doc.fontSize(14).text('Delivery Address:', { underline: true });
         doc.fontSize(12).text(`${address.name}`);
         doc.text(`${address.landmark}, ${address.city}, ${address.state}`);
@@ -560,30 +565,67 @@ const generateInvoice = async (req, res) => {
         doc.text(`Phone: ${address.phone}`);
         doc.moveDown();
 
+        // Table for Ordered Items
         doc.fontSize(14).text('Ordered Items:', { underline: true });
         doc.moveDown(0.5);
 
+        // Table Header
+        const tableTop = doc.y;
+        const itemWidth = 200;
+        const qtyWidth = 60;
+        const priceWidth = 80;
+        const totalWidth = 80;
+        const tableLeft = 50;
+
+        doc.fontSize(12).font('Helvetica-Bold')
+            .text('Item', tableLeft, tableTop, { width: itemWidth })
+            .text('Qty', tableLeft + itemWidth, tableTop, { width: qtyWidth, align: 'right' })
+            .text('Price', tableLeft + itemWidth + qtyWidth, tableTop, { width: priceWidth, align: 'right' })
+            .text('Total', tableLeft + itemWidth + qtyWidth + priceWidth, tableTop, { width: totalWidth, align: 'right' });
+
+        // Draw table header line
+        doc.moveTo(tableLeft, tableTop + 15)
+           .lineTo(tableLeft + itemWidth + qtyWidth + priceWidth + totalWidth, tableTop + 15)
+           .stroke();
+
+        // Table Rows
+        let currentY = tableTop + 20;
+        doc.font('Helvetica');
         products.forEach((item, index) => {
-            doc.fontSize(12).text(`${index + 1}. ${item.productName}`);
-            doc.text(`   Quantity: ${item.quantity}`);
-            doc.text(`   Price: ₹${item.price}`);
-            doc.text(`   Total: ₹${item.total}`);
-            doc.moveDown(0.5);
+            doc.fontSize(12)
+                .text(item.productName.substring(0, 25), tableLeft, currentY, { width: itemWidth }) // Truncate long names
+                .text(item.quantity, tableLeft + itemWidth, currentY, { width: qtyWidth, align: 'right' })
+                .text(`₹${item.price}`, tableLeft + itemWidth + qtyWidth, currentY, { width: priceWidth, align: 'right' })
+                .text(`₹${item.total}`, tableLeft + itemWidth + qtyWidth + priceWidth, currentY, { width: totalWidth, align: 'right' });
+            currentY += 20;
         });
 
-        doc.moveDown();
-        doc.fontSize(14).text('Order Summary:', { underline: true });
-        doc.fontSize(12).text(`Total Price: ₹${order.totalPrice}`);
-        doc.text(`Discount: ₹${order.discount}`);
-        doc.fontSize(14).text(`Final Amount: ₹${order.finalAmount}`, { bold: true });
+        // Draw table bottom line
+        doc.moveTo(tableLeft, currentY)
+           .lineTo(tableLeft + itemWidth + qtyWidth + priceWidth + totalWidth, currentY)
+           .stroke();
 
-        // Updated Footer with Company Details
+        // Order Summary
         doc.moveDown(2);
-        doc.fontSize(10).text('Thank you for your purchase!', { align: 'center' });
-        doc.moveDown(0.5);
-        doc.text('Mobile Clinic', { align: 'center' });
-        doc.text('Email: support@mobileclinic.com', { align: 'center' });
-        doc.text('Phone: +91 12345 67890', { align: 'center' });
+        doc.fontSize(14).text('Order Summary:', { underline: true });
+        const summaryLeft = 350;
+        doc.fontSize(12)
+            .text('Total Price:', summaryLeft, doc.y + 10)
+            .text(`₹${order.totalPrice}`, summaryLeft + 100, doc.y - 12, { align: 'right' })
+            .text('Discount:', summaryLeft, doc.y + 5)
+            .text(`₹${order.discount}`, summaryLeft + 100, doc.y - 12, { align: 'right' });
+        doc.fontSize(14).font('Helvetica-Bold')
+            .text('Final Amount:', summaryLeft, doc.y + 10)
+            .text(`₹${order.finalAmount}`, summaryLeft + 100, doc.y - 14, { align: 'right' });
+
+        // Footer
+        doc.moveDown(2);
+        doc.fontSize(10).font('Helvetica')
+            .text('Thank you for your purchase!', { align: 'center' })
+            .moveDown(0.5)
+            .text('Mobile Clinic', { align: 'center' })
+            .text('Email: support@mobileclinic.com', { align: 'center' })
+            .text('Phone: +91 12345 67890', { align: 'center' });
 
         doc.end();
 

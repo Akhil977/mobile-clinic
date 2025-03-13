@@ -22,24 +22,32 @@
 
     <!-- Main content -->
     <section class="content">
-      <div class="row">
-        <div class="col-xs-12">
-          <div class="box box-default">
-            <div class="box-body clearfix">
-              <h5 class="pull-left" style="margin: 0;">Dashboard Overview</h5>
-              <div class="form-group pull-right" style="margin: 0;">
-                <select id="globalFilter" class="form-control input-sm">
-                  <option value="daily">Weekly</option>
-                  
-                  <option value="monthly" selected>Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="box box-default">
+              <div class="box-body clearfix">
+                <h5 class="pull-left" style="margin: 0;">Dashboard Overview</h5>
+                <div class="form-group pull-right" style="margin: 0;">
+                  <select id="globalFilter" class="form-control input-sm" style="display: inline-block; width: 150px;">
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly" selected>Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                  <button id="customDateBtn" class="btn btn-default btn-sm" style="margin-left: 10px;">
+                    <i class="fa fa-calendar"></i> Custom Date
+                  </button>
+                  <div id="customDateRange" style="display: none; margin-top: 10px;">
+                    <input type="date" id="startDate" class="form-control input-sm" style="display: inline-block; width: 35%; margin-right: 2%;">
+                    <input type="date" id="endDate" class="form-control input-sm" style="display: inline-block; width: 35%; margin-right: 2%;">
+                    <button id="applyCustomDate" class="btn btn-primary btn-sm" style="width: 25%;">Apply</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
+      
       <div class="row">
         <div class="col-md-3 col-sm-6 col-xs-12">
           <div class="small-box bg-aqua">
@@ -197,7 +205,7 @@
                       <th>Date</th>
                       <th>Amount</th>
                       <th>Status</th>
-                      <th>Action</th>
+                    
                     </tr>
                   </thead>
                   <tbody id="recentOrdersTable">
@@ -222,174 +230,278 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    let salesChart, categoryChart, ordersChart;
-    const chartColors = {
-        primary: "#3c8dbc",
-        success: "#00a65a",
-        warning: "#f39c12",
-        info: "#00c0ef",
-    };
+  let salesChart, categoryChart, ordersChart;
+  const chartColors = {
+      primary: "#3c8dbc",
+      success: "#00a65a",
+      warning: "#f39c12",
+      info: "#00c0ef",
+  };
 
-    // Fetch data from API
-    async function fetchDashboardData(period) {
-        try {
-            const response = await fetch(`/admin/api/dashboard?period=${period}`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            if (data.error) throw new Error(data.error);
-            console.log("Fetched Data:", data); // Debugging
-            return data;
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            alert("Error loading dashboard data");
-            return null;
-        }
-    }
+  // Fetch data from API
+  async function fetchDashboardData(period, startDate = null, endDate = null) {
+      try {
+          let url = `/admin/api/dashboard?period=${encodeURIComponent(period)}`;
+          if (period === "custom" && startDate && endDate) {
+              url += `&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+          }
+          console.log("Fetching URL:", url);
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const data = await response.json();
+          if (data.error) throw new Error(data.error);
+          console.log("Fetched Data:", data);
+          return data;
+      } catch (error) {
+          console.error("Fetch Error:", error);
+          alert("Error loading dashboard data");
+          return null;
+      }
+  }
 
-    // Initialize sales chart
-    function initSalesChart(data) {
-        const salesCtx = document.getElementById("salesChart").getContext("2d");
-        if (salesChart) salesChart.destroy();
-        salesChart = new Chart(salesCtx, {
-            type: "line",
-            data: {
-                labels: data.sales.labels,
-                datasets: [{
-                    label: "Revenue",
-                    data: data.sales.revenue,
-                    borderColor: chartColors.primary,
-                    backgroundColor: `${chartColors.primary}20`,
-                    tension: 0.3,
-                    fill: true,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: (value) => "₹" + value.toLocaleString(),
-                        },
-                    },
-                },
-            },
-        });
-    }
+  // Initialize sales chart
+  function initSalesChart(data) {
+      const salesCtx = document.getElementById("salesChart").getContext("2d");
+      if (salesChart) salesChart.destroy();
+      salesChart = new Chart(salesCtx, {
+          type: "line",
+          data: {
+              labels: data.sales.labels,
+              datasets: [{
+                  label: "Revenue",
+                  data: data.sales.revenue,
+                  borderColor: chartColors.primary,
+                  backgroundColor: `${chartColors.primary}20`,
+                  tension: 0.3,
+                  fill: true,
+              }],
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                  y: {
+                      beginAtZero: true,
+                      ticks: {
+                          callback: (value) => "₹" + value.toLocaleString(),
+                      },
+                  },
+              },
+          },
+      });
+  }
 
-    // Category Performance Pie Chart
-    function initCategoryChart(data) {
-        const categoryCtx = document.getElementById("categoryChart").getContext("2d");
-        if (categoryChart) categoryChart.destroy();
-        categoryChart = new Chart(categoryCtx, {
-            type: "pie",
-            data: {
-                labels: data.categories.labels,
-                datasets: [{
-                    data: data.categories.data,
-                    backgroundColor: [chartColors.primary, chartColors.success, chartColors.warning, chartColors.info],
-                    borderWidth: 0,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: "right", labels: { padding: 20 } },
-                },
-            },
-        });
-    }
+  // Category Performance Pie Chart
+  function initCategoryChart(data) {
+      const categoryCtx = document.getElementById("categoryChart").getContext("2d");
+      if (categoryChart) categoryChart.destroy();
 
-    // Orders Overview Bar Chart
-    function initOrdersChart(data) {
-        const ordersCtx = document.getElementById("ordersChart").getContext("2d");
-        if (ordersChart) ordersChart.destroy();
-        ordersChart = new Chart(ordersCtx, {
-            type: "bar",
-            data: {
-                labels: data.sales.labels,
-                datasets: [{
-                    label: "Orders",
-                    data: data.sales.orders,
-                    backgroundColor: chartColors.primary,
-                    borderRadius: 4,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } },
-            },
-        });
-    }
+      console.log("Category Data:", data.categories);
 
-    // Update summary values
-    function updateSummaryValues(data) {
-        document.getElementById("revenueValue").textContent = data.summary.revenue;
-        document.getElementById("ordersValue").textContent = data.summary.orders;
-        document.getElementById("productsValue").textContent = data.stats.products;
-        document.getElementById("usersValue").textContent = data.stats.users;
-    }
+      const labels = data.categories.labels.length ? data.categories.labels : ["No Data"];
+      const dataset = data.categories.data.length ? data.categories.data : [1];
 
-    // Update best selling products table
-    function updateBestSellingTable(data) {
-        const tableBody = document.getElementById("bestSellingTable");
-        tableBody.innerHTML = data.bestSelling.map(item => `
-            <tr>
-                <td>${item.product}</td>
-                <td>${item.price}</td>
-                <td>${item.sold}</td>
-            </tr>
-        `).join("") || "<tr><td colspan='3'>No data available</td></tr>";
-    }
+      categoryChart = new Chart(categoryCtx, {
+          type: "pie",
+          data: {
+              labels: labels,
+              datasets: [{
+                  data: dataset,
+                  backgroundColor: [chartColors.primary, chartColors.success, chartColors.warning, chartColors.info],
+                  borderWidth: 0,
+              }],
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: { position: "right", labels: { padding: 20 } },
+              },
+          },
+      });
+  }
 
-    // Update top performers
-    function updateTopPerformers(data) {
-        document.getElementById("bestBrand").textContent = data.topPerformers.brand.name;
-        document.getElementById("bestBrandSales").textContent = `${data.topPerformers.brand.sales} sales`;
-        document.getElementById("bestCategory").textContent = data.topPerformers.category.name;
-        document.getElementById("bestCategorySales").textContent = `${data.topPerformers.category.sales} sales`;
-    }
+  // Orders Overview Bar Chart
+  function initOrdersChart(data) {
+      const ordersCtx = document.getElementById("ordersChart").getContext("2d");
+      if (ordersChart) ordersChart.destroy();
+      ordersChart = new Chart(ordersCtx, {
+          type: "bar",
+          data: {
+              labels: data.sales.labels,
+              datasets: [{
+                  label: "Orders",
+                  data: data.sales.orders,
+                  backgroundColor: chartColors.primary,
+                  borderRadius: 4,
+              }],
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true } },
+          },
+      });
+  }
 
-    // Update recent orders
-    function updateRecentOrders(data) {
-        const tableBody = document.getElementById("recentOrdersTable");
-        tableBody.innerHTML = data.recentOrders.map(order => `
-            <tr>
-                <td>${order.orderId}</td>
-                <td>${order.customer}</td>
-                <td>${order.date}</td>
-                <td>${order.amount}</td>
-                <td><span class="label label-${order.status === "Delivered" ? "success" : order.status === "Placed" ? "info" : "warning"}">${order.status}</span></td>
-                <td><a href="/admin/orders/${order.orderId}" class="btn btn-default btn-xs">Details</a></td>
-            </tr>
-        `).join("") || "<tr><td colspan='6'>No data available</td></tr>";
-    }
+  // Update summary values
+  function updateSummaryValues(data) {
+      document.getElementById("revenueValue").textContent = data.summary.revenue;
+      document.getElementById("ordersValue").textContent = data.summary.orders;
+      document.getElementById("productsValue").textContent = data.stats.products;
+      document.getElementById("usersValue").textContent = data.stats.users;
+  }
 
-    // Update all charts and data
-    async function updateAllCharts() {
-        const period = document.getElementById("globalFilter").value;
-        const data = await fetchDashboardData(period);
-        if (data) {
-            initSalesChart(data);
-            initCategoryChart(data);
-            initOrdersChart(data);
-            updateSummaryValues(data);
-            updateBestSellingTable(data);
-            updateTopPerformers(data);
-            updateRecentOrders(data);
-        }
-    }
+  // Update best selling products table
+  function updateBestSellingTable(data) {
+      const tableBody = document.getElementById("bestSellingTable");
+      tableBody.innerHTML = data.bestSelling.map(item => `
+          <tr>
+              <td>${item.product}</td>
+              <td>${item.price}</td>
+              <td>${item.sold}</td>
+          </tr>
+      `).join("") || "<tr><td colspan='3'>No data available</td></tr>";
+  }
 
-    // Initialize on page load and filter change
-    document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("globalFilter").addEventListener("change", updateAllCharts);
-        updateAllCharts();
-    });
+  // Update top performers
+  function updateTopPerformers(data) {
+      document.getElementById("bestBrand").textContent = data.topPerformers.brand.name || "No Data";
+      document.getElementById("bestBrandSales").textContent = `₹${data.topPerformers.brand.sales.toLocaleString()} sales`;
+      document.getElementById("bestCategory").textContent = data.topPerformers.category.name || "No Data";
+      document.getElementById("bestCategorySales").textContent = `₹${data.topPerformers.category.sales.toLocaleString()} sales`;
+  }
+
+  // Update recent orders
+  function updateRecentOrders(data) {
+      const tableBody = document.getElementById("recentOrdersTable");
+      tableBody.innerHTML = data.recentOrders.map(order => `
+          <tr>
+              <td>${order.orderId}</td>
+              <td>${order.customer}</td>
+              <td>${order.date}</td>
+              <td>${order.amount}</td>
+              <td><span class="label label-${order.status === "Delivered" ? "success" : order.status === "Placed" ? "info" : "warning"}">${order.status}</span></td>
+          </tr>
+      `).join("") || "<tr><td colspan='6'>No data available</td></tr>";
+  }
+
+  // Update all charts and data
+  async function updateAllCharts(forceCustom = false) {
+      const globalFilter = document.getElementById("globalFilter");
+      let period = globalFilter.value;
+      const startDate = document.getElementById("startDate")?.value;
+      const endDate = document.getElementById("endDate")?.value;
+
+      // Force custom period if triggered by Apply button
+      if (forceCustom) {
+          period = "custom";
+      }
+
+      console.log("Updating charts with - Period:", period, "Start Date:", startDate, "End Date:", endDate);
+
+      let data;
+      if (period === "custom") {
+          if (!startDate || !endDate) {
+              alert("Please select both start and end dates.");
+              return;
+          }
+          if (new Date(startDate) > new Date(endDate)) {
+              alert("End date cannot be earlier than start date.");
+              return;
+          }
+          console.log("Fetching custom range data...");
+          data = await fetchDashboardData("custom", startDate, endDate);
+      } else {
+          console.log("Fetching standard period data...");
+          data = await fetchDashboardData(period);
+      }
+
+      if (data) {
+          console.log("Received Data:", data);
+          initSalesChart(data);
+          initCategoryChart(data);
+          initOrdersChart(data);
+          updateSummaryValues(data);
+          updateBestSellingTable(data);
+          updateTopPerformers(data);
+          updateRecentOrders(data);
+      } else {
+          console.log("No data returned for update");
+      }
+  }
+
+  // Initialize on page load and handle events
+  document.addEventListener("DOMContentLoaded", () => {
+      const globalFilter = document.getElementById("globalFilter");
+      const customDateBtn = document.getElementById("customDateBtn");
+      const customDateRange = document.getElementById("customDateRange");
+      const startDateInput = document.getElementById("startDate");
+      const endDateInput = document.getElementById("endDate");
+      const applyCustomDateBtn = document.getElementById("applyCustomDate");
+
+      // Set max date to today
+      const today = new Date().toISOString().split("T")[0];
+      if (startDateInput && endDateInput) {
+          startDateInput.max = today;
+          endDateInput.max = today;
+      }
+
+      // Toggle custom date range visibility
+      if (customDateBtn) {
+          customDateBtn.addEventListener("click", () => {
+              if (customDateRange.style.display === "none" || customDateRange.style.display === "") {
+                  customDateRange.style.display = "block";
+                  customDateBtn.classList.add("active");
+                  globalFilter.value = "custom";
+                  console.log("Custom Date Range opened, globalFilter set to:", globalFilter.value);
+              } else {
+                  customDateRange.style.display = "none";
+                  customDateBtn.classList.remove("active");
+              }
+          });
+      }
+
+      // Validate end date
+      if (startDateInput) {
+          startDateInput.addEventListener("change", () => {
+              if (startDateInput.value) {
+                  endDateInput.min = startDateInput.value;
+                  if (endDateInput.value && endDateInput.value < startDateInput.value) {
+                      endDateInput.value = startDateInput.value;
+                  }
+              }
+          });
+      }
+
+      // Apply custom date
+      if (applyCustomDateBtn) {
+          applyCustomDateBtn.addEventListener("click", () => {
+              globalFilter.value = "custom";
+              const startDate = startDateInput.value;
+              const endDate = endDateInput.value;
+              console.log("Apply clicked - Period:", globalFilter.value, "Start:", startDate, "End:", endDate);
+              updateAllCharts(true); // Force custom range
+          });
+      }
+
+      // Global filter change
+      if (globalFilter) {
+          globalFilter.addEventListener("change", () => {
+              if (globalFilter.value !== "custom" && customDateRange) {
+                  customDateRange.style.display = "none";
+                  customDateBtn.classList.remove("active");
+              }
+              console.log("Global filter changed to:", globalFilter.value);
+              updateAllCharts();
+          });
+      }
+
+      // Initial load
+      updateAllCharts();
+  });
 </script>
 </body>
 </html>

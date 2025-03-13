@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <%- include ('component/head.ejs') %>
+</head>
 <body>
     <%- include ('component/header.ejs') %>
     <div class="page-container">
@@ -21,9 +23,9 @@
                         <% orders.forEach(function(order) { %>
                             <div class="card mb-3">
                                 <div class="card-body">
-                                    <div class="d-flex justify-content-between">
+                                    <div class="d-flex justify-content-between flex-column flex-md-row">
                                         <h6>Order #<%= order.orderId %></h6>
-                                        <div class="order-actions">
+                                        <div class="order-actions mt-2 mt-md-0">
                                             <a href="/order-details?id=<%= order._id %>" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-eye"></i> View Details
                                             </a>
@@ -78,11 +80,10 @@
 
                     <!-- Pagination Controls -->
                     <nav aria-label="Order pagination" class="mt-4">
-                        <ul class="pagination justify-content-center">
+                        <ul class="pagination justify-content-center flex-wrap">
                             <li class="page-item <%= (typeof currentPage !== 'undefined' && currentPage === 1) ? 'disabled' : '' %>">
-
                                 <a class="page-link" href="?page=<%= currentPage - 1 %>" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
+                                    <span aria-hidden="true">«</span>
                                 </a>
                             </li>
                             <% for(let i = 1; i <= totalPages; i++) { %>
@@ -92,7 +93,7 @@
                             <% } %>
                             <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
                                 <a class="page-link" href="?page=<%= currentPage + 1 %>" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
+                                    <span aria-hidden="true">»</span>
                                 </a>
                             </li>
                         </ul>
@@ -110,68 +111,175 @@
 
     <!-- Styles -->
     <style>
-    .page-container {
-        display: flex;
-        min-height: 100vh;
-    }
-    .user-aside {
-        width: 220px;
-        background-color: #ffffff;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-    }
-    .main-content {
-        flex: 1;
-        padding: 20px;
-        background-color: #f8f9fa;
-    }
-    .address-divider {
-        height: 1px;
-        background-color: #dee2e6;
-        margin: 15px 0;
-    }
-    .section-title {
-        color: #495057;
-        font-weight: 500;
-        margin-left: 15px;
-    }
-    .type-label {
-        color: #6c757d;
-        font-weight: 500;
-        text-transform: uppercase;
-        font-size: 0.8rem !important;
-    }
-    .no-address {
-        color: #6c757d;
-        padding: 30px;
-        background-color: white;
-        border-radius: 8px;
-        margin: 0 15px;
-    }
-    .card {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .order-details p {
-        margin-bottom: 0.3rem;
-        font-size: 0.9rem;
-    }
-    .order-actions button {
-        padding: 0.25rem 0.5rem;
-    }
-    .order-actions button:hover {
-        background-color: #f8f9fa;
-        border-radius: 4px;
-    }
-    .pagination .page-link {
-        color: #495057;
-    }
-    .pagination .page-item.active .page-link {
-        background-color: #007bff;
-        border-color: #007bff;
-    }
-    .pagination .page-item.disabled .page-link {
-        color: #6c757d;
-    }
+        /* Base Styles */
+        .page-container {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column; /* Stack vertically on small screens */
+        }
+
+        .user-aside {
+            width: 220px;
+            background-color: #ffffff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease; /* Smooth sidebar transition */
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .address-divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 15px 0;
+        }
+
+        .section-title {
+            color: #495057;
+            font-weight: 500;
+            margin-left: 15px;
+        }
+
+        .type-label {
+            color: #6c757d;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.8rem !important;
+        }
+
+        .no-address {
+            color: #6c757d;
+            padding: 30px;
+            background-color: white;
+            border-radius: 8px;
+            margin: 0 15px;
+        }
+
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .order-details p {
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .order-actions button,
+        .order-actions a {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .order-actions button:hover,
+        .order-actions a:hover {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .pagination .page-link {
+            color: #495057;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+        }
+
+        /* Responsive Styles */
+        @media (min-width: 768px) {
+            .page-container {
+                flex-direction: row; /* Sidebar and content side-by-side on larger screens */
+            }
+
+            .user-aside {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
+            }
+
+            .main-content {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .user-aside {
+                width: 100%;
+                box-shadow: none;
+                padding: 10px;
+                position: relative;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            .section-title {
+                margin-left: 0;
+                text-align: center;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            .order-details p {
+                font-size: 0.85rem;
+            }
+
+            .order-actions {
+                text-align: center;
+            }
+
+            .pagination {
+                margin: 10px 0;
+            }
+
+            .pagination .page-link {
+                padding: 0.5rem;
+            }
+
+            .no-address {
+                margin: 0;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card {
+                margin-bottom: 10px;
+            }
+
+            .order-details p {
+                font-size: 0.8rem;
+            }
+
+            .type-label {
+                font-size: 0.7rem !important;
+            }
+
+            .btn-sm {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.4rem;
+            }
+
+            .pagination .page-link {
+                font-size: 0.8rem;
+                padding: 0.4rem;
+            }
+
+            .text-center {
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </body>
 </html>

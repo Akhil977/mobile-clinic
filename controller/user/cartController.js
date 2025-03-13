@@ -11,6 +11,9 @@ const getCart = async (req, res) => {
     try {
         const userId = req.session.user;
         const isLoggedIn = req.session.isLoggedIn || false;
+        if(!isLoggedIn){
+            return res.redirect("/login")
+        }
         
         let cart = await Cart.findOne({ userId }).populate("item.productId");
         if (!cart) {
@@ -33,6 +36,9 @@ const addcart = async (req, res) => {
     const fromWishlist = req.query.fromWishlist === 'true'; // Check if adding from wishlist
 
     try {
+        if (!userId) {
+            return res.status(404).json({ success: false, message: 'user not logged in' });
+        }
         // Fetch the product details from the database
         const product = await Product.findById(productId);
         if (!product) {
